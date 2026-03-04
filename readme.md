@@ -1,0 +1,1 @@
+Run `clang -E -I vendor/wgpu-native/ffi/webgpu-headers vendor/wgpu-native/ffi/wgpu.h > preprocessed.h`, then `zig translate-c preprocessed.h` to get bindings.
