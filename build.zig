@@ -33,10 +33,17 @@ pub fn build(b: *std.Build) void {
         .root_module = generator_mod,
         .name = "z_wgpu_native_generator",
     });
+
+    const gen_tests = b.addTest(.{
+        .root_module = generator_mod,
+    });
+    const run_generator_tests = b.addRunArtifact(gen_tests);
+
     const run_generator = b.addRunArtifact(generator_exe);
     run_generator.addFileArg(root_bindings_source);
     run_generator.addDirectoryArg(b.path("src"));
     run_generator.step.dependOn(&generator_exe.step);
+    run_generator.step.dependOn(&run_generator_tests.step);
     run_generator.step.dependOn(root_bindings_step);
     const generate_wrapper_step = b.step("codegen", "Generate wrapper code.");
     generate_wrapper_step.dependOn(&run_generator.step);
@@ -58,12 +65,13 @@ pub fn build(b: *std.Build) void {
     });
     lib.step.dependOn(generate_wrapper_step);
     b.installArtifact(lib);
-
+    
     const lib_tests = b.addTest(.{
-        .root_module = generator_mod,
+        .root_module = mod,
     });
     const run_lib_tests = b.addRunArtifact(lib_tests);
 
     const test_step = b.step("test", "Run library tests");
+    test_step.dependOn(&run_generator_tests.step);
     test_step.dependOn(&run_lib_tests.step);
 }
