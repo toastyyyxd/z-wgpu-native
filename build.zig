@@ -20,7 +20,7 @@ pub fn build(b: *std.Build) void {
     run_translate_c.step.dependOn(&run_clang_preprocess.step);
     const root_bindings_source = run_translate_c.getOutput();
 
-    const root_bindings_step = b.step("root_bindings", "Preprocess and translate .h into initial .zig root bindings.");
+    const root_bindings_step = b.step("translate", "Preprocess and translate .h into initial .zig root bindings.");
     root_bindings_step.dependOn(&run_clang_preprocess.step);
     root_bindings_step.dependOn(&run_translate_c.step);
 
@@ -31,7 +31,7 @@ pub fn build(b: *std.Build) void {
     });
     const generator_exe = b.addExecutable(.{
         .root_module = generator_mod,
-        .name = "z_wgpu_native_generator",
+        .name = "z_wgpu_native_gen",
     });
 
     const gen_tests = b.addTest(.{
