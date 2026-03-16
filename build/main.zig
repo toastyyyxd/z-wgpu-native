@@ -42,10 +42,13 @@ fn process(init: std.process.Init, root_bindings: File, output_dir: Dir) !void {
 
     var ast = try std.zig.Ast.parse(init.gpa, root_bindings_content, .zig);
     defer ast.deinit(init.gpa);
-    for (ast.rootDecls()) |decl_i| {
-        const node = ast.nodes.get(@intFromEnum(decl_i));
-        std.debug.print("{any} {any}\n", .{ node, node.data });
+    for (ast.rootDecls()) |node_Idx| {
+        try parseNode(init.io, &ast, node_Idx);
     }
 
     _ = output_dir;
+}
+
+fn parseNode(init : std.process.Init, ast: *std.zig.Ast, node_idx: std.zig.Ast.Node) !void {
+    
 }
