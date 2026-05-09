@@ -37,13 +37,13 @@ pub fn requestDeviceCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ct
     };
 }
 
-pub fn queueWorkDoneCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.QueueWorkDoneStatus) void,
+pub fn queueWorkDoneCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.QueueWorkDoneStatus, [:0]const u8) void,
 ) c.WGPUQueueWorkDoneCallbackInfo {
     const Trampoline = struct {
-        fn call(status: c.WGPUQueueWorkDoneStatus, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
+        fn call(status: c.WGPUQueueWorkDoneStatus, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
             const c1: *C1 = @ptrCast(@alignCast(userdata1));
             const c2: *C2 = @ptrCast(@alignCast(userdata2));
-            cb(c1, c2, @enumFromInt(status));
+            cb(c1, c2, @enumFromInt(status), message.data[0..message.length :0]);
         }
     };
 

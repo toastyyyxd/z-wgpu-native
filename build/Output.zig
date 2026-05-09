@@ -161,6 +161,7 @@ fn isHandleLikeType(ctype: []const u8) bool {
         "QuerySet", "Queue", "RenderBundle", "RenderBundleEncoder",
         "RenderPassEncoder", "RenderPipeline", "Sampler",
         "ShaderModule", "Surface", "Texture", "TextureView",
+        "ExternalTexture",
     };
     const stripped = stripWgpu(ctype);
     for (handle_names) |h| {
@@ -189,7 +190,7 @@ fn mapTypeName(ctype: []const u8, buf: []u8) []const u8 {
         return std.fmt.bufPrint(buf, "?*{s}", .{zig_inner}) catch unreachable;
     }
     if (std.mem.eql(u8, ctype, "WGPUBool")) return "bool";
-    if (std.mem.eql(u8, ctype, "WGPUStringView")) return "[:0]const u8";
+    if (std.mem.eql(u8, ctype, "WGPUStringView")) return "StringView";
     if (std.mem.eql(u8, ctype, "WGPUFlags")) return "u64";
     if (std.mem.eql(u8, ctype, "void")) return "void";
     if (std.mem.startsWith(u8, ctype, "WGPU")) {
@@ -368,18 +369,28 @@ fn writeFlags(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
             fn lt(_: void, a: SortedVal, b: SortedVal) bool { return a.bit < b.bit; }
         }.lt);
 
+        // Deduplicate by bit position (keep first occurrence)
+        var deduped: std.ArrayListUnmanaged(SortedVal) = .empty;
+        defer deduped.deinit(mapping.gpa);
+        for (sorted_vals.items) |sv| {
+            if (deduped.items.len == 0 or deduped.items[deduped.items.len - 1].bit != sv.bit) {
+                try deduped.append(mapping.gpa, sv);
+            }
+        }
+
         // Force32 sentinel → u32 backing
         const backing = if (decl.has_force32) "u32" else "u64";
         const backing_bits: u8 = if (decl.has_force32) 32 else 64;
-        var max_bit: u8 = 0;
-        for (sorted_vals.items) |sv| {
-            if (sv.bit > max_bit) max_bit = sv.bit;
-        }
-        const pad_bits = backing_bits - max_bit - 1;
 
         try buf.print("pub const {s} = packed struct({s}) {{\n", .{ zname, backing });
 
-        for (sorted_vals.items) |sv| {
+        var current_bit: u8 = 0;
+        for (deduped.items) |sv| {
+            if (sv.bit > current_bit) {
+                const gap = sv.bit - current_bit;
+                try buf.print("    _: u{d} = 0,\n", .{gap});
+                current_bit = sv.bit;
+            }
             var name_buf: [128]u8 = undefined;
             const vname = zigValueName(sv.name, &name_buf);
             if (isZigKeyword(vname)) {
@@ -387,9 +398,13 @@ fn writeFlags(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
             } else {
                 try buf.print("    {s}: bool = false,\n", .{vname});
             }
+            current_bit += 1;
+        }
+        const final_pad = backing_bits - current_bit;
+        if (final_pad > 0) {
+            try buf.print("    __: u{d} = 0,\n", .{final_pad});
         }
 
-        try buf.print("    _: u{d} = 0,\n", .{pad_bits});
         try buf.print(
             \\    comptime {{ std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf({s})); }}
             \\
@@ -434,9 +449,9 @@ fn isSimpleInt(s: []const u8) bool {
 
 fn parseFlagBit(init_text: []const u8) u8 {
     if (std.mem.startsWith(u8, init_text, "@bitCast")) {
-        if (std.mem.lastIndexOfScalar(u8, init_text, '(')) |p| {
-            // Extract N from ...@intCast(N)))]
-            const after = init_text[p + 1 ..];
+        const marker = "@intCast(@as(c_int, ";
+        if (std.mem.indexOf(u8, init_text, marker)) |start| {
+            const after = init_text[start + marker.len ..];
             const end = std.mem.indexOfScalar(u8, after, ')') orelse return 0;
             return std.fmt.parseInt(u8, after[0..end], 10) catch 0;
         }
@@ -472,7 +487,30 @@ fn writeStructs(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
 
             if (f.init != .none) {
                 const init_slice = mapping.ast.getNodeSource(f.init.unwrap().?);
-                const zinit = mapFieldInit(type_slice, init_slice);
+                const mapped_init = mapFieldInit(type_slice, init_slice);
+                const zinit = if (std.mem.eql(u8, mapped_init, ".{}")) blk: {
+                    if (std.mem.startsWith(u8, type_slice, "union_")) {
+                        var zb: [256]u8 = undefined;
+                        break :blk std.fmt.bufPrint(&zb, "std.mem.zeroes({s})", .{ztype}) catch unreachable;
+                    }
+                    if (mapping.enum_decls.get(type_slice)) |enum_decl| {
+                        var val_iter = enum_decl.values.iterator();
+                        while (val_iter.next()) |val| {
+                            const init_text = mapping.ast.getNodeSource(val.value_ptr.*.init.unwrap().?);
+                            if (std.mem.eql(u8, init_text, "0")) {
+                                var vn_buf: [128]u8 = undefined;
+                                const vname = zigValueName(val.key_ptr.*, &vn_buf);
+                                var ei_buf: [256]u8 = undefined;
+                                if (isZigKeyword(vname)) {
+                                    break :blk std.fmt.bufPrint(&ei_buf, ".@\"{s}\"", .{vname}) catch unreachable;
+                                } else {
+                                    break :blk std.fmt.bufPrint(&ei_buf, ".{s}", .{vname}) catch unreachable;
+                                }
+                            }
+                        }
+                    }
+                    break :blk @as([]const u8, "undefined");
+                } else mapped_init;
                 try buf.print("    {s}: {s} = {s},\n", .{ fname, ztype, zinit });
             } else {
                 try buf.print("    {s}: {s},\n", .{ fname, ztype });
@@ -484,11 +522,12 @@ fn writeStructs(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
             try buf.appendSlice(
                 \\
                 \\    pub fn toSlice(sv: StringView) [:0]const u8 {
-                \\        return sv.data[0..sv.length :0];
+                \\        const ptr: [*]const u8 = @ptrCast(sv.data orelse return "");
+                \\        return ptr[0..sv.length :0];
                 \\    }
                 \\
                 \\    pub fn fromSlice(slice: [:0]const u8) StringView {
-                \\        return .{ .data = slice.ptr, .length = slice.len };
+                \\        return .{ .data = @ptrCast(slice.ptr), .length = slice.len };
                 \\    }
                 \\
             );
@@ -520,7 +559,7 @@ fn writeStructs(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
 
 fn mapFieldInit(ctype: []const u8, cinit: []const u8) []const u8 {
     if (std.mem.eql(u8, ctype, "WGPUBool") and std.mem.eql(u8, cinit, "0")) return "false";
-    if (std.mem.eql(u8, ctype, "WGPUStringView") and std.mem.startsWith(u8, cinit, "@import")) return "\"\"";
+    if (std.mem.eql(u8, ctype, "WGPUStringView") and std.mem.startsWith(u8, cinit, "@import")) return ".{}";
     if (std.mem.eql(u8, cinit, "null")) return "null";
     if (std.mem.startsWith(u8, cinit, "@import")) return ".{}";
     return cinit;
@@ -649,6 +688,7 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
     const ret_type = mapCTypeRef(ret_slice, &ret_buf);
     const returns_void = std.mem.eql(u8, ret_type, "void");
     const returns_status = std.mem.eql(u8, ret_slice, "WGPUStatus");
+    const is_handle_ret = fn_decl.return_kind == .handle;
 
     // When WGPUStatus with out-param, return !OutType instead of !void
     var actual_ret_type: []const u8 = ret_type;
@@ -659,6 +699,11 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
         const otype = mapping.ast.getNodeSource(out_param.type);
         var inner_buf: [256]u8 = undefined;
         actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "!{s}", .{mapCTypeRef(stripCPtrPrefix(otype), &inner_buf)}) catch unreachable;
+    }
+
+    // When returning a handle, use the handle type name directly (defined in handles.zig)
+    if (is_handle_ret) {
+        actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "{s}", .{typeSliceToHandleName(ret_slice)}) catch unreachable;
     }
 
     // Write signature
@@ -702,14 +747,13 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
         }
         try buf.appendSlice(");\n");
     } else {
-        const is_handle_ret = fn_decl.return_kind == .handle;
         if (is_handle_ret) {
             try buf.print("        const result = c.{s}(@ptrCast(self.ptr)", .{fn_decl.name});
             for (fn_decl.params.items[1..]) |*param| {
                 try buf.print(", {s}", .{param.name});
             }
             try buf.appendSlice(");\n");
-            try buf.appendSlice("        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };\n");
+            try buf.appendSlice("        return .{ .ptr = @ptrCast(result.?) };\n");
         } else {
             try buf.print("        return c.{s}(@ptrCast(self.ptr)", .{fn_decl.name});
             for (fn_decl.params.items[1..]) |*param| {
@@ -794,7 +838,7 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
             try buf.print("{s}", .{param.name});
         }
         try buf.appendSlice(");\n");
-        try buf.appendSlice("        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };\n");
+        try buf.appendSlice("        return .{ .ptr = @ptrCast(result.?) };\n");
     } else {
         try buf.print("        return c.{s}(", .{fn_decl.name});
         for (fn_decl.params.items, 0..) |*param, i| {

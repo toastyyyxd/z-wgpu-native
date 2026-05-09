@@ -77,6 +77,13 @@ pub const Buffer = struct {
         c.wgpuBufferDestroy(@ptrCast(self.ptr));
     }
 
+    pub fn writeMappedRange(self: Buffer, data: ?*const anyopaque, size: usize) !usize {
+        var result: usize = undefined;
+        const status = c.wgpuBufferWriteMappedRange(@ptrCast(self.ptr), &result, data, size);
+        if (status != 1) return error.Unexpected;
+        return result;
+    }
+
     pub fn mapAsync(self: Buffer, mode: c.WGPUMapMode, offset: usize, size: usize, callbackInfo: c.WGPUBufferMapCallbackInfo) c.WGPUFuture {
         return c.wgpuBufferMapAsync(@ptrCast(self.ptr), mode, offset, size, callbackInfo);
     }
@@ -87,6 +94,13 @@ pub const Buffer = struct {
 
     pub fn getConstMappedRange(self: Buffer, offset: usize, size: usize) ?*const anyopaque {
         return c.wgpuBufferGetConstMappedRange(@ptrCast(self.ptr), offset, size);
+    }
+
+    pub fn readMappedRange(self: Buffer, data: ?*anyopaque, size: usize) !usize {
+        var result: usize = undefined;
+        const status = c.wgpuBufferReadMappedRange(@ptrCast(self.ptr), &result, data, size);
+        if (status != 1) return error.Unexpected;
+        return result;
     }
 
     pub fn getUsage(self: Buffer) c.WGPUBufferUsage {
@@ -135,9 +149,9 @@ pub const CommandEncoder = struct {
         c.wgpuCommandEncoderCopyBufferToTexture(@ptrCast(self.ptr), source, destination, copySize);
     }
 
-    pub fn beginComputePass(self: CommandEncoder, descriptor: ?*const c.WGPUComputePassDescriptor) c.WGPUComputePassEncoder {
+    pub fn beginComputePass(self: CommandEncoder, descriptor: ?*const c.WGPUComputePassDescriptor) ComputePassEncoder {
         const result = c.wgpuCommandEncoderBeginComputePass(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
     pub fn copyTextureToBuffer(self: CommandEncoder, source: ?*const c.WGPUTexelCopyTextureInfo, destination: ?*const c.WGPUTexelCopyBufferInfo, copySize: ?*const c.WGPUExtent3D) void {
@@ -164,14 +178,14 @@ pub const CommandEncoder = struct {
         c.wgpuCommandEncoderPopDebugGroup(@ptrCast(self.ptr));
     }
 
-    pub fn beginRenderPass(self: CommandEncoder, descriptor: ?*const c.WGPURenderPassDescriptor) c.WGPURenderPassEncoder {
+    pub fn beginRenderPass(self: CommandEncoder, descriptor: ?*const c.WGPURenderPassDescriptor) RenderPassEncoder {
         const result = c.wgpuCommandEncoderBeginRenderPass(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
-    pub fn finish(self: CommandEncoder, descriptor: ?*const c.WGPUCommandBufferDescriptor) c.WGPUCommandBuffer {
+    pub fn finish(self: CommandEncoder, descriptor: ?*const c.WGPUCommandBufferDescriptor) CommandBuffer {
         const result = c.wgpuCommandEncoderFinish(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
     pub fn setLabel(self: CommandEncoder, label: c.WGPUStringView) void {
@@ -264,9 +278,9 @@ pub const ComputePipeline = struct {
         c.wgpuComputePipelineSetLabel(@ptrCast(self.ptr), label);
     }
 
-    pub fn getBindGroupLayout(self: ComputePipeline, groupIndex: u32) c.WGPUBindGroupLayout {
+    pub fn getBindGroupLayout(self: ComputePipeline, groupIndex: u32) BindGroupLayout {
         const result = c.wgpuComputePipelineGetBindGroupLayout(@ptrCast(self.ptr), groupIndex);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
 };
@@ -278,42 +292,42 @@ pub const Device = struct {
         return .{ .ptr = ptr };
     }
 
-    pub fn createTexture(self: Device, descriptor: ?*const c.WGPUTextureDescriptor) c.WGPUTexture {
+    pub fn createTexture(self: Device, descriptor: ?*const c.WGPUTextureDescriptor) Texture {
         const result = c.wgpuDeviceCreateTexture(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
     pub fn hasFeature(self: Device, feature: c.WGPUFeatureName) bool {
         return c.wgpuDeviceHasFeature(@ptrCast(self.ptr), feature);
     }
 
-    pub fn createBindGroup(self: Device, descriptor: ?*const c.WGPUBindGroupDescriptor) c.WGPUBindGroup {
+    pub fn createBindGroup(self: Device, descriptor: ?*const c.WGPUBindGroupDescriptor) BindGroup {
         const result = c.wgpuDeviceCreateBindGroup(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
-    pub fn createBuffer(self: Device, descriptor: ?*const c.WGPUBufferDescriptor) c.WGPUBuffer {
+    pub fn createBuffer(self: Device, descriptor: ?*const c.WGPUBufferDescriptor) Buffer {
         const result = c.wgpuDeviceCreateBuffer(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
-    pub fn createShaderModuleSpirV(self: Device, descriptor: ?*const c.WGPUShaderModuleDescriptorSpirV) c.WGPUShaderModule {
+    pub fn createShaderModuleSpirV(self: Device, descriptor: ?*const c.WGPUShaderModuleDescriptorSpirV) ShaderModule {
         const result = c.wgpuDeviceCreateShaderModuleSpirV(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
     pub fn startGraphicsDebuggerCapture(self: Device) bool {
         return c.wgpuDeviceStartGraphicsDebuggerCapture(@ptrCast(self.ptr));
     }
 
-    pub fn createRenderPipeline(self: Device, descriptor: ?*const c.WGPURenderPipelineDescriptor) c.WGPURenderPipeline {
+    pub fn createRenderPipeline(self: Device, descriptor: ?*const c.WGPURenderPipelineDescriptor) RenderPipeline {
         const result = c.wgpuDeviceCreateRenderPipeline(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
-    pub fn createShaderModule(self: Device, descriptor: ?*const c.WGPUShaderModuleDescriptor) c.WGPUShaderModule {
+    pub fn createShaderModule(self: Device, descriptor: ?*const c.WGPUShaderModuleDescriptor) ShaderModule {
         const result = c.wgpuDeviceCreateShaderModule(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
     pub fn getNativeMetalDevice(self: Device) ?*anyopaque {
@@ -332,23 +346,26 @@ pub const Device = struct {
         return c.wgpuDeviceCreateComputePipelineAsync(@ptrCast(self.ptr), descriptor, callbackInfo);
     }
 
-    pub fn createPipelineLayout(self: Device, descriptor: ?*const c.WGPUPipelineLayoutDescriptor) c.WGPUPipelineLayout {
+    pub fn createPipelineLayout(self: Device, descriptor: ?*const c.WGPUPipelineLayoutDescriptor) PipelineLayout {
         const result = c.wgpuDeviceCreatePipelineLayout(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
-    pub fn createRenderBundleEncoder(self: Device, descriptor: ?*const c.WGPURenderBundleEncoderDescriptor) c.WGPURenderBundleEncoder {
+    pub fn createRenderBundleEncoder(self: Device, descriptor: ?*const c.WGPURenderBundleEncoderDescriptor) RenderBundleEncoder {
         const result = c.wgpuDeviceCreateRenderBundleEncoder(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
-    pub fn createSampler(self: Device, descriptor: ?*const c.WGPUSamplerDescriptor) c.WGPUSampler {
+    pub fn createSampler(self: Device, descriptor: ?*const c.WGPUSamplerDescriptor) Sampler {
         const result = c.wgpuDeviceCreateSampler(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
-    pub fn getAdapterInfo(self: Device) c.WGPUAdapterInfo {
-        return c.wgpuDeviceGetAdapterInfo(@ptrCast(self.ptr));
+    pub fn getAdapterInfo(self: Device) !c.WGPUAdapterInfo {
+        var result: c.WGPUAdapterInfo = undefined;
+        const status = c.wgpuDeviceGetAdapterInfo(@ptrCast(self.ptr), &result);
+        if (status != 1) return error.Unexpected;
+        return result;
     }
 
     pub fn createRenderPipelineAsync(self: Device, descriptor: ?*const c.WGPURenderPipelineDescriptor, callbackInfo: c.WGPUCreateRenderPipelineAsyncCallbackInfo) c.WGPUFuture {
@@ -363,23 +380,23 @@ pub const Device = struct {
         return c.wgpuDevicePopErrorScope(@ptrCast(self.ptr), callbackInfo);
     }
 
-    pub fn getQueue(self: Device) c.WGPUQueue {
+    pub fn getQueue(self: Device) Queue {
         const result = c.wgpuDeviceGetQueue(@ptrCast(self.ptr));
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
     pub fn getLostFuture(self: Device) c.WGPUFuture {
         return c.wgpuDeviceGetLostFuture(@ptrCast(self.ptr));
     }
 
-    pub fn createCommandEncoder(self: Device, descriptor: ?*const c.WGPUCommandEncoderDescriptor) c.WGPUCommandEncoder {
+    pub fn createCommandEncoder(self: Device, descriptor: ?*const c.WGPUCommandEncoderDescriptor) CommandEncoder {
         const result = c.wgpuDeviceCreateCommandEncoder(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
-    pub fn createBindGroupLayout(self: Device, descriptor: ?*const c.WGPUBindGroupLayoutDescriptor) c.WGPUBindGroupLayout {
+    pub fn createBindGroupLayout(self: Device, descriptor: ?*const c.WGPUBindGroupLayoutDescriptor) BindGroupLayout {
         const result = c.wgpuDeviceCreateBindGroupLayout(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
     pub fn getLimits(self: Device) !c.WGPULimits {
@@ -401,14 +418,27 @@ pub const Device = struct {
         c.wgpuDevicePushErrorScope(@ptrCast(self.ptr), filter);
     }
 
-    pub fn createComputePipeline(self: Device, descriptor: ?*const c.WGPUComputePipelineDescriptor) c.WGPUComputePipeline {
+    pub fn createComputePipeline(self: Device, descriptor: ?*const c.WGPUComputePipelineDescriptor) ComputePipeline {
         const result = c.wgpuDeviceCreateComputePipeline(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
-    pub fn createQuerySet(self: Device, descriptor: ?*const c.WGPUQuerySetDescriptor) c.WGPUQuerySet {
+    pub fn createQuerySet(self: Device, descriptor: ?*const c.WGPUQuerySetDescriptor) QuerySet {
         const result = c.wgpuDeviceCreateQuerySet(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
+    }
+
+};
+
+pub const ExternalTexture = struct {
+    ptr: *anyopaque,
+
+    pub fn fromPtr(ptr: *anyopaque) ExternalTexture {
+        return .{ .ptr = ptr };
+    }
+
+    pub fn setLabel(self: ExternalTexture, label: c.WGPUStringView) void {
+        c.wgpuExternalTextureSetLabel(@ptrCast(self.ptr), label);
     }
 
 };
@@ -424,20 +454,17 @@ pub const Instance = struct {
         return c.wgpuInstanceEnumerateAdapters(@ptrCast(self.ptr), options, adapters);
     }
 
-    pub fn createSurface(self: Instance, descriptor: ?*const c.WGPUSurfaceDescriptor) c.WGPUSurface {
+    pub fn createSurface(self: Instance, descriptor: ?*const c.WGPUSurfaceDescriptor) Surface {
         const result = c.wgpuInstanceCreateSurface(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
     pub fn requestAdapter(self: Instance, options: ?*const c.WGPURequestAdapterOptions, callbackInfo: c.WGPURequestAdapterCallbackInfo) c.WGPUFuture {
         return c.wgpuInstanceRequestAdapter(@ptrCast(self.ptr), options, callbackInfo);
     }
 
-    pub fn getWGSLLanguageFeatures(self: Instance) !c.WGPUSupportedWGSLLanguageFeatures {
-        var result: c.WGPUSupportedWGSLLanguageFeatures = undefined;
-        const status = c.wgpuInstanceGetWGSLLanguageFeatures(@ptrCast(self.ptr), &result);
-        if (status != 1) return error.Unexpected;
-        return result;
+    pub fn getWGSLLanguageFeatures(self: Instance, features: ?*c.WGPUSupportedWGSLLanguageFeatures) void {
+        c.wgpuInstanceGetWGSLLanguageFeatures(@ptrCast(self.ptr), features);
     }
 
     pub fn generateReport(self: Instance, report: ?*c.WGPUGlobalReport) void {
@@ -573,9 +600,9 @@ pub const RenderBundleEncoder = struct {
         c.wgpuRenderBundleEncoderSetLabel(@ptrCast(self.ptr), label);
     }
 
-    pub fn finish(self: RenderBundleEncoder, descriptor: ?*const c.WGPURenderBundleDescriptor) c.WGPURenderBundle {
+    pub fn finish(self: RenderBundleEncoder, descriptor: ?*const c.WGPURenderBundleDescriptor) RenderBundle {
         const result = c.wgpuRenderBundleEncoderFinish(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
     pub fn drawIndirect(self: RenderBundleEncoder, indirectBuffer: c.WGPUBuffer, indirectOffset: u64) void {
@@ -748,9 +775,9 @@ pub const RenderPipeline = struct {
         c.wgpuRenderPipelineSetLabel(@ptrCast(self.ptr), label);
     }
 
-    pub fn getBindGroupLayout(self: RenderPipeline, groupIndex: u32) c.WGPUBindGroupLayout {
+    pub fn getBindGroupLayout(self: RenderPipeline, groupIndex: u32) BindGroupLayout {
         const result = c.wgpuRenderPipelineGetBindGroupLayout(@ptrCast(self.ptr), groupIndex);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
 };
@@ -829,6 +856,10 @@ pub const Texture = struct {
         return .{ .ptr = ptr };
     }
 
+    pub fn getTextureBindingViewDimension(self: Texture) c.WGPUTextureViewDimension {
+        return c.wgpuTextureGetTextureBindingViewDimension(@ptrCast(self.ptr));
+    }
+
     pub fn getSampleCount(self: Texture) u32 {
         return c.wgpuTextureGetSampleCount(@ptrCast(self.ptr));
     }
@@ -837,9 +868,9 @@ pub const Texture = struct {
         return c.wgpuTextureGetFormat(@ptrCast(self.ptr));
     }
 
-    pub fn createView(self: Texture, descriptor: ?*const c.WGPUTextureViewDescriptor) c.WGPUTextureView {
+    pub fn createView(self: Texture, descriptor: ?*const c.WGPUTextureViewDescriptor) TextureView {
         const result = c.wgpuTextureCreateView(@ptrCast(self.ptr), descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
     }
 
     pub fn getDimension(self: Texture) c.WGPUTextureDimension {
@@ -893,6 +924,10 @@ pub const TextureView = struct {
 
 };
 
+pub fn getInstanceFeatures(features: ?*c.WGPUSupportedInstanceFeatures) void {
+        c.wgpuGetInstanceFeatures(features);
+}
+
 pub fn supportedFeaturesFreeMembers(supportedFeatures: c.WGPUSupportedFeatures) void {
         c.wgpuSupportedFeaturesFreeMembers(supportedFeatures);
 }
@@ -909,24 +944,28 @@ pub fn setLogCallback(callback: c.WGPULogCallback, userdata: ?*anyopaque) void {
         c.wgpuSetLogCallback(callback, userdata);
 }
 
-pub fn getInstanceCapabilities() !c.WGPUInstanceCapabilities {
-        var result: c.WGPUInstanceCapabilities = undefined;
-        const status = c.wgpuGetInstanceCapabilities(&result);
-        if (status != 1) return error.Unexpected;
-        return result;
-}
-
 pub fn adapterInfoFreeMembers(adapterInfo: c.WGPUAdapterInfo) void {
         c.wgpuAdapterInfoFreeMembers(adapterInfo);
 }
 
 pub fn createInstance(descriptor: ?*const c.WGPUInstanceDescriptor) Instance {
         const result = c.wgpuCreateInstance(descriptor);
-        return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+        return .{ .ptr = @ptrCast(result.?) };
+}
+
+pub fn supportedInstanceFeaturesFreeMembers(supportedInstanceFeatures: c.WGPUSupportedInstanceFeatures) void {
+        c.wgpuSupportedInstanceFeaturesFreeMembers(supportedInstanceFeatures);
 }
 
 pub fn supportedWGSLLanguageFeaturesFreeMembers(supportedWGSLLanguageFeatures: c.WGPUSupportedWGSLLanguageFeatures) void {
         c.wgpuSupportedWGSLLanguageFeaturesFreeMembers(supportedWGSLLanguageFeatures);
+}
+
+pub fn getInstanceLimits() !c.WGPUInstanceLimits {
+        var result: c.WGPUInstanceLimits = undefined;
+        const status = c.wgpuGetInstanceLimits(&result);
+        if (status != 1) return error.Unexpected;
+        return result;
 }
 
 pub fn getVersion() u32 {
@@ -935,6 +974,10 @@ pub fn getVersion() u32 {
 
 pub fn setLogLevel(level: c.WGPULogLevel) void {
         c.wgpuSetLogLevel(level);
+}
+
+pub fn hasInstanceFeature(feature: c.WGPUInstanceFeatureName) bool {
+        return c.wgpuHasInstanceFeature(feature);
 }
 
 /// Wait for one or more futures to complete.

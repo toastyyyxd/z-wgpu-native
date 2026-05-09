@@ -46,6 +46,9 @@ pub fn generate(mapping: *Mapping) !void {
             }
             if (std.mem.eql(u8, value_name, "None")) continue;
 
+            const init_text = mapping.ast.getNodeSource(var_decl.ast.init_node.unwrap().?);
+            if (std.mem.eql(u8, init_text, "0")) continue;
+
             const field_decl = try mapping.arena.create(Mapping.FieldDecl);
             field_decl.* = .{
                 .node = root_node,
@@ -54,7 +57,6 @@ pub fn generate(mapping: *Mapping) !void {
             };
 
             // Classify as composite (multi-bit preset) or single-bit value
-            const init_text = mapping.ast.getNodeSource(var_decl.ast.init_node.unwrap().?);
             if (std.mem.startsWith(u8, init_text, "@bitCast")) {
                 if (std.mem.indexOfScalar(u8, init_text, '|') != null) {
                     // Multi-bit composite (OR of multiple bits)
