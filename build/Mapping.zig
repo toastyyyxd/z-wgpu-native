@@ -26,9 +26,12 @@ pub const StructField = struct {
     init: Ast.Node.OptionalIndex,
 };
 
+pub const ContainerKind = enum { @"struct", @"union" };
+
 pub const StructDecl = struct {
     node: Ast.Node.Index,
     fields: std.ArrayListUnmanaged(StructField) = .empty,
+    kind: ContainerKind = .@"struct",
 };
 
 pub const FnRef = struct {
@@ -197,6 +200,11 @@ pub fn premap(self: *@This()) !void {
                 }
             }
             try self.struct_names.append(self.gpa, name["struct_".len..]);
+            continue;
+        }
+
+        if (std.mem.startsWith(u8, name, "union_")) {
+            try self.struct_names.append(self.gpa, name["union_".len..]);
             continue;
         }
 

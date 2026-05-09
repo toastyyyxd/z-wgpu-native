@@ -164,7 +164,7 @@ pub const LogLevel = enum(c_uint) {
 };
 
 pub const NativeFeature = enum(c_uint) {
-    push_constants = 196609,
+    immediates = 196609,
     texture_adapter_specific_format_features = 196610,
     multi_draw_indirect_count = 196612,
     vertex_writable_storage = 196613,
@@ -177,17 +177,17 @@ pub const NativeFeature = enum(c_uint) {
     texture_compression_astc_hdr = 196620,
     mappable_primary_buffers = 196622,
     buffer_binding_array = 196623,
-    uniform_buffer_and_storage_texture_array_non_uniform_indexing = 196624,
+    storage_texture_array_non_uniform_indexing = 196624,
     polygon_mode_line = 196627,
     polygon_mode_point = 196628,
     conservative_rasterization = 196629,
-    spirv_shader_passthrough = 196631,
+    clear_texture = 196630,
+    multiview = 196632,
     vertex_attribute64bit = 196633,
     texture_format_nv12 = 196634,
     ray_query = 196636,
     shader_f64 = 196637,
     shader_i16 = 196638,
-    shader_primitive_index = 196639,
     shader_early_depth_test = 196640,
     subgroup = 196641,
     subgroup_vertex = 196642,
@@ -195,6 +195,22 @@ pub const NativeFeature = enum(c_uint) {
     timestamp_query_inside_encoders = 196644,
     timestamp_query_inside_passes = 196645,
     shader_int64 = 196646,
+    shader_float32_atomic = 196647,
+    texture_atomic = 196648,
+    texture_format_p010 = 196649,
+    pipeline_cache = 196651,
+    shader_int64_atomic_min_max = 196652,
+    shader_int64_atomic_all_ops = 196653,
+    texture_int64_atomic = 196656,
+    shader_barycentrics = 196663,
+    selective_multiview = 196664,
+    multisample_array = 196666,
+    cooperative_matrix = 196667,
+    shader_per_vertex = 196668,
+    shader_draw_index = 196669,
+    acceleration_structure_binding_array = 196670,
+    memory_decoration_coherent = 196671,
+    memory_decoration_volatile = 196672,
 };
 
 pub const BlendOperation = enum(c_uint) {
@@ -389,6 +405,7 @@ pub const SurfaceGetCurrentTextureStatus = enum(c_uint) {
     out_of_memory = 6,
     device_lost = 7,
     @"error" = 8,
+    occluded = 196609,
 };
 
 pub const BufferBindingType = enum(c_uint) {
@@ -521,6 +538,13 @@ pub const Dx12Compiler = enum(c_uint) {
     @"undefined" = 0,
     fxc = 1,
     dxc = 2,
+};
+
+pub const NativeDisplayHandleType = enum(c_uint) {
+    none = 0,
+    xlib = 1,
+    xcb = 2,
+    wayland = 3,
 };
 
 pub const RequestAdapterStatus = enum(c_uint) {
@@ -704,23 +728,30 @@ pub const MapMode = packed struct(u64) {
 pub const InstanceBackend = packed struct(u32) {
     metal: bool = false,
     dx12: bool = false,
+    secondary: bool = false,
     vulkan: bool = false,
-    dx11: bool = false,
+    browser_web_gpu: bool = false,
     all: bool = false,
     gl: bool = false,
-    browser_web_gpu: bool = false,
     _: u31 = 0,
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u32)); }
 };
 
 pub const InstanceBackend_primary: InstanceBackend = @bitCast(@as(c_long, (((@as(c_int, 1) << @intCast(@as(c_int, 0))) | (@as(c_int, 1) << @intCast(@as(c_int, 2)))) | (@as(c_int, 1) << @intCast(@as(c_int, 3)))) | (@as(c_int, 1) << @intCast(@as(c_int, 5)))));
-pub const InstanceBackend_secondary: InstanceBackend = @bitCast(@as(c_long, (@as(c_int, 1) << @intCast(@as(c_int, 1))) | (@as(c_int, 1) << @intCast(@as(c_int, 4)))));
 
 pub const InstanceFlag = packed struct(u32) {
-    validation: bool = false,
+    empty: bool = false,
+    advanced_debugging: bool = false,
     discard_hal_labels: bool = false,
-    debug: bool = false,
+    allow_underlying_noncompliant_adapter: bool = false,
     default: bool = false,
+    validation: bool = false,
+    validation_indirect_call: bool = false,
+    automatic_timestamp_normalization: bool = false,
+    debug: bool = false,
+    debugging: bool = false,
+    gpu_based_validation: bool = false,
+    with_env: bool = false,
     _: u31 = 0,
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u32)); }
 };
@@ -1405,6 +1436,31 @@ pub const RequestDeviceCallbackInfo = extern struct {
     userdata2: ?*anyopaque = null,
 };
 
+pub const XlibDisplayHandle = extern struct {
+    display: ?*anyopaque = null,
+    screen: c_int = 0,
+};
+
+pub const XcbDisplayHandle = extern struct {
+    connection: ?*anyopaque = null,
+    screen: c_int = 0,
+};
+
+pub const WaylandDisplayHandle = extern struct {
+    display: ?*anyopaque = null,
+};
+
+pub const unnamed_1 = extern union {
+    xlib: XlibDisplayHandle,
+    xcb: XcbDisplayHandle,
+    wayland: WaylandDisplayHandle,
+};
+
+pub const NativeDisplayHandle = extern struct {
+    type: NativeDisplayHandleType = .{},
+    data: unnamed_1 = .{},
+};
+
 pub const InstanceExtras = extern struct {
     chain: ChainedStruct = .{},
     backends: InstanceBackend = 0,
@@ -1417,6 +1473,7 @@ pub const InstanceExtras = extern struct {
     dx12_presentation_system: Dx12SwapchainKind = .{},
     budget_for_device_creation: ?*const u8 = null,
     budget_for_device_loss: ?*const u8 = null,
+    display_handle: NativeDisplayHandle = .{},
 };
 
 pub const DeviceExtras = extern struct {
@@ -1425,22 +1482,16 @@ pub const DeviceExtras = extern struct {
 };
 
 pub const NativeLimits = extern struct {
-    chain: ChainedStructOut = .{},
-    max_push_constant_size: u32 = 0,
+    chain: ChainedStruct = .{},
     max_non_sampler_bindings: u32 = 0,
     max_binding_array_elements_per_shader_stage: u32 = 0,
-};
-
-pub const PushConstantRange = extern struct {
-    stages: ShaderStage = 0,
-    start: u32 = 0,
-    end: u32 = 0,
+    max_binding_array_sampler_elements_per_shader_stage: u32 = 0,
+    max_multiview_view_count: u32 = 0,
 };
 
 pub const PipelineLayoutExtras = extern struct {
     chain: ChainedStruct = .{},
-    push_constant_range_count: usize = 0,
-    push_constant_ranges: ?*const PushConstantRange = null,
+    immediate_data_size: u32 = 0,
 };
 
 pub const ShaderDefine = extern struct {
@@ -1453,7 +1504,7 @@ pub const ShaderSourceGLSL = extern struct {
     stage: ShaderStage = 0,
     code: [:0]const u8 = "",
     define_count: u32 = 0,
-    defines: ?*ShaderDefine = null,
+    defines: ?*const ShaderDefine = null,
 };
 
 pub const ShaderModuleDescriptorSpirV = extern struct {
@@ -1534,5 +1585,13 @@ pub const PrimitiveStateExtras = extern struct {
     chain: ChainedStruct = .{},
     polygon_mode: PolygonMode = .{},
     conservative: bool = false,
+};
+
+pub const ImageSubresourceRange = extern struct {
+    aspect: TextureAspect = .{},
+    base_mip_level: u32 = 0,
+    mip_level_count: u32 = 0,
+    base_array_layer: u32 = 0,
+    array_layer_count: u32 = 0,
 };
 

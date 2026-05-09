@@ -7,19 +7,25 @@ pub fn discover(mapping: *Mapping) !void {
         const var_decl = mapping.ast.fullVarDecl(root_node) orelse continue;
         const name_token = var_decl.ast.mut_token + 1;
         const name = mapping.ast.tokenSlice(name_token);
-        if (!std.mem.startsWith(u8, name, "struct_")) continue;
 
-        const init_node = var_decl.ast.init_node.unwrap() orelse continue;
-        const first_slice = mapping.ast.tokenSlice(mapping.ast.firstToken(init_node));
-        if (std.mem.eql(u8, first_slice, "opaque")) continue;
-        if (!std.mem.eql(u8, first_slice, "extern")) continue;
-
-        const struct_name = name["struct_".len..];
-        const struct_decl = try mapping.arena.create(Mapping.StructDecl);
-        struct_decl.* = .{ .node = root_node };
-        try mapping.struct_decls.put(mapping.gpa, struct_name, struct_decl);
-        try mapping.decls.put(mapping.gpa, root_node, .{ .strct = struct_decl });
+        if (std.mem.startsWith(u8, name, "struct_")) {
+            try discoverContainer(mapping, name["struct_".len..], root_node, var_decl, .@"struct");
+        } else if (std.mem.startsWith(u8, name, "union_")) {
+            try discoverContainer(mapping, name["union_".len..], root_node, var_decl, .@"union");
+        }
     }
+}
+
+fn discoverContainer(mapping: *Mapping, bare_name: []const u8, root_node: Ast.Node.Index, var_decl: Ast.full.VarDecl, kind: Mapping.ContainerKind) !void {
+    const init_node = var_decl.ast.init_node.unwrap() orelse return;
+    const first_slice = mapping.ast.tokenSlice(mapping.ast.firstToken(init_node));
+    if (std.mem.eql(u8, first_slice, "opaque")) return;
+    if (!std.mem.eql(u8, first_slice, "extern")) return;
+
+    const struct_decl = try mapping.arena.create(Mapping.StructDecl);
+    struct_decl.* = .{ .node = root_node, .kind = kind };
+    try mapping.struct_decls.put(mapping.gpa, bare_name, struct_decl);
+    try mapping.decls.put(mapping.gpa, root_node, .{ .strct = struct_decl });
 }
 
 pub fn generate(mapping: *Mapping) !void {

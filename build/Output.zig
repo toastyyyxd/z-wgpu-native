@@ -84,6 +84,12 @@ fn zigStructName(name: []const u8) []const u8 {
     return n;
 }
 
+fn zigUnionName(name: []const u8) []const u8 {
+    var n = name;
+    if (std.mem.startsWith(u8, n, "union_")) n = n["union_".len..];
+    return n;
+}
+
 fn zigHandleName(name: []const u8) []const u8 {
     return zigStructName(name);
 }
@@ -193,6 +199,7 @@ fn mapTypeName(ctype: []const u8, buf: []u8) []const u8 {
         return stripWgpu(ctype);
     }
     if (std.mem.startsWith(u8, ctype, "struct_")) return zigStructName(ctype);
+    if (std.mem.startsWith(u8, ctype, "union_")) return zigUnionName(ctype);
     return ctype;
 }
 
@@ -449,8 +456,12 @@ fn writeStructs(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
         if (decl.fields.items.len == 0) continue;
 
         const zname = zigStructName(sname);
+        const container_kw: []const u8 = switch (decl.kind) {
+            .@"struct" => "struct",
+            .@"union" => "union",
+        };
 
-        try buf.print("pub const {s} = extern struct {{\n", .{zname});
+        try buf.print("pub const {s} = extern {s} {{\n", .{ zname, container_kw });
 
         for (decl.fields.items) |f| {
             var type_buf: [256]u8 = undefined;

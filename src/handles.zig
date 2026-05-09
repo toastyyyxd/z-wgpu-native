@@ -152,6 +152,10 @@ pub const CommandEncoder = struct {
         c.wgpuCommandEncoderCopyBufferToBuffer(@ptrCast(self.ptr), source, sourceOffset, destination, destinationOffset, size);
     }
 
+    pub fn clearTexture(self: CommandEncoder, texture: c.WGPUTexture, range: ?*const c.WGPUImageSubresourceRange) void {
+        c.wgpuCommandEncoderClearTexture(@ptrCast(self.ptr), texture, range);
+    }
+
     pub fn resolveQuerySet(self: CommandEncoder, querySet: c.WGPUQuerySet, firstQuery: u32, queryCount: u32, destination: c.WGPUBuffer, destinationOffset: u64) void {
         c.wgpuCommandEncoderResolveQuerySet(@ptrCast(self.ptr), querySet, firstQuery, queryCount, destination, destinationOffset);
     }
@@ -203,6 +207,10 @@ pub const ComputePassEncoder = struct {
         c.wgpuComputePassEncoderSetPipeline(@ptrCast(self.ptr), pipeline);
     }
 
+    pub fn setImmediates(self: ComputePassEncoder, offset: u32, sizeBytes: u32, data: ?*const anyopaque) void {
+        c.wgpuComputePassEncoderSetImmediates(@ptrCast(self.ptr), offset, sizeBytes, data);
+    }
+
     pub fn setBindGroup(self: ComputePassEncoder, groupIndex: u32, group: c.WGPUBindGroup, dynamicOffsetCount: usize, dynamicOffsets: ?*const u32) void {
         c.wgpuComputePassEncoderSetBindGroup(@ptrCast(self.ptr), groupIndex, group, dynamicOffsetCount, dynamicOffsets);
     }
@@ -225,10 +233,6 @@ pub const ComputePassEncoder = struct {
 
     pub fn dispatchWorkgroupsIndirect(self: ComputePassEncoder, indirectBuffer: c.WGPUBuffer, indirectOffset: u64) void {
         c.wgpuComputePassEncoderDispatchWorkgroupsIndirect(@ptrCast(self.ptr), indirectBuffer, indirectOffset);
-    }
-
-    pub fn setPushConstants(self: ComputePassEncoder, offset: u32, sizeBytes: u32, data: ?*const anyopaque) void {
-        c.wgpuComputePassEncoderSetPushConstants(@ptrCast(self.ptr), offset, sizeBytes, data);
     }
 
     pub fn pushDebugGroup(self: ComputePassEncoder, groupLabel: c.WGPUStringView) void {
@@ -298,6 +302,10 @@ pub const Device = struct {
         return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
     }
 
+    pub fn startGraphicsDebuggerCapture(self: Device) bool {
+        return c.wgpuDeviceStartGraphicsDebuggerCapture(@ptrCast(self.ptr));
+    }
+
     pub fn createRenderPipeline(self: Device, descriptor: ?*const c.WGPURenderPipelineDescriptor) c.WGPURenderPipeline {
         const result = c.wgpuDeviceCreateRenderPipeline(@ptrCast(self.ptr), descriptor);
         return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
@@ -306,6 +314,10 @@ pub const Device = struct {
     pub fn createShaderModule(self: Device, descriptor: ?*const c.WGPUShaderModuleDescriptor) c.WGPUShaderModule {
         const result = c.wgpuDeviceCreateShaderModule(@ptrCast(self.ptr), descriptor);
         return .{ .ptr = @ptrCast(result orelse return error.Unexpected) };
+    }
+
+    pub fn getNativeMetalDevice(self: Device) ?*anyopaque {
+        return c.wgpuDeviceGetNativeMetalDevice(@ptrCast(self.ptr));
     }
 
     pub fn poll(self: Device, wait: bool, submissionIndex: ?*const c.WGPUSubmissionIndex) bool {
@@ -375,6 +387,10 @@ pub const Device = struct {
         const status = c.wgpuDeviceGetLimits(@ptrCast(self.ptr), &result);
         if (status != 1) return error.Unexpected;
         return result;
+    }
+
+    pub fn stopGraphicsDebuggerCapture(self: Device) void {
+        c.wgpuDeviceStopGraphicsDebuggerCapture(@ptrCast(self.ptr));
     }
 
     pub fn getFeatures(self: Device, features: ?*c.WGPUSupportedFeatures) void {
@@ -495,6 +511,10 @@ pub const Queue = struct {
         return c.wgpuQueueOnSubmittedWorkDone(@ptrCast(self.ptr), callbackInfo);
     }
 
+    pub fn getNativeMetalCommandQueue(self: Queue) ?*anyopaque {
+        return c.wgpuQueueGetNativeMetalCommandQueue(@ptrCast(self.ptr));
+    }
+
     pub fn setLabel(self: Queue, label: c.WGPUStringView) void {
         c.wgpuQueueSetLabel(@ptrCast(self.ptr), label);
     }
@@ -549,10 +569,6 @@ pub const RenderBundleEncoder = struct {
         c.wgpuRenderBundleEncoderPushDebugGroup(@ptrCast(self.ptr), groupLabel);
     }
 
-    pub fn setPushConstants(self: RenderBundleEncoder, stages: c.WGPUShaderStage, offset: u32, sizeBytes: u32, data: ?*const anyopaque) void {
-        c.wgpuRenderBundleEncoderSetPushConstants(@ptrCast(self.ptr), stages, offset, sizeBytes, data);
-    }
-
     pub fn setLabel(self: RenderBundleEncoder, label: c.WGPUStringView) void {
         c.wgpuRenderBundleEncoderSetLabel(@ptrCast(self.ptr), label);
     }
@@ -590,6 +606,10 @@ pub const RenderBundleEncoder = struct {
         c.wgpuRenderBundleEncoderDrawIndexedIndirect(@ptrCast(self.ptr), indirectBuffer, indirectOffset);
     }
 
+    pub fn setImmediates(self: RenderBundleEncoder, offset: u32, sizeBytes: u32, data: ?*const anyopaque) void {
+        c.wgpuRenderBundleEncoderSetImmediates(@ptrCast(self.ptr), offset, sizeBytes, data);
+    }
+
     pub fn setBindGroup(self: RenderBundleEncoder, groupIndex: u32, group: c.WGPUBindGroup, dynamicOffsetCount: usize, dynamicOffsets: ?*const u32) void {
         c.wgpuRenderBundleEncoderSetBindGroup(@ptrCast(self.ptr), groupIndex, group, dynamicOffsetCount, dynamicOffsets);
     }
@@ -619,10 +639,6 @@ pub const RenderPassEncoder = struct {
         c.wgpuRenderPassEncoderSetVertexBuffer(@ptrCast(self.ptr), slot, buffer, offset, size);
     }
 
-    pub fn setPushConstants(self: RenderPassEncoder, stages: c.WGPUShaderStage, offset: u32, sizeBytes: u32, data: ?*const anyopaque) void {
-        c.wgpuRenderPassEncoderSetPushConstants(@ptrCast(self.ptr), stages, offset, sizeBytes, data);
-    }
-
     pub fn multiDrawIndirect(self: RenderPassEncoder, buffer: c.WGPUBuffer, offset: u64, count: u32) void {
         c.wgpuRenderPassEncoderMultiDrawIndirect(@ptrCast(self.ptr), buffer, offset, count);
     }
@@ -633,6 +649,10 @@ pub const RenderPassEncoder = struct {
 
     pub fn multiDrawIndexedIndirect(self: RenderPassEncoder, buffer: c.WGPUBuffer, offset: u64, count: u32) void {
         c.wgpuRenderPassEncoderMultiDrawIndexedIndirect(@ptrCast(self.ptr), buffer, offset, count);
+    }
+
+    pub fn setImmediates(self: RenderPassEncoder, offset: u32, sizeBytes: u32, data: ?*const anyopaque) void {
+        c.wgpuRenderPassEncoderSetImmediates(@ptrCast(self.ptr), offset, sizeBytes, data);
     }
 
     pub fn setStencilReference(self: RenderPassEncoder, reference: u32) void {
@@ -848,6 +868,10 @@ pub const Texture = struct {
 
     pub fn setLabel(self: Texture, label: c.WGPUStringView) void {
         c.wgpuTextureSetLabel(@ptrCast(self.ptr), label);
+    }
+
+    pub fn getNativeMetalTexture(self: Texture) ?*anyopaque {
+        return c.wgpuTextureGetNativeMetalTexture(@ptrCast(self.ptr));
     }
 
     pub fn getHeight(self: Texture) u32 {
