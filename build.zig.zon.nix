@@ -14,11 +14,11 @@ let
   unpackZigArtifact =
     { name, artifact }:
     runCommandLocal name { nativeBuildInputs = [ zig ]; } ''
-      hash="$(zig fetch --global-cache-dir "$TMPDIR" ${artifact})"
-      mv "$TMPDIR/p/$hash" "$out"
-      chmod 755 "$out"
+      touch "$TMPDIR/build.zig" # https://codeberg.org/ziglang/zig/issues/31866
+      hash="$(cd "$TMPDIR" && zig fetch --global-cache-dir "$TMPDIR" ${artifact})"
+      mv "$TMPDIR/p/$hash.tar.gz" "$out.tar.gz"
+      chmod 644 "$out.tar.gz"
     '';
-
   fetchZig =
     {
       name,
@@ -46,6 +46,7 @@ let
       inherit name rev hash;
       url = url_without_query;
       deepClone = false;
+      fetchSubmodules = false;
     };
 
   fetchZigArtifact =
