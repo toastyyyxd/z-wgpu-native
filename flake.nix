@@ -22,6 +22,17 @@
         ]; # Packages for compiling
         buildInputs = with env.pkgs; [
           libclang.lib
+          libx11
+          libxrandr
+          libxinerama
+          libxi
+          libxcursor
+          libxext
+          libxxf86vm
+          glfw
+          wayland
+          wayland-protocols
+          libxkbcommon
         ]; # Packages for linking
         zigPreferMusl = true; # Smaller binaries, avoids shipping glibc
       };

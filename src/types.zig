@@ -1,5 +1,6 @@
 const c = @import("c_wgpu_native");
 const std = @import("std");
+const handles = @import("handles.zig");
 const types = @This();
 
 pub const MapAsyncStatus = enum(c_uint) {
@@ -714,13 +715,15 @@ pub const PrimitiveTopology = enum(c_uint) {
 };
 
 pub const ColorWriteMask = packed struct(u64) {
-    all: bool = false,
+    red: bool = false,
     green: bool = false,
     blue: bool = false,
     alpha: bool = false,
     __: u60 = 0,
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
 };
+
+pub const ColorWriteMask_all: ColorWriteMask = @bitCast(@as(u64, 15));
 
 pub const ShaderStage = packed struct(u64) {
     vertex: bool = false,
@@ -763,20 +766,20 @@ pub const MapMode = packed struct(u64) {
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
 };
 
-pub const InstanceBackend = packed struct(u32) {
+pub const InstanceBackend = packed struct(u64) {
     vulkan: bool = false,
     gl: bool = false,
     metal: bool = false,
     dx12: bool = false,
     _: u1 = 0,
     browser_web_gpu: bool = false,
-    __: u26 = 0,
-    comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u32)); }
+    __: u58 = 0,
+    comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
 };
 
-pub const InstanceBackend_primary: InstanceBackend = @bitCast(@as(c_long, (((@as(c_int, 1) << @intCast(@as(c_int, 0))) | (@as(c_int, 1) << @intCast(@as(c_int, 2)))) | (@as(c_int, 1) << @intCast(@as(c_int, 3)))) | (@as(c_int, 1) << @intCast(@as(c_int, 5)))));
+pub const InstanceBackend_primary: InstanceBackend = @bitCast(@as(u64, @bitCast(@as(c_long, (((@as(c_int, 1) << @intCast(@as(c_int, 0))) | (@as(c_int, 1) << @intCast(@as(c_int, 2)))) | (@as(c_int, 1) << @intCast(@as(c_int, 3)))) | (@as(c_int, 1) << @intCast(@as(c_int, 5)))))));
 
-pub const InstanceFlag = packed struct(u32) {
+pub const InstanceFlag = packed struct(u64) {
     debug: bool = false,
     validation: bool = false,
     discard_hal_labels: bool = false,
@@ -789,8 +792,8 @@ pub const InstanceFlag = packed struct(u32) {
     debugging: bool = false,
     advanced_debugging: bool = false,
     with_env: bool = false,
-    __: u4 = 0,
-    comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u32)); }
+    __: u36 = 0,
+    comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
 };
 
 pub const StringView = extern struct {
@@ -827,10 +830,10 @@ pub fn chainedIterator(first: ?*const ChainedStruct) ChainedIterator {
 }
 pub const AdapterInfo = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    vendor: StringView = undefined,
-    architecture: StringView = undefined,
-    device: StringView = undefined,
-    description: StringView = undefined,
+    vendor: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
+    architecture: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
+    device: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
+    description: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     backend_type: BackendType = .@"undefined",
     adapter_type: AdapterType = undefined,
     vendor_id: u32 = 0,
@@ -848,16 +851,16 @@ pub const BlendComponent = extern struct {
 pub const BufferBindingLayout = extern struct {
     next_in_chain: ?*ChainedStruct = null,
     type: BufferBindingType = .binding_not_used,
-    has_dynamic_offset: bool = false,
+    has_dynamic_offset: c_int = 0,
     min_binding_size: u64 = 0,
 };
 
 pub const BufferDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
-    usage: BufferUsage = 0,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
+    usage: BufferUsage = .{},
     size: u64 = 0,
-    mapped_at_creation: bool = false,
+    mapped_at_creation: c_int = 0,
 };
 
 pub const Color = extern struct {
@@ -869,12 +872,12 @@ pub const Color = extern struct {
 
 pub const CommandBufferDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
 };
 
 pub const CommandEncoderDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
 };
 
 pub const CompatibilityModeLimits = extern struct {
@@ -887,7 +890,7 @@ pub const CompatibilityModeLimits = extern struct {
 
 pub const CompilationMessage = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    message: StringView = undefined,
+    message: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     type: CompilationMessageType = undefined,
     line_num: u64 = 0,
     line_pos: u64 = 0,
@@ -897,7 +900,7 @@ pub const CompilationMessage = extern struct {
 
 pub const ConstantEntry = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    key: StringView = undefined,
+    key: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     value: f64 = 0,
 };
 
@@ -909,7 +912,7 @@ pub const Extent3D = extern struct {
 
 pub const ExternalTextureBindingEntry = extern struct {
     chain: ChainedStruct = undefined,
-    external_texture: c.WGPUExternalTexture = null,
+    external_texture: handles.OptionalExternalTexture = .{ .ptr = null },
 };
 
 pub const ExternalTextureBindingLayout = extern struct {
@@ -929,7 +932,7 @@ pub const MultisampleState = extern struct {
     next_in_chain: ?*ChainedStruct = null,
     count: u32 = 0,
     mask: u32 = 0,
-    alpha_to_coverage_enabled: bool = false,
+    alpha_to_coverage_enabled: c_int = 0,
 };
 
 pub const Origin3D = extern struct {
@@ -940,16 +943,16 @@ pub const Origin3D = extern struct {
 
 pub const PassTimestampWrites = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    query_set: c.WGPUQuerySet = null,
+    query_set: handles.OptionalQuerySet = .{ .ptr = null },
     beginning_of_pass_write_index: u32 = 0,
     end_of_pass_write_index: u32 = 0,
 };
 
 pub const PipelineLayoutDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     bind_group_layout_count: usize = 0,
-    bind_group_layouts: ?*const c.WGPUBindGroupLayout = null,
+    bind_group_layouts: ?*const handles.OptionalBindGroupLayout = null,
     immediate_size: u32 = 0,
 };
 
@@ -959,48 +962,48 @@ pub const PrimitiveState = extern struct {
     strip_index_format: IndexFormat = .@"undefined",
     front_face: FrontFace = .@"undefined",
     cull_mode: CullMode = .@"undefined",
-    unclipped_depth: bool = false,
+    unclipped_depth: c_int = 0,
 };
 
 pub const QuerySetDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     type: QueryType = undefined,
     count: u32 = 0,
 };
 
 pub const QueueDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
 };
 
 pub const RenderBundleDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
 };
 
 pub const RenderBundleEncoderDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     color_format_count: usize = 0,
     color_formats: ?*const TextureFormat = null,
     depth_stencil_format: TextureFormat = .@"undefined",
     sample_count: u32 = 0,
-    depth_read_only: bool = false,
-    stencil_read_only: bool = false,
+    depth_read_only: c_int = 0,
+    stencil_read_only: c_int = 0,
 };
 
 pub const RenderPassDepthStencilAttachment = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    view: c.WGPUTextureView = null,
+    view: handles.OptionalTextureView = .{ .ptr = null },
     depth_load_op: LoadOp = .@"undefined",
     depth_store_op: StoreOp = .@"undefined",
     depth_clear_value: f32 = 0,
-    depth_read_only: bool = false,
+    depth_read_only: c_int = 0,
     stencil_load_op: LoadOp = .@"undefined",
     stencil_store_op: StoreOp = .@"undefined",
     stencil_clear_value: u32 = 0,
-    stencil_read_only: bool = false,
+    stencil_read_only: c_int = 0,
 };
 
 pub const RenderPassMaxDrawCount = extern struct {
@@ -1010,7 +1013,7 @@ pub const RenderPassMaxDrawCount = extern struct {
 
 pub const RequestAdapterWebXROptions = extern struct {
     chain: ChainedStruct = undefined,
-    xr_compatible: bool = false,
+    xr_compatible: c_int = 0,
 };
 
 pub const SamplerBindingLayout = extern struct {
@@ -1020,7 +1023,7 @@ pub const SamplerBindingLayout = extern struct {
 
 pub const SamplerDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     address_mode_u: AddressMode = .@"undefined",
     address_mode_v: AddressMode = .@"undefined",
     address_mode_w: AddressMode = .@"undefined",
@@ -1041,7 +1044,7 @@ pub const ShaderSourceSPIRV = extern struct {
 
 pub const ShaderSourceWGSL = extern struct {
     chain: ChainedStruct = undefined,
-    code: StringView = undefined,
+    code: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
 };
 
 pub const StencilFaceState = extern struct {
@@ -1075,7 +1078,7 @@ pub const SupportedWGSLLanguageFeatures = extern struct {
 
 pub const SurfaceCapabilities = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    usages: TextureUsage = 0,
+    usages: TextureUsage = .{},
     format_count: usize = 0,
     formats: ?*const TextureFormat = null,
     present_mode_count: usize = 0,
@@ -1092,9 +1095,9 @@ pub const SurfaceColorManagement = extern struct {
 
 pub const SurfaceConfiguration = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    device: c.WGPUDevice = null,
+    device: handles.OptionalDevice = .{ .ptr = null },
     format: TextureFormat = .@"undefined",
-    usage: TextureUsage = 0,
+    usage: TextureUsage = .{},
     width: u32 = 0,
     height: u32 = 0,
     view_format_count: usize = 0,
@@ -1139,7 +1142,7 @@ pub const SurfaceSourceXlibWindow = extern struct {
 
 pub const SurfaceTexture = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    texture: c.WGPUTexture = null,
+    texture: handles.OptionalTexture = .{ .ptr = null },
     status: SurfaceGetCurrentTextureStatus = undefined,
 };
 
@@ -1153,7 +1156,7 @@ pub const TextureBindingLayout = extern struct {
     next_in_chain: ?*ChainedStruct = null,
     sample_type: TextureSampleType = .binding_not_used,
     view_dimension: TextureViewDimension = .@"undefined",
-    multisampled: bool = false,
+    multisampled: c_int = 0,
 };
 
 pub const TextureBindingViewDimension = extern struct {
@@ -1178,17 +1181,17 @@ pub const VertexAttribute = extern struct {
 pub const BindGroupEntry = extern struct {
     next_in_chain: ?*ChainedStruct = null,
     binding: u32 = 0,
-    buffer: c.WGPUBuffer = null,
+    buffer: handles.OptionalBuffer = .{ .ptr = null },
     offset: u64 = 0,
     size: u64 = 0,
-    sampler: c.WGPUSampler = null,
-    texture_view: c.WGPUTextureView = null,
+    sampler: handles.OptionalSampler = .{ .ptr = null },
+    texture_view: handles.OptionalTextureView = .{ .ptr = null },
 };
 
 pub const BindGroupLayoutEntry = extern struct {
     next_in_chain: ?*ChainedStruct = null,
     binding: u32 = 0,
-    visibility: ShaderStage = 0,
+    visibility: ShaderStage = .{},
     binding_array_size: u32 = 0,
     buffer: BufferBindingLayout = undefined,
     sampler: SamplerBindingLayout = undefined,
@@ -1209,14 +1212,14 @@ pub const CompilationInfo = extern struct {
 
 pub const ComputePassDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     timestamp_writes: ?*const PassTimestampWrites = null,
 };
 
 pub const ComputeState = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    module: c.WGPUShaderModule = null,
-    entry_point: StringView = undefined,
+    module: handles.OptionalShaderModule = .{ .ptr = null },
+    entry_point: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     constant_count: usize = 0,
     constants: ?*const ConstantEntry = null,
 };
@@ -1237,7 +1240,7 @@ pub const DepthStencilState = extern struct {
 
 pub const FutureWaitInfo = extern struct {
     future: Future = undefined,
-    completed: bool = false,
+    completed: c_int = 0,
 };
 
 pub const InstanceDescriptor = extern struct {
@@ -1285,9 +1288,9 @@ pub const Limits = extern struct {
 
 pub const RenderPassColorAttachment = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    view: c.WGPUTextureView = null,
+    view: handles.OptionalTextureView = .{ .ptr = null },
     depth_slice: u32 = 0,
-    resolve_target: c.WGPUTextureView = null,
+    resolve_target: handles.OptionalTextureView = .{ .ptr = null },
     load_op: LoadOp = .@"undefined",
     store_op: StoreOp = .@"undefined",
     clear_value: Color = undefined,
@@ -1297,28 +1300,28 @@ pub const RequestAdapterOptions = extern struct {
     next_in_chain: ?*ChainedStruct = null,
     feature_level: FeatureLevel = .@"undefined",
     power_preference: PowerPreference = .@"undefined",
-    force_fallback_adapter: bool = false,
+    force_fallback_adapter: c_int = 0,
     backend_type: BackendType = .@"undefined",
-    compatible_surface: c.WGPUSurface = null,
+    compatible_surface: handles.OptionalSurface = .{ .ptr = null },
 };
 
 pub const ShaderModuleDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
 };
 
 pub const SurfaceDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
 };
 
 pub const TexelCopyBufferInfo = extern struct {
     layout: TexelCopyBufferLayout = undefined,
-    buffer: c.WGPUBuffer = null,
+    buffer: handles.OptionalBuffer = .{ .ptr = null },
 };
 
 pub const TexelCopyTextureInfo = extern struct {
-    texture: c.WGPUTexture = null,
+    texture: handles.OptionalTexture = .{ .ptr = null },
     mip_level: u32 = 0,
     origin: Origin3D = undefined,
     aspect: TextureAspect = .@"undefined",
@@ -1331,8 +1334,8 @@ pub const TextureComponentSwizzleDescriptor = extern struct {
 
 pub const TextureDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
-    usage: TextureUsage = 0,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
+    usage: TextureUsage = .{},
     dimension: TextureDimension = .@"undefined",
     size: Extent3D = undefined,
     format: TextureFormat = .@"undefined",
@@ -1352,15 +1355,15 @@ pub const VertexBufferLayout = extern struct {
 
 pub const BindGroupDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
-    layout: c.WGPUBindGroupLayout = null,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
+    layout: handles.OptionalBindGroupLayout = .{ .ptr = null },
     entry_count: usize = 0,
     entries: ?*const BindGroupEntry = null,
 };
 
 pub const BindGroupLayoutDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     entry_count: usize = 0,
     entries: ?*const BindGroupLayoutEntry = null,
 };
@@ -1369,13 +1372,13 @@ pub const ColorTargetState = extern struct {
     next_in_chain: ?*ChainedStruct = null,
     format: TextureFormat = .@"undefined",
     blend: ?*const BlendState = null,
-    write_mask: ColorWriteMask = 0,
+    write_mask: ColorWriteMask = .{},
 };
 
 pub const ComputePipelineDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
-    layout: c.WGPUPipelineLayout = null,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
+    layout: handles.OptionalPipelineLayout = .{ .ptr = null },
     compute: ComputeState = undefined,
 };
 
@@ -1396,7 +1399,7 @@ pub const UncapturedErrorCallbackInfo = extern struct {
 
 pub const DeviceDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     required_feature_count: usize = 0,
     required_features: ?*const FeatureName = null,
     required_limits: ?*const Limits = null,
@@ -1407,17 +1410,17 @@ pub const DeviceDescriptor = extern struct {
 
 pub const RenderPassDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     color_attachment_count: usize = 0,
     color_attachments: ?*const RenderPassColorAttachment = null,
     depth_stencil_attachment: ?*const RenderPassDepthStencilAttachment = null,
-    occlusion_query_set: c.WGPUQuerySet = null,
+    occlusion_query_set: handles.OptionalQuerySet = .{ .ptr = null },
     timestamp_writes: ?*const PassTimestampWrites = null,
 };
 
 pub const TextureViewDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     format: TextureFormat = .@"undefined",
     dimension: TextureViewDimension = .@"undefined",
     base_mip_level: u32 = 0,
@@ -1425,13 +1428,13 @@ pub const TextureViewDescriptor = extern struct {
     base_array_layer: u32 = 0,
     array_layer_count: u32 = 0,
     aspect: TextureAspect = .@"undefined",
-    usage: TextureUsage = 0,
+    usage: TextureUsage = .{},
 };
 
 pub const VertexState = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    module: c.WGPUShaderModule = null,
-    entry_point: StringView = undefined,
+    module: handles.OptionalShaderModule = .{ .ptr = null },
+    entry_point: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     constant_count: usize = 0,
     constants: ?*const ConstantEntry = null,
     buffer_count: usize = 0,
@@ -1440,8 +1443,8 @@ pub const VertexState = extern struct {
 
 pub const FragmentState = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    module: c.WGPUShaderModule = null,
-    entry_point: StringView = undefined,
+    module: handles.OptionalShaderModule = .{ .ptr = null },
+    entry_point: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     constant_count: usize = 0,
     constants: ?*const ConstantEntry = null,
     target_count: usize = 0,
@@ -1450,8 +1453,8 @@ pub const FragmentState = extern struct {
 
 pub const RenderPipelineDescriptor = extern struct {
     next_in_chain: ?*ChainedStruct = null,
-    label: StringView = undefined,
-    layout: c.WGPUPipelineLayout = null,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
+    layout: handles.OptionalPipelineLayout = .{ .ptr = null },
     vertex: VertexState = undefined,
     primitive: PrimitiveState = undefined,
     depth_stencil: ?*const DepthStencilState = null,
@@ -1550,12 +1553,12 @@ pub const NativeDisplayHandle = extern struct {
 
 pub const InstanceExtras = extern struct {
     chain: ChainedStruct = undefined,
-    backends: InstanceBackend = 0,
-    flags: InstanceFlag = 0,
+    backends: InstanceBackend = .{},
+    flags: InstanceFlag = .{},
     dx12_shader_compiler: Dx12Compiler = .@"undefined",
     gles3_minor_version: Gles3MinorVersion = .automatic,
     gl_fence_behaviour: GLFenceBehaviour = .normal,
-    dxc_path: StringView = undefined,
+    dxc_path: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     dxc_max_shader_model: DxcMaxShaderModel = .v6_0,
     dx12_presentation_system: Dx12SwapchainKind = .@"undefined",
     budget_for_device_creation: ?*const u8 = null,
@@ -1565,7 +1568,7 @@ pub const InstanceExtras = extern struct {
 
 pub const DeviceExtras = extern struct {
     chain: ChainedStruct = undefined,
-    trace_path: StringView = undefined,
+    trace_path: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
 };
 
 pub const NativeLimits = extern struct {
@@ -1582,20 +1585,20 @@ pub const PipelineLayoutExtras = extern struct {
 };
 
 pub const ShaderDefine = extern struct {
-    name: StringView = undefined,
-    value: StringView = undefined,
+    name: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
+    value: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
 };
 
 pub const ShaderSourceGLSL = extern struct {
     chain: ChainedStruct = undefined,
-    stage: ShaderStage = 0,
-    code: StringView = undefined,
+    stage: ShaderStage = .{},
+    code: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     define_count: u32 = 0,
     defines: ?*const ShaderDefine = null,
 };
 
 pub const ShaderModuleDescriptorSpirV = extern struct {
-    label: StringView = undefined,
+    label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     source_size: u32 = 0,
     source: ?*const u32 = null,
 };
@@ -1634,16 +1637,16 @@ pub const GlobalReport = extern struct {
 
 pub const InstanceEnumerateAdapterOptions = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
-    backends: InstanceBackend = 0,
+    backends: InstanceBackend = .{},
 };
 
 pub const BindGroupEntryExtras = extern struct {
     chain: ChainedStruct = undefined,
-    buffers: ?*const c.WGPUBuffer = null,
+    buffers: ?*const handles.OptionalBuffer = null,
     buffer_count: usize = 0,
-    samplers: ?*const c.WGPUSampler = null,
+    samplers: ?*const handles.OptionalSampler = null,
     sampler_count: usize = 0,
-    texture_views: ?*const c.WGPUTextureView = null,
+    texture_views: ?*const handles.OptionalTextureView = null,
     texture_view_count: usize = 0,
 };
 
@@ -1671,7 +1674,7 @@ pub const SurfaceSourceSwapChainPanel = extern struct {
 pub const PrimitiveStateExtras = extern struct {
     chain: ChainedStruct = undefined,
     polygon_mode: PolygonMode = .fill,
-    conservative: bool = false,
+    conservative: c_int = 0,
 };
 
 pub const ImageSubresourceRange = extern struct {

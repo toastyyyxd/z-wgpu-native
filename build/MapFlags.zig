@@ -66,7 +66,15 @@ pub fn generate(mapping: *Mapping) !void {
                     try flags_decl.values.put(mapping.gpa, value_name, field_decl);
                 }
             } else if (isSimpleInt(init_text)) {
-                try flags_decl.values.put(mapping.gpa, value_name, field_decl);
+                const v = std.fmt.parseInt(u64, init_text, 10) catch {
+                    try flags_decl.composites.put(mapping.gpa, value_name, field_decl);
+                    continue;
+                };
+                if (std.math.isPowerOfTwo(v)) {
+                    try flags_decl.values.put(mapping.gpa, value_name, field_decl);
+                } else {
+                    try flags_decl.composites.put(mapping.gpa, value_name, field_decl);
+                }
             } else {
                 try flags_decl.composites.put(mapping.gpa, value_name, field_decl);
             }

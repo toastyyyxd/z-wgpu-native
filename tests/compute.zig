@@ -3,7 +3,7 @@ const z = @import("z_wgpu_native");
 
 const DeviceCtx = struct {
     status: z.types.RequestDeviceStatus = undefined,
-    device: z.c.WGPUDevice = null,
+    device: ?z.handles.Device = null,
 };
 
 const MapCtx = struct {
@@ -19,14 +19,13 @@ pub fn main(init: std.process.Init) !void {
 
     try w.print("creating instance...\n", .{});
 
-    const instance = z.handles.createInstance(null);
-    var raw_adapter: z.c.WGPUAdapter = undefined;
-    const adapter_count = instance.enumerateAdapters(null, &raw_adapter);
+    const instance = try z.handles.createInstance(null);
+    var adapter: z.handles.Adapter = undefined;
+    const adapter_count = instance.enumerateAdapters(null, &adapter);
     if (adapter_count == 0) {
         try w.print("no adapters available, skipping\n", .{});
         return;
     }
-    const adapter = z.handles.Adapter.fromPtr(raw_adapter.?);
 
     try w.print("requesting device...\n", .{});
 
@@ -38,28 +37,27 @@ pub fn main(init: std.process.Init) !void {
         &dev_ctx,
         &dev_ctx2,
         struct {
-            fn cb(ctx: *DeviceCtx, _: *u8, s: z.types.RequestDeviceStatus, d: z.c.WGPUDevice, _: [:0]const u8) void {
+            fn cb(ctx: *DeviceCtx, _: *u8, s: z.types.RequestDeviceStatus, d: z.handles.Device, _: []const u8) void {
                 ctx.status = s;
                 ctx.device = d;
             }
         }.cb,
     ));
-    var dev_waits = [_]z.c.WGPUFutureWaitInfo{.{ .future = dev_future, .completed = 0 }};
-    _ = try z.handles.waitAny(instance, &dev_waits, 5_000_000_000);
+    var dev_waits = [_]z.types.FutureWaitInfo{.{ .future = dev_future, .completed = 0 }};
+    _ = try z.handles.waitAny(instance, @ptrCast(&dev_waits), 5_000_000_000);
 
-    const device = z.handles.Device.fromPtr(dev_ctx.device.?);
-    const queue = device.getQueue();
+    const device = dev_ctx.device.?;
+    const queue = try device.getQueue();
 
     try w.print("loading shader...\n", .{});
 
-    const shader_wgsl = @embedFile("shader.wgsl");
-    var shader_source = z.c.WGPUShaderSourceWGSL{
-        .chain = .{ .next = null, .sType = z.c.WGPUSType_ShaderSourceWGSL },
-        .code = .{ .data = shader_wgsl, .length = shader_wgsl.len },
+    const shader_wgsl = @embedFile("compute.wgsl");
+    var shader_source = z.types.ShaderSourceWGSL{
+        .chain = .{ .s_type = .shader_source_wgsl },
+        .code = z.types.StringView.fromSlice(shader_wgsl),
     };
-    const shader_module = device.createShaderModule(&z.c.WGPUShaderModuleDescriptor{
-        .nextInChain = &shader_source.chain,
-        .label = .{ .data = "compute_shader", .length = 14 },
+    const shader_module = try device.createShaderModule(&z.types.ShaderModuleDescriptor{
+        .next_in_chain = &shader_source.chain,
     });
 
     try w.print("creating buffers...\n", .{});
@@ -67,97 +65,72 @@ pub fn main(init: std.process.Init) !void {
     const numbers = [_]u32{ 1, 2, 3, 4 };
     const numbers_size = @as(u64, @sizeOf(@TypeOf(numbers)));
 
-    const staging_buffer = device.createBuffer(&z.c.WGPUBufferDescriptor{
-        .nextInChain = null,
-        .label = .{ .data = "staging_buffer", .length = 14 },
-        .usage = z.c.WGPUBufferUsage_MapRead | z.c.WGPUBufferUsage_CopyDst,
+    const staging_buffer = try device.createBuffer(&z.types.BufferDescriptor{
+        .usage = .{ .map_read = true, .copy_dst = true },
         .size = numbers_size,
-        .mappedAtCreation = 0,
+        .mapped_at_creation = 0,
     });
 
-    const storage_buffer = device.createBuffer(&z.c.WGPUBufferDescriptor{
-        .nextInChain = null,
-        .label = .{ .data = "storage_buffer", .length = 14 },
-        .usage = z.c.WGPUBufferUsage_Storage | z.c.WGPUBufferUsage_CopyDst | z.c.WGPUBufferUsage_CopySrc,
+    const storage_buffer = try device.createBuffer(&z.types.BufferDescriptor{
+        .usage = .{ .storage = true, .copy_dst = true, .copy_src = true },
         .size = numbers_size,
-        .mappedAtCreation = 0,
+        .mapped_at_creation = 0,
     });
 
     try w.print("creating compute pipeline...\n", .{});
 
-    const compute_pipeline = device.createComputePipeline(&z.c.WGPUComputePipelineDescriptor{
-        .nextInChain = null,
-        .label = .{ .data = "compute_pipeline", .length = 16 },
-        .layout = null,
+    const compute_pipeline = try device.createComputePipeline(&z.types.ComputePipelineDescriptor{
         .compute = .{
-            .nextInChain = null,
-            .module = @as(z.c.WGPUShaderModule, @ptrCast(shader_module.ptr)),
-            .entryPoint = .{ .data = "main", .length = 4 },
-            .constantCount = 0,
-            .constants = null,
+            .module = z.handles.OptionalShaderModule.wrap(shader_module),
+            .entry_point = z.types.StringView.fromSlice("main"),
         },
     });
 
-    const bind_group_layout = compute_pipeline.getBindGroupLayout(0);
-    const bind_group = device.createBindGroup(&z.c.WGPUBindGroupDescriptor{
-        .nextInChain = null,
-        .label = .{ .data = "bind_group", .length = 10 },
-        .layout = @as(z.c.WGPUBindGroupLayout, @ptrCast(bind_group_layout.ptr)),
-        .entryCount = 1,
-        .entries = @ptrCast(&[_]z.c.WGPUBindGroupEntry{
-            z.c.WGPUBindGroupEntry{
-                .nextInChain = null,
-                .binding = 0,
-                .buffer = @as(z.c.WGPUBuffer, @ptrCast(storage_buffer.ptr)),
-                .offset = 0,
-                .size = numbers_size,
-            },
+    const bind_group_layout = try compute_pipeline.getBindGroupLayout(0);
+    const bind_group = try device.createBindGroup(&z.types.BindGroupDescriptor{
+        .layout = z.handles.OptionalBindGroupLayout.wrap(bind_group_layout),
+        .entry_count = 1,
+        .entries = @ptrCast(&z.types.BindGroupEntry{
+            .binding = 0,
+            .buffer = z.handles.OptionalBuffer.wrap(storage_buffer),
+            .offset = 0,
+            .size = numbers_size,
         }),
     });
 
     try w.print("executing compute...\n", .{});
 
-    queue.writeBuffer(
-        @as(z.c.WGPUBuffer, @ptrCast(storage_buffer.ptr)),
-        0,
-        @ptrCast(&numbers),
-        numbers_size,
-    );
+    queue.writeBuffer(storage_buffer, 0, @ptrCast(&numbers), numbers_size);
 
-    const command_encoder = device.createCommandEncoder(null);
-    const compute_pass = command_encoder.beginComputePass(null);
-    compute_pass.setPipeline(@as(z.c.WGPUComputePipeline, @ptrCast(compute_pipeline.ptr)));
-    compute_pass.setBindGroup(0, @as(z.c.WGPUBindGroup, @ptrCast(bind_group.ptr)), 0, null);
+    const command_encoder = try device.createCommandEncoder(null);
+    const compute_pass = try command_encoder.beginComputePass(null);
+    compute_pass.setPipeline(compute_pipeline);
+    compute_pass.setBindGroup(0, bind_group, 0, null);
     compute_pass.dispatchWorkgroups(@as(u32, @intCast(numbers.len)), 1, 1);
     compute_pass.end();
 
-    command_encoder.copyBufferToBuffer(
-        @as(z.c.WGPUBuffer, @ptrCast(storage_buffer.ptr)), 0,
-        @as(z.c.WGPUBuffer, @ptrCast(staging_buffer.ptr)), 0,
-        numbers_size,
-    );
-    const command_buffer = command_encoder.finish(null);
-    const raw_cb = @as(z.c.WGPUCommandBuffer, @ptrCast(command_buffer.ptr));
-    queue.submit(1, @ptrCast(&raw_cb));
+    command_encoder.copyBufferToBuffer(storage_buffer, 0, staging_buffer, 0, numbers_size);
+    const command_buffer = try command_encoder.finish(null);
+    queue.submit(1, &command_buffer);
 
     try w.print("reading back results...\n", .{});
 
     var map_ctx = MapCtx{};
     var map_ctx2: u8 = 0;
-    const map_future = staging_buffer.mapAsync(z.c.WGPUMapMode_Read, 0, numbers_size, z.callbacks.bufferMapCallback(
+    const map_future = staging_buffer.mapAsync(z.types.MapMode{ .read = true }, 0, numbers_size, z.callbacks.bufferMapCallback(
         MapCtx,
         u8,
         &map_ctx,
         &map_ctx2,
         struct {
-            fn cb(ctx: *MapCtx, _: *u8, s: z.types.MapAsyncStatus, _: [:0]const u8) void {
+            fn cb(ctx: *MapCtx, _: *u8, s: z.types.MapAsyncStatus, _: []const u8) void {
                 ctx.status = s;
                 ctx.mapped = true;
             }
         }.cb,
     ));
-    var map_waits = [_]z.c.WGPUFutureWaitInfo{.{ .future = map_future, .completed = 0 }};
-    _ = try z.handles.waitAny(instance, &map_waits, 5_000_000_000);
+    var map_waits = [_]z.types.FutureWaitInfo{.{ .future = map_future, .completed = 0 }};
+    _ = try z.handles.waitAny(instance, @ptrCast(&map_waits), 5_000_000_000);
 
     const mapped = staging_buffer.getMappedRange(0, numbers_size) orelse return error.MapFailed;
     const result: []const u32 = @as([*]const u32, @alignCast(@ptrCast(mapped)))[0..numbers.len];
@@ -173,4 +146,5 @@ pub fn main(init: std.process.Init) !void {
     }
 
     try w.print("PASS\n", .{});
+    try file_writer.flush();
 }

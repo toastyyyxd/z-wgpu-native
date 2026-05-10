@@ -66,15 +66,15 @@ pub fn generate(mapping: *Mapping) !void {
 }
 
 fn resolveTypeKind(mapping: *Mapping, type_node: Ast.Node.Index) Mapping.FnParamKind {
-    var n = type_node;
+    _ = &type_node;
     var pname_buf: [256]u8 = undefined;
     while (true) {
-        switch (mapping.ast.nodeTag(n)) {
+        switch (mapping.ast.nodeTag(type_node)) {
             .identifier => {
-                const type_name = mapping.ast.tokenSlice(mapping.ast.firstToken(n));
+                const type_name = mapping.ast.tokenSlice(mapping.ast.firstToken(type_node));
                 if (mapping.handle_decls.contains(removePtrPrefix(type_name))) return .handle;
                 if (std.mem.startsWith(u8, type_name, "WGPU") and
-                    mapping.handle_decls.contains(std.fmt.bufPrint(&pname_buf, "{s}Impl", .{type_name}) catch unreachable)) return .handle;
+                mapping.handle_decls.contains(std.fmt.bufPrint(&pname_buf, "{s}Impl", .{type_name}) catch unreachable)) return .handle;
                 if (mapping.struct_decls.contains(removePtrPrefix(type_name))) return .data_struct;
                 if (mapping.flag_decls.contains(type_name)) return .flags;
                 if (mapping.enum_decls.contains(removePtrPrefix(type_name))) return .enum_c;
@@ -84,14 +84,25 @@ fn resolveTypeKind(mapping: *Mapping, type_node: Ast.Node.Index) Mapping.FnParam
                 if (std.mem.startsWith(u8, type_name, "WGPU")) return .unknown;
                 return .primitive;
             },
-            .ptr_type, .ptr_type_bit_range => {
-                n = mapping.ast.nodeData(n).extra_and_node[1];
-            },
-            .ptr_type_aligned, .ptr_type_sentinel => {
-                n = mapping.ast.nodeData(n).opt_node_and_node[1];
-            },
-            .optional_type => {
-                n = mapping.ast.nodeData(n).node;
+            .ptr_type, .ptr_type_bit_range, .ptr_type_aligned, .ptr_type_sentinel, .optional_type => {
+                // Follow pointer/optional chain, but if the innermost is a handle, return .pointer
+                var n = type_node;
+                while (true) {
+                    switch (mapping.ast.nodeTag(n)) {
+                        .identifier => {
+                            const tname = mapping.ast.tokenSlice(mapping.ast.firstToken(n));
+                            if (mapping.handle_decls.contains(removePtrPrefix(tname))) return .pointer;
+                            if (std.mem.startsWith(u8, tname, "WGPU") and
+                                mapping.handle_decls.contains(std.fmt.bufPrint(&pname_buf, "{s}Impl", .{tname}) catch unreachable)) return .pointer;
+                            if (mapping.struct_decls.contains(removePtrPrefix(tname))) return .data_struct;
+                            return .unknown;
+                        },
+                        .ptr_type, .ptr_type_bit_range => n = mapping.ast.nodeData(n).extra_and_node[1],
+                        .ptr_type_aligned, .ptr_type_sentinel => n = mapping.ast.nodeData(n).opt_node_and_node[1],
+                        .optional_type => n = mapping.ast.nodeData(n).node,
+                        else => return .unknown,
+                    }
+                }
             },
             else => return .unknown,
         }

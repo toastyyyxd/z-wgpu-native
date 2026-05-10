@@ -76,9 +76,7 @@ pub fn build(b: *std.Build) void {
     mod.linkSystemLibrary("pthread", .{});
     mod.linkSystemLibrary("dl", .{});
     mod.linkSystemLibrary("m", .{});
-    lib.step.dependOn(generate_wrapper_step);
     lib.step.dependOn(&run_cargo.step);
-    b.installArtifact(lib);
 
     const lib_test_mod = b.addModule("z_wgpu_native_tests", .{
         .root_source_file = b.path("tests/lib.zig"),
@@ -108,8 +106,48 @@ pub fn build(b: *std.Build) void {
     const compute_test_step = b.step("compute-test", "Run compute integration test");
     compute_test_step.dependOn(&run_compute_test.step);
 
+    const triangle_mod = b.addModule("z_wgpu_native_triangle_test", .{
+        .root_source_file = b.path("tests/triangle.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    triangle_mod.addImport("z_wgpu_native", mod);
+    triangle_mod.linkSystemLibrary("glfw3", .{});
+    triangle_mod.linkSystemLibrary("wayland-client", .{});
+    triangle_mod.linkSystemLibrary("wayland-egl", .{});
+
+    const triangle_exe = b.addExecutable(.{
+        .name = "triangle-test",
+        .root_module = triangle_mod,
+    });
+    triangle_exe.step.dependOn(&run_cargo.step);
+    const run_triangle_test = b.addRunArtifact(triangle_exe);
+    const triangle_test_step = b.step("triangle-test", "Run windowed triangle test");
+    triangle_test_step.dependOn(&run_triangle_test.step);
+
+    const rgbw_mod = b.addModule("z_wgpu_native_rgbw_test", .{
+        .root_source_file = b.path("tests/rgbw.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    rgbw_mod.addImport("z_wgpu_native", mod);
+    rgbw_mod.linkSystemLibrary("glfw3", .{});
+    rgbw_mod.linkSystemLibrary("wayland-client", .{});
+    rgbw_mod.linkSystemLibrary("wayland-egl", .{});
+
+    const rgbw_exe = b.addExecutable(.{
+        .name = "rgbw-test",
+        .root_module = rgbw_mod,
+    });
+    rgbw_exe.step.dependOn(&run_cargo.step);
+    const run_rgbw_test = b.addRunArtifact(rgbw_exe);
+    const rgbw_test_step = b.step("rgbw-test", "Run windowed cube+pyramid test");
+    rgbw_test_step.dependOn(&run_rgbw_test.step);
+
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&run_generator_tests.step);
     test_step.dependOn(&run_lib_tests.step);
     test_step.dependOn(&run_compute_test.step);
+    test_step.dependOn(&run_triangle_test.step);
+    test_step.dependOn(&run_rgbw_test.step);
 }
