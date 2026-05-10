@@ -1,7 +1,8 @@
 {
-  description = "Zig project flake";
+  description = "z_wgpu_native";
 
   inputs = {
+    self = { submodules = true; };
     zig2nix.url = "github:cloudef/zig2nix";
     zls-overlay.url = "github:zigtools/zls";
   };
@@ -11,16 +12,18 @@
   in (flake-utils.lib.eachDefaultSystem (system: let
       env = zig2nix.outputs.zig-env.${system} { zig = zig2nix.outputs.packages.${system}.zig-master; };
       zls = zls-overlay.packages.x86_64-linux.zls;
+      pkgs = env.pkgs;
     in with builtins; with env.pkgs.lib; rec {
       # Base
       packages.foreign = env.package { # Clean binaries for shipping outside nix
         src = cleanSource ./.;
-        nativeBuildInputs = with env.pkgs; [
+        nativeBuildInputs = with pkgs; [
           cargo
           clang
           libclang.lib
+          rustPlatform.cargoSetupHook
         ]; # Packages for compiling
-        buildInputs = with env.pkgs; [
+        buildInputs = with pkgs; [
           libclang.lib
           libx11
           libxrandr
@@ -35,14 +38,18 @@
           libxkbcommon
         ]; # Packages for linking
         zigPreferMusl = true; # Smaller binaries, avoids shipping glibc
+        cargoRoot = "vendor/wgpu-native";
+        cargoDeps = pkgs.rustPlatform.importCargoLock {
+          lockFile = ./vendor/wgpu-native/Cargo.lock;
+        };
       };
 
       packages.default = packages.foreign.override (attrs: { # nix build .
         zigPreferMusl = false; # Prefer nix friendly settings
-        zigWrapperBins = with env.pkgs; []; # Executables for runtime PATH
+        zigWrapperBins = with pkgs; []; # Executables for runtime PATH
         zigWrapperLibs = attrs.buildInputs or []; # Libraries for LD_LIBRARY_PATH
         env = attrs.env or {} // {
-          LIBCLANG_PATH = "${env.pkgs.llvmPackages.libclang.lib}/lib";
+          LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
         };
       });
 

@@ -3,12 +3,20 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-
-    const run_clang_preprocess = b.addSystemCommand(&[_][]const u8{
-        "bash", "-c", "mkdir -p .zig-cache/tmp && clang -E -I vendor/wgpu-native/ffi/webgpu-headers vendor/wgpu-native/ffi/wgpu.h | sed '/typedef.*_Float/d' > .zig-cache/tmp/preprocessed.h",
-    });
-    const preprocessed_h = b.path(".zig-cache/tmp/preprocessed.h");
     
+    const run_clang_preprocess = b.addSystemCommand(&[_][]const u8{
+        "clang", "-E", "-I", "vendor/wgpu-native/ffi/webgpu-headers", "vendor/wgpu-native/ffi/wgpu.h",
+    });
+
+    const sed_filter = b.addSystemCommand(&[_][]const u8{
+        "sed", "-E", "/typedef.*_Float(32|64|128|32x|64x);/d",
+    });
+    sed_filter.addFileArg(run_clang_preprocess.captureStdOut(.{}));
+
+    const preprocessed_h = sed_filter.captureStdOut(.{
+        .basename = "preprocessed.h",
+    });
+
     const run_translate_c = b.addTranslateC(.{
         .root_source_file = preprocessed_h,
         .optimize = optimize,
