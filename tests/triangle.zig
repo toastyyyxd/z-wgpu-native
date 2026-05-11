@@ -96,7 +96,7 @@ pub fn main(init: std.process.Init) !void {
 
     surface.configure(&z.types.SurfaceConfiguration{
         .device = z.handles.OptionalDevice.wrap(device),
-        .format = caps.formats.?.*,
+        .format = caps.formats[0],
         .usage = .{ .render_attachment = true },
         .view_formats = caps.formats,
         .alpha_mode = .auto,
@@ -135,7 +135,7 @@ pub fn main(init: std.process.Init) !void {
             .module = z.handles.OptionalShaderModule.wrap(shader_module),
             .entry_point = z.types.StringView.fromSlice("fs_main"),
             .target_count = 1,
-            .targets = @ptrCast(&[1]z.types.ColorTargetState{.{ .format = caps.formats.?.*, .write_mask = z.types.ColorWriteMask_all }}),
+            .targets = @ptrCast(&[1]z.types.ColorTargetState{.{ .format = caps.formats[0], .write_mask = z.types.ColorWriteMask_all }}),
         },
     });
 

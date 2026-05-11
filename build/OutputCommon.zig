@@ -140,13 +140,19 @@ pub fn mapTypeName(ctype: []const u8, buf: []u8, mapping: *Mapping) []const u8 {
         const inner = ctype["[*c]const ".len..];
         var inner_buf: [256]u8 = undefined;
         const zig_inner = mapTypeName(inner, &inner_buf, mapping);
-        return std.fmt.bufPrint(buf, "?*const {s}", .{zig_inner}) catch unreachable;
+        if (isHandleLikeType(inner, mapping)) {
+            return std.fmt.bufPrint(buf, "?*const {s}", .{zig_inner}) catch unreachable;
+        }
+        return std.fmt.bufPrint(buf, "[*c]const {s}", .{zig_inner}) catch unreachable;
     }
     if (std.mem.startsWith(u8, ctype, "[*c]")) {
         const inner = ctype["[*c]".len..];
         var inner_buf: [256]u8 = undefined;
         const zig_inner = mapTypeName(inner, &inner_buf, mapping);
-        return std.fmt.bufPrint(buf, "?*{s}", .{zig_inner}) catch unreachable;
+        if (isHandleLikeType(inner, mapping)) {
+            return std.fmt.bufPrint(buf, "?*{s}", .{zig_inner}) catch unreachable;
+        }
+        return std.fmt.bufPrint(buf, "[*c]{s}", .{zig_inner}) catch unreachable;
     }
     if (std.mem.startsWith(u8, ctype, "?*")) {
         const inner = ctype["?*".len..];
@@ -181,14 +187,20 @@ pub fn mapCTypeRef(ctype: []const u8, buf: []u8, mapping: *Mapping, wrap_handles
         var inner_buf: [256]u8 = undefined;
         const inner_wrap = wrap_handles and isHandleLikeType(inner, mapping);
         const zig_inner = mapCTypeRef(inner, &inner_buf, mapping, inner_wrap);
-        return std.fmt.bufPrint(buf, "?*const {s}", .{zig_inner}) catch unreachable;
+        if (isHandleLikeType(inner, mapping)) {
+            return std.fmt.bufPrint(buf, "?*const {s}", .{zig_inner}) catch unreachable;
+        }
+        return std.fmt.bufPrint(buf, "[*c]const {s}", .{zig_inner}) catch unreachable;
     }
     if (std.mem.startsWith(u8, ctype, "[*c]")) {
         const inner = ctype["[*c]".len..];
         var inner_buf: [256]u8 = undefined;
         const inner_wrap = wrap_handles and isHandleLikeType(inner, mapping);
         const zig_inner = mapCTypeRef(inner, &inner_buf, mapping, inner_wrap);
-        return std.fmt.bufPrint(buf, "?*{s}", .{zig_inner}) catch unreachable;
+        if (isHandleLikeType(inner, mapping)) {
+            return std.fmt.bufPrint(buf, "?*{s}", .{zig_inner}) catch unreachable;
+        }
+        return std.fmt.bufPrint(buf, "[*c]{s}", .{zig_inner}) catch unreachable;
     }
     if (std.mem.startsWith(u8, ctype, "?*")) {
         const inner = ctype["?*".len..];

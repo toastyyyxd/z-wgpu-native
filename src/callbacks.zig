@@ -74,7 +74,7 @@ pub fn deviceLostCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2:
 pub fn compilationInfoCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.CompilationInfoRequestStatus, ?*const c.struct_WGPUCompilationInfo) void,
 ) types.CompilationInfoCallbackInfo {
     const Trampoline = struct {
-        fn call(status: c.WGPUCompilationInfoRequestStatus, compilationInfo: ?*const c.struct_WGPUCompilationInfo, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
+        fn call(status: c.WGPUCompilationInfoRequestStatus, compilationInfo: [*c]const c.struct_WGPUCompilationInfo, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
             const c1: *C1 = @ptrCast(@alignCast(userdata1));
             const c2: *C2 = @ptrCast(@alignCast(userdata2));
             cb(c1, c2, @enumFromInt(status), compilationInfo);
