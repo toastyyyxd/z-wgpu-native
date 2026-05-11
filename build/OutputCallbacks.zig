@@ -10,6 +10,15 @@ pub fn writeCallbacks(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void
     var cb_iter = mapping.callback_decls.iterator();
     while (cb_iter.next()) |entry| {
         const cb_decl = entry.value_ptr.*;
+
+        var info_name_buf: [256]u8 = undefined;
+        const info_name = std.fmt.bufPrint(&info_name_buf, "{s}Info", .{cb_decl.name}) catch unreachable;
+
+        if (!mapping.struct_decls.contains(info_name)) {
+            std.log.warn("codegen: skipping '{s}', no matching '{s}' struct in schema", .{ cb_decl.name, info_name });
+            continue;
+        }
+
         try writeCallbackTrampoline(buf, mapping, cb_decl);
     }
 }
@@ -49,7 +58,11 @@ fn writeCallbackTrampoline(buf: *std.array_list.Managed(u8), mapping: *Mapping, 
     try buf.appendSlice(") void,\n");
 
     // Return type
-    try buf.print(") c.{s}Info {{\n", .{cb_decl.name});
+    var cb_info_struct_buf: [256]u8 = undefined;
+    const cb_info_struct_name = std.fmt.bufPrint(&cb_info_struct_buf, "{s}Info", .{cb_decl.name}) catch unreachable;
+    var cb_info_ret_buf: [256]u8 = undefined;
+    const cb_info_ret_type = Common.mapCTypeRef(cb_info_struct_name, &cb_info_ret_buf, mapping, true);
+    try buf.print(") {s} {{\n", .{cb_info_ret_type});
 
     // Trampoline
     try buf.appendSlice("    const Trampoline = struct {\n");
@@ -108,11 +121,14 @@ fn writeCallbackTrampoline(buf: *std.array_list.Managed(u8), mapping: *Mapping, 
 
 fn mapCallbackZigType(ctype: []const u8, buf: []u8, mapping: *Mapping) []const u8 {
     if (std.mem.eql(u8, ctype, "WGPUStringView")) return "[]const u8";
-    if (std.mem.startsWith(u8, ctype, "WGPU") and std.mem.endsWith(u8, ctype, "Status")) {
+    if (std.mem.startsWith(u8, ctype, "WGPU") and (mapping.enum_decls.contains(ctype) or mapping.flag_decls.contains(ctype))) {
         return std.fmt.bufPrint(buf, "types.{s}", .{Common.stripWgpu(ctype)}) catch unreachable;
     }
     if (std.mem.startsWith(u8, ctype, "WGPU") and Common.isHandleLikeType(ctype, mapping)) {
         return std.fmt.bufPrint(buf, "handles.{s}", .{Common.zigHandleName(ctype)}) catch unreachable;
+    }
+    if (std.mem.startsWith(u8, ctype, "WGPU") and mapping.struct_decls.contains(ctype)) {
+        return std.fmt.bufPrint(buf, "types.{s}", .{Common.zigStructName(ctype)}) catch unreachable;
     }
     if (std.mem.startsWith(u8, ctype, "WGPU")) {
         return std.fmt.bufPrint(buf, "c.{s}", .{ctype}) catch unreachable;
@@ -139,7 +155,7 @@ fn mapCbExpr(param: *Mapping.CallbackParam, buf: []u8, mapping: *Mapping) []cons
     if (std.mem.eql(u8, param.type, "WGPUStringView")) {
         return std.fmt.bufPrint(buf, "if ({s}.data) |d| d[0..{s}.length] else \"\"", .{ param.name, param.name }) catch unreachable;
     }
-    if (std.mem.startsWith(u8, param.type, "WGPU") and std.mem.endsWith(u8, param.type, "Status")) {
+    if (std.mem.startsWith(u8, param.type, "WGPU") and (mapping.enum_decls.contains(param.type) or mapping.flag_decls.contains(param.type))) {
         return std.fmt.bufPrint(buf, "@enumFromInt({s})", .{param.name}) catch unreachable;
     }
     if (std.mem.startsWith(u8, param.type, "WGPU") and Common.isHandleLikeType(param.type, mapping)) {

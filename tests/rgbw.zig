@@ -141,14 +141,13 @@ pub fn main(init: std.process.Init) !void {
 
     const caps = try surface.getCapabilities(adapter);
     defer z.handles.surfaceCapabilitiesFreeMembers(caps);
-    if (caps.formatCount == 0 or caps.presentModeCount == 0) return error.NoSurfaceFormats;
+    if (caps.format_count == 0 or caps.present_mode_count == 0) return error.NoSurfaceFormats;
 
     surface.configure(&z.types.SurfaceConfiguration{
         .device = z.handles.OptionalDevice.wrap(device),
-        .format = @enumFromInt(caps.formats[0]),
+        .format = caps.formats.?.*,
         .usage = .{ .render_attachment = true },
-        .view_format_count = 1,
-        .view_formats = @ptrCast(&caps.formats[0]),
+        .view_formats = caps.formats,
         .alpha_mode = .auto,
         .width = 640,
         .height = 480,
@@ -231,7 +230,7 @@ pub fn main(init: std.process.Init) !void {
             .module = z.handles.OptionalShaderModule.wrap(shader_module),
             .entry_point = z.types.StringView.fromSlice("fs_main"),
             .target_count = 1,
-            .targets = @ptrCast(&[1]z.types.ColorTargetState{.{ .format = @enumFromInt(caps.formats[0]), .write_mask = z.types.ColorWriteMask_all }}),
+            .targets = @ptrCast(&[1]z.types.ColorTargetState{.{ .format = caps.formats.?.*, .write_mask = z.types.ColorWriteMask_all }}),
         },
         .depth_stencil = &.{
             .format = .depth24_plus,

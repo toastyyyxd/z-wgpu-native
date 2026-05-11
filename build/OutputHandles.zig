@@ -100,8 +100,8 @@ pub fn writeHandlesAndFuncs(buf: *std.array_list.Managed(u8), mapping: *Mapping)
     try buf.appendSlice(
         \\/// Wait for one or more futures to complete.
         \\/// Returns the number of completed futures, or an error on timeout.
-        \\pub fn waitAny(instance: Instance, futures: []c.WGPUFutureWaitInfo, timeout_ns: u64) !usize {
-        \\    const status = c.wgpuInstanceWaitAny(@ptrCast(instance.ptr), futures.len, futures.ptr, timeout_ns);
+        \\pub fn waitAny(instance: Instance, futures: []types.FutureWaitInfo, timeout_ns: u64) !usize {
+        \\    const status = c.wgpuInstanceWaitAny(@ptrCast(instance.ptr), futures.len, @ptrCast(futures.ptr), timeout_ns);
         \\    if (status == c.WGPUWaitStatus_Success) return futures.len;
         \\    if (status == c.WGPUWaitStatus_TimedOut) return error.Timeout;
         \\    return error.Unexpected;
@@ -169,6 +169,9 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
             actual_ret_type = converted;
             ret_type_converted = true;
         }
+    }
+    if (ret_maybe_converted and !ret_type_converted and std.mem.startsWith(u8, actual_ret_type, "types.")) {
+        ret_type_converted = true;
     }
 
     // Write signature
@@ -295,6 +298,8 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
         actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "!{s}", .{Common.typeSliceToHandleName(ret_slice)}) catch unreachable;
     }
 
+    const standalone_ret_converted = !is_handle_ret and !returns_void and !returns_status and standalone_out_param_idx == null and std.mem.startsWith(u8, actual_ret_type, "types.");
+
     try buf.print("pub fn {s}(", .{zname});
     var sig_sep = false;
     for (fn_decl.params.items, 0..) |*param, i| {
@@ -351,6 +356,14 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
         }
         try buf.appendSlice(");\n");
         try buf.appendSlice("        return .{ .ptr = @ptrCast(result.?) };\n");
+    } else if (standalone_ret_converted) {
+        try buf.print("        const result = c.{s}(", .{fn_decl.name});
+        for (fn_decl.params.items, 0..) |*param, i| {
+            if (i > 0) try buf.appendSlice(", ");
+            try Common.writeParamExpr(buf, param, mapping);
+        }
+        try buf.appendSlice(");\n");
+        try buf.appendSlice("        return @bitCast(result);\n");
     } else {
         try buf.print("        return c.{s}(", .{fn_decl.name});
         for (fn_decl.params.items, 0..) |*param, i| {

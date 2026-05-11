@@ -198,16 +198,23 @@ pub fn mapCTypeRef(ctype: []const u8, buf: []u8, mapping: *Mapping, wrap_handles
         return std.fmt.bufPrint(buf, "?*{s}", .{zig_inner}) catch unreachable;
     }
     if (std.mem.eql(u8, ctype, "WGPUBool")) return "c_int";
-    if (std.mem.eql(u8, ctype, "WGPUStringView")) return "c.WGPUStringView";
+    if (std.mem.eql(u8, ctype, "WGPUStringView")) {
+        if (wrap_handles) return "types.StringView" else return "c.WGPUStringView";
+    }
     if (std.mem.eql(u8, ctype, "WGPUFlags")) return "u64";
     if (std.mem.eql(u8, ctype, "void")) return "void";
     if (std.mem.eql(u8, ctype, "WGPUStatus")) return "!void";
-    if (std.mem.eql(u8, ctype, "WGPUFuture")) return "c.WGPUFuture";
+    if (std.mem.eql(u8, ctype, "WGPUFuture")) {
+        if (wrap_handles) return "types.Future" else return "c.WGPUFuture";
+    }
     if (std.mem.startsWith(u8, ctype, "WGPU") and wrap_handles and isHandleLikeType(ctype, mapping)) {
         return zigHandleName(ctype);
     }
     if (std.mem.startsWith(u8, ctype, "WGPU") and wrap_handles and (mapping.enum_decls.contains(ctype) or mapping.flag_decls.contains(ctype))) {
         return std.fmt.bufPrint(buf, "types.{s}", .{stripWgpu(ctype)}) catch unreachable;
+    }
+    if ((std.mem.startsWith(u8, ctype, "WGPU") or std.mem.startsWith(u8, ctype, "struct_")) and wrap_handles and mapping.struct_decls.contains(ctype)) {
+        return std.fmt.bufPrint(buf, "types.{s}", .{zigStructName(ctype)}) catch unreachable;
     }
     if (std.mem.startsWith(u8, ctype, "WGPU") or std.mem.startsWith(u8, ctype, "struct_")) {
         return std.fmt.bufPrint(buf, "c.{s}", .{ctype}) catch unreachable;
@@ -244,6 +251,10 @@ pub fn writeParamExpr(buf: *std.array_list.Managed(u8), param: *Mapping.FnParam,
         try buf.print("@ptrCast({s}.ptr)", .{param.name});
     } else if (param.kind == .pointer) {
         try buf.print("@ptrCast({s})", .{param.name});
+    } else if (param.kind == .string) {
+        try buf.print("@bitCast({s})", .{param.name});
+    } else if (param.kind == .data_struct) {
+        try buf.print("@bitCast({s})", .{param.name});
     } else if (param.kind == .enum_c) {
         try buf.print("@intFromEnum({s})", .{param.name});
     } else if (param.kind == .flags) {

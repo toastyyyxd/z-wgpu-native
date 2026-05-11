@@ -10,7 +10,6 @@ pub fn discover(mapping: *Mapping) !void {
 
         // Look for callback typedefs: WGPU*Callback = ?*const fn (...) callconv(.c) void;
         if (!std.mem.endsWith(u8, name, "Callback")) continue;
-        if (std.mem.eql(u8, name, "WGPUChainedStructCallback")) continue;
 
         const init_node = var_decl.ast.init_node.unwrap() orelse continue;
         const init_text = mapping.ast.getNodeSource(init_node);
