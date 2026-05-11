@@ -5,7 +5,7 @@ const Common = @import("OutputCommon.zig");
 pub fn writeHandlesAndFuncs(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
     try buf.appendSlice("const c = @import(\"c_wgpu_native\");\nconst types = @import(\"types.zig\");\n\n");
 
-    // Build a map: handle zig name → list of function names
+    // Build a map: handle zig name -> list of function names
     var handle_funcs = std.StringHashMapUnmanaged(std.ArrayListUnmanaged([]const u8)){};
     defer {
         var it = handle_funcs.iterator();
@@ -65,7 +65,7 @@ pub fn writeHandlesAndFuncs(buf: *std.array_list.Managed(u8), mapping: *Mapping)
 
         try buf.appendSlice("};\n\n");
 
-        // Emit Optional{Handle} — 8-byte extern struct for nullable handle fields
+        // Emit Optional{Handle}: 8-byte extern struct for nullable handle fields
         try buf.print("pub const Optional{s} = extern struct {{\n", .{hzname});
         try buf.appendSlice("    ptr: ?*anyopaque,\n\n");
         try buf.print("    pub fn wrap(handle: {s}) Optional{s} {{\n", .{ hzname, hzname });
@@ -119,8 +119,8 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
         after_wgpu;
     const zname = Common.lowerFirst(method, &name_buf);
 
-    // Skip C refcounting methods — not for public API
-    if (std.mem.eql(u8, zname, "addRef") or std.mem.eql(u8, zname, "release")) return;
+    // Skip C refcounting methods: not for public API
+    if (std.mem.endsWith(u8, fn_decl.name, "AddRef") or std.mem.endsWith(u8, fn_decl.name, "Release")) return;
 
     var ret_buf: [256]u8 = undefined;
     const ret_slice = if (fn_decl.return_type.unwrap()) |rt|
@@ -159,7 +159,7 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
         actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "!{s}", .{Common.typeSliceToHandleName(ret_slice)}) catch unreachable;
     }
 
-    // For non-handle struct returns (e.g. c.WGPUFuture → types.Future)
+    // For non-handle struct returns (e.g. c.WGPUFuture -> types.Future)
     const ret_maybe_converted = !is_handle_ret and !returns_void and !returns_status and out_param_idx == null;
     var ret_type_converted = false;
     if (ret_maybe_converted) {

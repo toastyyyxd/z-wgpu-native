@@ -136,7 +136,7 @@ pub fn parseIntValue(s: []const u8) ?u64 {
 }
 
 // ---------------------------------------------------------------------------
-// C type → Zig type name mapping
+// C type -> Zig type name mapping
 // ---------------------------------------------------------------------------
 
 pub fn isCallbackType(ctype: []const u8) bool {
@@ -180,7 +180,6 @@ pub fn mapTypeName(ctype: []const u8, buf: []u8, mapping: *Mapping) []const u8 {
         return std.fmt.bufPrint(buf, "?*{s}", .{zig_inner}) catch unreachable;
     }
     if (std.mem.eql(u8, ctype, "WGPUBool")) return "c_int";
-    if (std.mem.eql(u8, ctype, "WGPUStringView")) return "StringView";
     if (std.mem.eql(u8, ctype, "WGPUFlags")) return "u64";
     if (std.mem.eql(u8, ctype, "void")) return "void";
     if (std.mem.startsWith(u8, ctype, "WGPU")) {
@@ -190,6 +189,9 @@ pub fn mapTypeName(ctype: []const u8, buf: []u8, mapping: *Mapping) []const u8 {
         if (isHandleLikeType(ctype, mapping)) {
             return std.fmt.bufPrint(buf, "handles.Optional{s}", .{zigHandleName(ctype)}) catch unreachable;
         }
+        if (mapping.struct_decls.contains(ctype)) {
+            return zigStructName(ctype);
+        }
         return stripWgpu(ctype);
     }
     if (std.mem.startsWith(u8, ctype, "struct_")) return zigStructName(ctype);
@@ -198,7 +200,7 @@ pub fn mapTypeName(ctype: []const u8, buf: []u8, mapping: *Mapping) []const u8 {
 }
 
 /// Map a C type to its raw C reference (from c_wgpu_native module)
-/// When wrap_handles=true (method signatures), handle types → wrapper names.
+/// When wrap_handles=true (method signatures), handle types -> wrapper names.
 /// When wrap_handles=false (trampoline C ABI), handle types stay as c.WGPU*.
 pub fn mapCTypeRef(ctype: []const u8, buf: []u8, mapping: *Mapping, wrap_handles: bool) []const u8 {
     if (std.mem.startsWith(u8, ctype, "[*c]const ")) {
@@ -229,15 +231,9 @@ pub fn mapCTypeRef(ctype: []const u8, buf: []u8, mapping: *Mapping, wrap_handles
         return std.fmt.bufPrint(buf, "?*{s}", .{zig_inner}) catch unreachable;
     }
     if (std.mem.eql(u8, ctype, "WGPUBool")) return "c_int";
-    if (std.mem.eql(u8, ctype, "WGPUStringView")) {
-        if (wrap_handles) return "types.StringView" else return "c.WGPUStringView";
-    }
     if (std.mem.eql(u8, ctype, "WGPUFlags")) return "u64";
     if (std.mem.eql(u8, ctype, "void")) return "void";
     if (std.mem.eql(u8, ctype, "WGPUStatus")) return "!void";
-    if (std.mem.eql(u8, ctype, "WGPUFuture")) {
-        if (wrap_handles) return "types.Future" else return "c.WGPUFuture";
-    }
     if (std.mem.startsWith(u8, ctype, "WGPU") and wrap_handles and isHandleLikeType(ctype, mapping)) {
         return zigHandleName(ctype);
     }

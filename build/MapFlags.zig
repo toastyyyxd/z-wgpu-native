@@ -41,15 +41,12 @@ pub fn generate(mapping: *Mapping) !void {
             if (name[flags_name.len] != '_') continue;
 
             const value_name = name[flags_name.len + 1 ..];
-            if (std.mem.eql(u8, value_name, "Force32")) {
+            const init_text = mapping.ast.getNodeSource(var_decl.ast.init_node.unwrap().?);
+            if (std.mem.eql(u8, init_text, "2147483647")) {
                 flags_decl.has_force32 = true;
                 continue;
             }
-            if (std.mem.eql(u8, value_name, "None")) continue;
-
-            const init_text = mapping.ast.getNodeSource(var_decl.ast.init_node.unwrap().?);
             if (std.mem.eql(u8, init_text, "0")) continue;
-
             const field_decl = try mapping.arena.create(Mapping.FieldDecl);
             field_decl.* = .{
                 .node = root_node,
@@ -63,7 +60,7 @@ pub fn generate(mapping: *Mapping) !void {
                     // Multi-bit composite (OR of multiple bits)
                     try flags_decl.composites.put(mapping.gpa, value_name, field_decl);
                 } else {
-                    // Single-bit — treat as regular value for packed struct field
+                    // Single-bit: treat as regular value for packed struct field
                     try flags_decl.values.put(mapping.gpa, value_name, field_decl);
                 }
             } else if (Common.parseIntValue(init_text)) |v| {

@@ -73,7 +73,7 @@ pub const FnReturnKind = enum {
     bool_c,
     flags,
     enum_c,
-    status,      // WGPUStatus specifically — maps to error union
+    status,      // WGPUStatus specifically; maps to error union
     future,      // WGPUFuture
     primitive,
     pointer,

@@ -36,7 +36,8 @@ pub fn generate(mapping: *Mapping) !void {
             if (name[enum_name.len] != '_') continue;
 
             const value_name = name[enum_name.len + 1 ..];
-            if (std.mem.eql(u8, value_name, "Force32")) continue;
+            const init_text = mapping.ast.getNodeSource(var_decl.ast.init_node.unwrap().?);
+            if (std.mem.eql(u8, init_text, "2147483647")) continue;
 
             const field_decl = try mapping.arena.create(Mapping.FieldDecl);
             field_decl.* = .{

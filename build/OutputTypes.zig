@@ -19,10 +19,12 @@ fn writeEnums(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
         const zname = Common.zigEnumName(cname);
 
         var val_iter = decl.values.iterator();
-        // Skip enums with only Force32 (shouldn't happen, but safety)
+        // Skip enums with only Force32 sentinel (shouldn't happen, but safety)
         var has_real: bool = false;
         while (val_iter.next()) |val| {
-            if (!std.mem.eql(u8, val.key_ptr.*, "Force32")) has_real = true;
+            const fd = val.value_ptr.*;
+            const init_slice = mapping.ast.getNodeSource(fd.init.unwrap().?);
+            if (!std.mem.eql(u8, init_slice, "2147483647")) has_real = true;
         }
         if (!has_real) continue;
 
@@ -101,7 +103,7 @@ fn writeFlags(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
             }
         }
 
-        // Backing is always u64 — all WGPU flags are uint64_t.
+        // Backing is always u64; all WGPU flags are uint64_t.
         // has_force32 only guarantees minimum 32-bit width, never shrinks from u64.
         const backing = "u64";
         const backing_bits: u8 = 64;
