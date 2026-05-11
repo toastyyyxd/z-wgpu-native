@@ -116,6 +116,25 @@ pub fn isZigKeyword(name: []const u8) bool {
     return false;
 }
 
+pub fn parseIntValue(s: []const u8) ?u64 {
+    if (std.mem.startsWith(u8, s, "0x") or std.mem.startsWith(u8, s, "0X")) {
+        if (s.len > 2) return std.fmt.parseInt(u64, s[2..], 16) catch null;
+        return null;
+    }
+    if (std.mem.startsWith(u8, s, "0b") or std.mem.startsWith(u8, s, "0B")) {
+        if (s.len > 2) return std.fmt.parseInt(u64, s[2..], 2) catch null;
+        return null;
+    }
+    if (std.mem.startsWith(u8, s, "0o") or std.mem.startsWith(u8, s, "0O")) {
+        if (s.len > 2) return std.fmt.parseInt(u64, s[2..], 8) catch null;
+        return null;
+    }
+    if (s.len > 0 and s[0] >= '0' and s[0] <= '9') {
+        return std.fmt.parseInt(u64, s, 10) catch null;
+    }
+    return null;
+}
+
 // ---------------------------------------------------------------------------
 // C type → Zig type name mapping
 // ---------------------------------------------------------------------------

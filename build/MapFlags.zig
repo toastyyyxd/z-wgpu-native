@@ -1,6 +1,7 @@
 const std = @import("std");
 const Ast = std.zig.Ast;
 const Mapping = @import("Mapping.zig");
+const Common = @import("OutputCommon.zig");
 
 pub fn discover(mapping: *Mapping) !void {
     for (mapping.ast.rootDecls()) |root_node| {
@@ -65,11 +66,7 @@ pub fn generate(mapping: *Mapping) !void {
                     // Single-bit — treat as regular value for packed struct field
                     try flags_decl.values.put(mapping.gpa, value_name, field_decl);
                 }
-            } else if (isSimpleInt(init_text)) {
-                const v = std.fmt.parseInt(u64, init_text, 10) catch {
-                    try flags_decl.composites.put(mapping.gpa, value_name, field_decl);
-                    continue;
-                };
+            } else if (Common.parseIntValue(init_text)) |v| {
                 if (std.math.isPowerOfTwo(v)) {
                     try flags_decl.values.put(mapping.gpa, value_name, field_decl);
                 } else {
@@ -83,9 +80,4 @@ pub fn generate(mapping: *Mapping) !void {
     }
 }
 
-fn isSimpleInt(s: []const u8) bool {
-    for (s) |c| {
-        if (c < '0' or c > '9') return false;
-    }
-    return s.len > 0;
-}
+

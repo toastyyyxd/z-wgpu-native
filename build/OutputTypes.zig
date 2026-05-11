@@ -36,8 +36,8 @@ fn writeEnums(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
         while (val_iter.next()) |val| {
             const field_decl = val.value_ptr.*;
             const init_slice = mapping.ast.getNodeSource(field_decl.init.unwrap().?);
-            const int_val = std.fmt.parseInt(i64, init_slice, 10) catch continue;
-            try sorted_vals.append(mapping.gpa, .{ .name = val.key_ptr.*, .value = int_val });
+            const int_val = Common.parseIntValue(init_slice) orelse continue;
+            try sorted_vals.append(mapping.gpa, .{ .name = val.key_ptr.*, .value = @as(i64, @intCast(int_val)) });
         }
 
         std.sort.insertion(
@@ -164,25 +164,21 @@ fn writeFlags(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
     }
 }
 
-fn isSimpleInt(s: []const u8) bool {
-    for (s) |c| {
-        if (c < '0' or c > '9') return false;
-    }
-    return s.len > 0;
-}
-
 fn parseFlagBit(init_text: []const u8) u8 {
     if (std.mem.startsWith(u8, init_text, "@bitCast")) {
-        const marker = "@intCast(@as(c_int, ";
-        if (std.mem.indexOf(u8, init_text, marker)) |start| {
-            const after = init_text[start + marker.len ..];
-            const end = std.mem.indexOfScalar(u8, after, ')') orelse return 0;
-            return std.fmt.parseInt(u8, after[0..end], 10) catch 0;
+        const shift_pos = std.mem.indexOf(u8, init_text, "<<") orelse return 0;
+        const after = init_text[shift_pos + 2..];
+        var i: usize = 0;
+        while (i < after.len and !std.ascii.isDigit(after[i])) : (i += 1) {}
+        if (i < after.len) {
+            const start = i;
+            i += 1;
+            while (i < after.len and std.ascii.isDigit(after[i])) : (i += 1) {}
+            return std.fmt.parseInt(u8, after[start..i], 10) catch 0;
         }
         return 0;
     }
-    if (isSimpleInt(init_text)) {
-        const v = std.fmt.parseInt(u64, init_text, 10) catch return 0;
+    if (Common.parseIntValue(init_text)) |v| {
         if (v == 0) return 0;
         return @intCast(@ctz(v));
     }
