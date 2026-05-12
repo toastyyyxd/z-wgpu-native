@@ -1606,58 +1606,58 @@ pub const OptionalTextureView = extern struct {
 };
 
 pub fn getInstanceFeatures(features: [*c]types.SupportedInstanceFeatures) void {
-        c.wgpuGetInstanceFeatures(@ptrCast(features));
+    c.wgpuGetInstanceFeatures(@ptrCast(features));
 }
 
 pub fn supportedFeaturesFreeMembers(supportedFeatures: types.SupportedFeatures) void {
-        c.wgpuSupportedFeaturesFreeMembers(@bitCast(supportedFeatures));
+    c.wgpuSupportedFeaturesFreeMembers(@bitCast(supportedFeatures));
 }
 
 pub fn surfaceCapabilitiesFreeMembers(surfaceCapabilities: types.SurfaceCapabilities) void {
-        c.wgpuSurfaceCapabilitiesFreeMembers(@bitCast(surfaceCapabilities));
+    c.wgpuSurfaceCapabilitiesFreeMembers(@bitCast(surfaceCapabilities));
 }
 
 pub fn getProcAddress(procName: types.StringView) c.WGPUProc {
-        return c.wgpuGetProcAddress(@bitCast(procName));
+    return c.wgpuGetProcAddress(@bitCast(procName));
 }
 
 pub fn setLogCallback(callback: c.WGPULogCallback, userdata: ?*anyopaque) void {
-        c.wgpuSetLogCallback(callback, userdata);
+    c.wgpuSetLogCallback(callback, userdata);
 }
 
 pub fn adapterInfoFreeMembers(adapterInfo: types.AdapterInfo) void {
-        c.wgpuAdapterInfoFreeMembers(@bitCast(adapterInfo));
+    c.wgpuAdapterInfoFreeMembers(@bitCast(adapterInfo));
 }
 
 pub fn createInstance(descriptor: [*c]const types.InstanceDescriptor) ?Instance {
-        const result = c.wgpuCreateInstance(@ptrCast(descriptor));
-        if (result) |r| return .{ .ptr = @ptrCast(r) } else return null;
+    const result = c.wgpuCreateInstance(@ptrCast(descriptor));
+    if (result) |r| return .{ .ptr = @ptrCast(r) } else return null;
 }
 
 pub fn supportedInstanceFeaturesFreeMembers(supportedInstanceFeatures: types.SupportedInstanceFeatures) void {
-        c.wgpuSupportedInstanceFeaturesFreeMembers(@bitCast(supportedInstanceFeatures));
+    c.wgpuSupportedInstanceFeaturesFreeMembers(@bitCast(supportedInstanceFeatures));
 }
 
 pub fn supportedWGSLLanguageFeaturesFreeMembers(supportedWGSLLanguageFeatures: types.SupportedWGSLLanguageFeatures) void {
-        c.wgpuSupportedWGSLLanguageFeaturesFreeMembers(@bitCast(supportedWGSLLanguageFeatures));
+    c.wgpuSupportedWGSLLanguageFeaturesFreeMembers(@bitCast(supportedWGSLLanguageFeatures));
 }
 
 pub fn getInstanceLimits() types.StatusError!types.InstanceLimits {
-        var result: types.InstanceLimits = undefined;
-        const status = c.wgpuGetInstanceLimits(&result);
-        try @as(types.Status, @enumFromInt(status)).toError();
-        return result;
+    var result: types.InstanceLimits = undefined;
+    const status = c.wgpuGetInstanceLimits(&result);
+    try @as(types.Status, @enumFromInt(status)).toError();
+    return result;
 }
 
 pub fn getVersion() u32 {
-        return c.wgpuGetVersion();
+    return c.wgpuGetVersion();
 }
 
 pub fn setLogLevel(level: types.LogLevel) void {
-        c.wgpuSetLogLevel(@intFromEnum(level));
+    c.wgpuSetLogLevel(@intFromEnum(level));
 }
 
 pub fn hasInstanceFeature(feature: types.InstanceFeatureName) u32 {
-        return c.wgpuHasInstanceFeature(@intFromEnum(feature));
+    return c.wgpuHasInstanceFeature(@intFromEnum(feature));
 }
 

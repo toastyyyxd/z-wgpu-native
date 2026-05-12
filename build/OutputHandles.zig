@@ -359,8 +359,8 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
         const zot_raw = Common.mapCTypeRef(Common.stripCPtrPrefix(otype), &ob, mapping, true);
         var zot_buf: [256]u8 = undefined;
         const zot = Common.mapCRefToTypesRef(zot_raw, &zot_buf);
-        try buf.print("        var result: {s} = undefined;\n", .{zot});
-        try buf.print("        const status = c.{s}(", .{fn_decl.name});
+        try buf.print("    var result: {s} = undefined;\n", .{zot});
+        try buf.print("    const status = c.{s}(", .{fn_decl.name});
         for (fn_decl.params.items, 0..) |*param, i| {
             if (i > 0) try buf.appendSlice(", ");
             if (i == opi) {
@@ -370,41 +370,41 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
             }
         }
         try buf.appendSlice(");\n");
-        try buf.print("        try @as({s}, @enumFromInt(status)).toError();\n", .{status_type});
-        try buf.appendSlice("        return result;\n");
+        try buf.print("    try @as({s}, @enumFromInt(status)).toError();\n", .{status_type});
+        try buf.appendSlice("    return result;\n");
     } else if (returns_status) {
-        try buf.print("        const status = c.{s}(", .{fn_decl.name});
+        try buf.print("    const status = c.{s}(", .{fn_decl.name});
         for (fn_decl.params.items, 0..) |*param, i| {
             if (i > 0) try buf.appendSlice(", ");
             try Common.writeParamExpr(buf, param, mapping);
         }
         try buf.appendSlice(");\n");
-        try buf.print("        try @as({s}, @enumFromInt(status).toError();\n", .{status_type});
+        try buf.print("    try @as({s}, @enumFromInt(status).toError();\n", .{status_type});
     } else if (returns_void) {
-        try buf.print("        c.{s}(", .{fn_decl.name});
+        try buf.print("    c.{s}(", .{fn_decl.name});
         for (fn_decl.params.items, 0..) |*param, i| {
             if (i > 0) try buf.appendSlice(", ");
             try Common.writeParamExpr(buf, param, mapping);
         }
         try buf.appendSlice(");\n");
     } else if (is_handle_ret) {
-        try buf.print("        const result = c.{s}(", .{fn_decl.name});
+        try buf.print("    const result = c.{s}(", .{fn_decl.name});
         for (fn_decl.params.items, 0..) |*param, i| {
             if (i > 0) try buf.appendSlice(", ");
             try Common.writeParamExpr(buf, param, mapping);
         }
         try buf.appendSlice(");\n");
-        try buf.appendSlice("        if (result) |r| return .{ .ptr = @ptrCast(r) } else return null;\n");
+        try buf.appendSlice("    if (result) |r| return .{ .ptr = @ptrCast(r) } else return null;\n");
     } else if (standalone_ret_converted) {
-        try buf.print("        const result = c.{s}(", .{fn_decl.name});
+        try buf.print("    const result = c.{s}(", .{fn_decl.name});
         for (fn_decl.params.items, 0..) |*param, i| {
             if (i > 0) try buf.appendSlice(", ");
             try Common.writeParamExpr(buf, param, mapping);
         }
         try buf.appendSlice(");\n");
-        try buf.appendSlice("        return @bitCast(result);\n");
+        try buf.appendSlice("    return @bitCast(result);\n");
     } else {
-        try buf.print("        return c.{s}(", .{fn_decl.name});
+        try buf.print("    return c.{s}(", .{fn_decl.name});
         for (fn_decl.params.items, 0..) |*param, i| {
             if (i > 0) try buf.appendSlice(", ");
             try Common.writeParamExpr(buf, param, mapping);
