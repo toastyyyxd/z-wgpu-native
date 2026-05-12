@@ -3,11 +3,32 @@ const std = @import("std");
 const handles = @import("handles.zig");
 const types = @This();
 
+pub const MapAsyncStatusError = error{
+    CallbackCancelled,
+    Error,
+    Aborted,
+};
+
 pub const MapAsyncStatus = enum(c_uint) {
     success = 1,
     callback_cancelled = 2,
     @"error" = 3,
     aborted = 4,
+    pub fn toError(self: MapAsyncStatus) MapAsyncStatusError!void {
+        return switch (self) {
+            .success => return,
+            .callback_cancelled => return MapAsyncStatusError.CallbackCancelled,
+            .@"error" => return MapAsyncStatusError.Error,
+            .aborted => return MapAsyncStatusError.Aborted,
+        };
+    }
+    pub fn fromError(err: MapAsyncStatusError) MapAsyncStatus {
+        return switch (err) {
+            MapAsyncStatusError.CallbackCancelled => return .callback_cancelled,
+            MapAsyncStatusError.Error => return .@"error",
+            MapAsyncStatusError.Aborted => return .aborted,
+        };
+    }
 };
 
 pub const PolygonMode = enum(c_uint) {
@@ -72,9 +93,24 @@ pub const Gles3MinorVersion = enum(c_uint) {
     version2 = 3,
 };
 
+pub const CompilationInfoRequestStatusError = error{
+    CallbackCancelled,
+};
+
 pub const CompilationInfoRequestStatus = enum(c_uint) {
     success = 1,
     callback_cancelled = 2,
+    pub fn toError(self: CompilationInfoRequestStatus) CompilationInfoRequestStatusError!void {
+        return switch (self) {
+            .success => return,
+            .callback_cancelled => return CompilationInfoRequestStatusError.CallbackCancelled,
+        };
+    }
+    pub fn fromError(err: CompilationInfoRequestStatusError) CompilationInfoRequestStatus {
+        return switch (err) {
+            CompilationInfoRequestStatusError.CallbackCancelled => return .callback_cancelled,
+        };
+    }
 };
 
 pub const NativeTextureFormat = enum(c_uint) {
@@ -137,16 +173,52 @@ pub const ErrorType = enum(c_uint) {
     unknown = 5,
 };
 
+pub const PopErrorScopeStatusError = error{
+    CallbackCancelled,
+    Error,
+};
+
 pub const PopErrorScopeStatus = enum(c_uint) {
     success = 1,
     callback_cancelled = 2,
     @"error" = 3,
+    pub fn toError(self: PopErrorScopeStatus) PopErrorScopeStatusError!void {
+        return switch (self) {
+            .success => return,
+            .callback_cancelled => return PopErrorScopeStatusError.CallbackCancelled,
+            .@"error" => return PopErrorScopeStatusError.Error,
+        };
+    }
+    pub fn fromError(err: PopErrorScopeStatusError) PopErrorScopeStatus {
+        return switch (err) {
+            PopErrorScopeStatusError.CallbackCancelled => return .callback_cancelled,
+            PopErrorScopeStatusError.Error => return .@"error",
+        };
+    }
+};
+
+pub const RequestDeviceStatusError = error{
+    CallbackCancelled,
+    Error,
 };
 
 pub const RequestDeviceStatus = enum(c_uint) {
     success = 1,
     callback_cancelled = 2,
     @"error" = 3,
+    pub fn toError(self: RequestDeviceStatus) RequestDeviceStatusError!void {
+        return switch (self) {
+            .success => return,
+            .callback_cancelled => return RequestDeviceStatusError.CallbackCancelled,
+            .@"error" => return RequestDeviceStatusError.Error,
+        };
+    }
+    pub fn fromError(err: RequestDeviceStatusError) RequestDeviceStatus {
+        return switch (err) {
+            RequestDeviceStatusError.CallbackCancelled => return .callback_cancelled,
+            RequestDeviceStatusError.Error => return .@"error",
+        };
+    }
 };
 
 pub const VertexStepMode = enum(c_uint) {
@@ -369,10 +441,28 @@ pub const StorageTextureAccess = enum(c_uint) {
     read_write = 4,
 };
 
+pub const QueueWorkDoneStatusError = error{
+    CallbackCancelled,
+    Error,
+};
+
 pub const QueueWorkDoneStatus = enum(c_uint) {
     success = 1,
     callback_cancelled = 2,
     @"error" = 3,
+    pub fn toError(self: QueueWorkDoneStatus) QueueWorkDoneStatusError!void {
+        return switch (self) {
+            .success => return,
+            .callback_cancelled => return QueueWorkDoneStatusError.CallbackCancelled,
+            .@"error" => return QueueWorkDoneStatusError.Error,
+        };
+    }
+    pub fn fromError(err: QueueWorkDoneStatusError) QueueWorkDoneStatus {
+        return switch (err) {
+            QueueWorkDoneStatusError.CallbackCancelled => return .callback_cancelled,
+            QueueWorkDoneStatusError.Error => return .@"error",
+        };
+    }
 };
 
 pub const TextureDimension = enum(c_uint) {
@@ -400,9 +490,33 @@ pub const ToneMappingMode = enum(c_uint) {
     extended = 2,
 };
 
+pub const StatusError = error{
+    Error,
+};
+
 pub const Status = enum(c_uint) {
     success = 1,
     @"error" = 2,
+    pub fn toError(self: Status) StatusError!void {
+        return switch (self) {
+            .success => return,
+            .@"error" => return StatusError.Error,
+        };
+    }
+    pub fn fromError(err: StatusError) Status {
+        return switch (err) {
+            StatusError.Error => return .@"error",
+        };
+    }
+};
+
+pub const SurfaceGetCurrentTextureStatusError = error{
+    SuccessSuboptimal,
+    Timeout,
+    Outdated,
+    Lost,
+    Error,
+    Occluded,
 };
 
 pub const SurfaceGetCurrentTextureStatus = enum(c_uint) {
@@ -413,12 +527,51 @@ pub const SurfaceGetCurrentTextureStatus = enum(c_uint) {
     lost = 5,
     @"error" = 6,
     occluded = 196609,
+    pub fn toError(self: SurfaceGetCurrentTextureStatus) SurfaceGetCurrentTextureStatusError!void {
+        return switch (self) {
+            .success_optimal => return,
+            .success_suboptimal => return SurfaceGetCurrentTextureStatusError.SuccessSuboptimal,
+            .timeout => return SurfaceGetCurrentTextureStatusError.Timeout,
+            .outdated => return SurfaceGetCurrentTextureStatusError.Outdated,
+            .lost => return SurfaceGetCurrentTextureStatusError.Lost,
+            .@"error" => return SurfaceGetCurrentTextureStatusError.Error,
+            .occluded => return SurfaceGetCurrentTextureStatusError.Occluded,
+        };
+    }
+    pub fn fromError(err: SurfaceGetCurrentTextureStatusError) SurfaceGetCurrentTextureStatus {
+        return switch (err) {
+            SurfaceGetCurrentTextureStatusError.SuccessSuboptimal => return .success_suboptimal,
+            SurfaceGetCurrentTextureStatusError.Timeout => return .timeout,
+            SurfaceGetCurrentTextureStatusError.Outdated => return .outdated,
+            SurfaceGetCurrentTextureStatusError.Lost => return .lost,
+            SurfaceGetCurrentTextureStatusError.Error => return .@"error",
+            SurfaceGetCurrentTextureStatusError.Occluded => return .occluded,
+        };
+    }
+};
+
+pub const WaitStatusError = error{
+    TimedOut,
+    Error,
 };
 
 pub const WaitStatus = enum(c_uint) {
     success = 1,
     timed_out = 2,
     @"error" = 3,
+    pub fn toError(self: WaitStatus) WaitStatusError!void {
+        return switch (self) {
+            .success => return,
+            .timed_out => return WaitStatusError.TimedOut,
+            .@"error" => return WaitStatusError.Error,
+        };
+    }
+    pub fn fromError(err: WaitStatusError) WaitStatus {
+        return switch (err) {
+            WaitStatusError.TimedOut => return .timed_out,
+            WaitStatusError.Error => return .@"error",
+        };
+    }
 };
 
 pub const BufferBindingType = enum(c_uint) {
@@ -582,11 +735,32 @@ pub const NativeDisplayHandleType = enum(c_uint) {
     wayland = 3,
 };
 
+pub const RequestAdapterStatusError = error{
+    CallbackCancelled,
+    Unavailable,
+    Error,
+};
+
 pub const RequestAdapterStatus = enum(c_uint) {
     success = 1,
     callback_cancelled = 2,
     unavailable = 3,
     @"error" = 4,
+    pub fn toError(self: RequestAdapterStatus) RequestAdapterStatusError!void {
+        return switch (self) {
+            .success => return,
+            .callback_cancelled => return RequestAdapterStatusError.CallbackCancelled,
+            .unavailable => return RequestAdapterStatusError.Unavailable,
+            .@"error" => return RequestAdapterStatusError.Error,
+        };
+    }
+    pub fn fromError(err: RequestAdapterStatusError) RequestAdapterStatus {
+        return switch (err) {
+            RequestAdapterStatusError.CallbackCancelled => return .callback_cancelled,
+            RequestAdapterStatusError.Unavailable => return .unavailable,
+            RequestAdapterStatusError.Error => return .@"error",
+        };
+    }
 };
 
 pub const LoadOp = enum(c_uint) {
@@ -595,11 +769,32 @@ pub const LoadOp = enum(c_uint) {
     clear = 2,
 };
 
+pub const CreatePipelineAsyncStatusError = error{
+    CallbackCancelled,
+    ValidationError,
+    InternalError,
+};
+
 pub const CreatePipelineAsyncStatus = enum(c_uint) {
     success = 1,
     callback_cancelled = 2,
     validation_error = 3,
     internal_error = 4,
+    pub fn toError(self: CreatePipelineAsyncStatus) CreatePipelineAsyncStatusError!void {
+        return switch (self) {
+            .success => return,
+            .callback_cancelled => return CreatePipelineAsyncStatusError.CallbackCancelled,
+            .validation_error => return CreatePipelineAsyncStatusError.ValidationError,
+            .internal_error => return CreatePipelineAsyncStatusError.InternalError,
+        };
+    }
+    pub fn fromError(err: CreatePipelineAsyncStatusError) CreatePipelineAsyncStatus {
+        return switch (err) {
+            CreatePipelineAsyncStatusError.CallbackCancelled => return .callback_cancelled,
+            CreatePipelineAsyncStatusError.ValidationError => return .validation_error,
+            CreatePipelineAsyncStatusError.InternalError => return .internal_error,
+        };
+    }
 };
 
 pub const DxcMaxShaderModel = enum(c_uint) {
@@ -799,15 +994,22 @@ pub const InstanceFlag = packed struct(u64) {
 pub const StringView = extern struct {
     data: [*c]const u8 = null,
     length: usize = 0,
-
-    pub fn toSlice(sv: StringView) [:0]const u8 {
-        const ptr: [*]const u8 = @ptrCast(sv.data orelse return "");
-        return ptr[0..sv.length :0];
+pub fn toSlice(sv: StringView) ?[]const u8 {
+    const ptr: [*]const u8 = @ptrCast(sv.data orelse return null);
+    if (sv.length == std.math.maxInt(usize)) {
+        return std.mem.span(@as([*:0]const u8, @ptrCast(ptr)));
+    } else {
+        return ptr[0..sv.length];
     }
+}
 
-    pub fn fromSlice(slice: [:0]const u8) StringView {
-        return .{ .data = @ptrCast(slice.ptr), .length = slice.len };
-    }
+pub fn fromSlice(slice: []const u8) StringView {
+    return .{ .data = @ptrCast(slice.ptr), .length = slice.len };
+}
+
+pub fn fromZStr(slice: [:0]const u8) StringView {
+    return .{ .data = @ptrCast(slice.ptr), .length = std.math.maxInt(usize) };
+}
 };
 
 pub const ChainedStruct = extern struct {

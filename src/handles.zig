@@ -8,17 +8,17 @@ pub const Adapter = struct {
         return .{ .ptr = ptr };
     }
 
-    pub fn getInfo(self: Adapter) !types.AdapterInfo {
+    pub fn getInfo(self: Adapter) types.StatusError!types.AdapterInfo {
         var result: types.AdapterInfo = undefined;
         const status = c.wgpuAdapterGetInfo(@ptrCast(self.ptr), @ptrCast(&result));
-        if (status != 1) return error.Unexpected;
+        try @as(types.Status, @enumFromInt(status)).toError();
         return result;
     }
 
-    pub fn getLimits(self: Adapter) !types.Limits {
+    pub fn getLimits(self: Adapter) types.StatusError!types.Limits {
         var result: types.Limits = undefined;
         const status = c.wgpuAdapterGetLimits(@ptrCast(self.ptr), @ptrCast(&result));
-        if (status != 1) return error.Unexpected;
+        try @as(types.Status, @enumFromInt(status)).toError();
         return result;
     }
 
@@ -166,9 +166,9 @@ pub const Buffer = struct {
         c.wgpuBufferDestroy(@ptrCast(self.ptr));
     }
 
-    pub fn writeMappedRange(self: Buffer, offset: usize, data: ?*const anyopaque, size: usize) !void {
+    pub fn writeMappedRange(self: Buffer, offset: usize, data: ?*const anyopaque, size: usize) types.StatusError!void {
         const status = c.wgpuBufferWriteMappedRange(@ptrCast(self.ptr), offset, data, size);
-        if (status != 1) return error.Unexpected;
+        try @as(types.Status, @enumFromInt(status)).toError();
     }
 
     pub fn mapAsync(self: Buffer, mode: types.MapMode, offset: usize, size: usize, callbackInfo: types.BufferMapCallbackInfo) types.Future {
@@ -184,9 +184,9 @@ pub const Buffer = struct {
         return c.wgpuBufferGetConstMappedRange(@ptrCast(self.ptr), offset, size);
     }
 
-    pub fn readMappedRange(self: Buffer, offset: usize, data: ?*anyopaque, size: usize) !void {
+    pub fn readMappedRange(self: Buffer, offset: usize, data: ?*anyopaque, size: usize) types.StatusError!void {
         const status = c.wgpuBufferReadMappedRange(@ptrCast(self.ptr), offset, data, size);
-        if (status != 1) return error.Unexpected;
+        try @as(types.Status, @enumFromInt(status)).toError();
     }
 
     pub fn getUsage(self: Buffer) types.BufferUsage {
@@ -594,10 +594,10 @@ pub const Device = struct {
         return .{ .ptr = @ptrCast(result.?) };
     }
 
-    pub fn getAdapterInfo(self: Device) !types.AdapterInfo {
+    pub fn getAdapterInfo(self: Device) types.StatusError!types.AdapterInfo {
         var result: types.AdapterInfo = undefined;
         const status = c.wgpuDeviceGetAdapterInfo(@ptrCast(self.ptr), @ptrCast(&result));
-        if (status != 1) return error.Unexpected;
+        try @as(types.Status, @enumFromInt(status)).toError();
         return result;
     }
 
@@ -635,10 +635,10 @@ pub const Device = struct {
         return .{ .ptr = @ptrCast(result.?) };
     }
 
-    pub fn getLimits(self: Device) !types.Limits {
+    pub fn getLimits(self: Device) types.StatusError!types.Limits {
         var result: types.Limits = undefined;
         const status = c.wgpuDeviceGetLimits(@ptrCast(self.ptr), @ptrCast(&result));
-        if (status != 1) return error.Unexpected;
+        try @as(types.Status, @enumFromInt(status)).toError();
         return result;
     }
 
@@ -774,9 +774,11 @@ pub const Instance = struct {
         c.wgpuInstanceProcessEvents(@ptrCast(self.ptr));
     }
 
-    pub fn waitAny(self: Instance, futureCount: usize, futures: [*c]types.FutureWaitInfo, timeoutNS: u64) types.WaitStatus {
-        const result = c.wgpuInstanceWaitAny(@ptrCast(self.ptr), futureCount, @ptrCast(futures), timeoutNS);
-        return @bitCast(result);
+    pub fn waitAny(self: Instance, futureCount: usize, timeoutNS: u64) types.WaitStatusError!types.FutureWaitInfo {
+        var result: types.FutureWaitInfo = undefined;
+        const status = c.wgpuInstanceWaitAny(@ptrCast(self.ptr), futureCount, @ptrCast(&result), timeoutNS);
+        try @as(types.WaitStatus, @enumFromInt(status)).toError();
+        return result;
     }
 
 };
@@ -1413,19 +1415,19 @@ pub const Surface = struct {
         c.wgpuSurfaceConfigure(@ptrCast(self.ptr), @ptrCast(config));
     }
 
-    pub fn present(self: Surface) !void {
+    pub fn present(self: Surface) types.StatusError!void {
         const status = c.wgpuSurfacePresent(@ptrCast(self.ptr));
-        if (status != 1) return error.Unexpected;
+        try @as(types.Status, @enumFromInt(status)).toError();
     }
 
     pub fn unconfigure(self: Surface) void {
         c.wgpuSurfaceUnconfigure(@ptrCast(self.ptr));
     }
 
-    pub fn getCapabilities(self: Surface, adapter: Adapter) !types.SurfaceCapabilities {
+    pub fn getCapabilities(self: Surface, adapter: Adapter) types.StatusError!types.SurfaceCapabilities {
         var result: types.SurfaceCapabilities = undefined;
         const status = c.wgpuSurfaceGetCapabilities(@ptrCast(self.ptr), @ptrCast(adapter.ptr), @ptrCast(&result));
-        if (status != 1) return error.Unexpected;
+        try @as(types.Status, @enumFromInt(status)).toError();
         return result;
     }
 
@@ -1642,10 +1644,10 @@ pub fn supportedWGSLLanguageFeaturesFreeMembers(supportedWGSLLanguageFeatures: t
         c.wgpuSupportedWGSLLanguageFeaturesFreeMembers(@bitCast(supportedWGSLLanguageFeatures));
 }
 
-pub fn getInstanceLimits() !types.InstanceLimits {
+pub fn getInstanceLimits() types.StatusError!types.InstanceLimits {
         var result: types.InstanceLimits = undefined;
         const status = c.wgpuGetInstanceLimits(&result);
-        if (status != 1) return error.Unexpected;
+        try @as(types.Status, @enumFromInt(status)).toError();
         return result;
 }
 
@@ -1663,9 +1665,8 @@ pub fn hasInstanceFeature(feature: types.InstanceFeatureName) c_int {
 
 /// Wait for one or more futures to complete.
 /// Returns the number of completed futures, or an error on timeout.
-pub fn waitAny(instance: Instance, futures: []types.FutureWaitInfo, timeout_ns: u64) !usize {
+pub fn waitAny(instance: Instance, futures: []types.FutureWaitInfo, timeout_ns: u64) types.WaitStatusError!usize {
     const status = c.wgpuInstanceWaitAny(@ptrCast(instance.ptr), futures.len, @ptrCast(futures.ptr), timeout_ns);
-    if (status == c.WGPUWaitStatus_Success) return futures.len;
-    if (status == c.WGPUWaitStatus_TimedOut) return error.Timeout;
-    return error.Unexpected;
+    try @as(types.WaitStatus, @enumFromInt(status)).toError();
+    return futures.len;
 }

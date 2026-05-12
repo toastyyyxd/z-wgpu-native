@@ -100,11 +100,10 @@ pub fn writeHandlesAndFuncs(buf: *std.array_list.Managed(u8), mapping: *Mapping)
     try buf.appendSlice(
         \\/// Wait for one or more futures to complete.
         \\/// Returns the number of completed futures, or an error on timeout.
-        \\pub fn waitAny(instance: Instance, futures: []types.FutureWaitInfo, timeout_ns: u64) !usize {
+        \\pub fn waitAny(instance: Instance, futures: []types.FutureWaitInfo, timeout_ns: u64) types.WaitStatusError!usize {
         \\    const status = c.wgpuInstanceWaitAny(@ptrCast(instance.ptr), futures.len, @ptrCast(futures.ptr), timeout_ns);
-        \\    if (status == c.WGPUWaitStatus_Success) return futures.len;
-        \\    if (status == c.WGPUWaitStatus_TimedOut) return error.Timeout;
-        \\    return error.Unexpected;
+        \\    try @as(types.WaitStatus, @enumFromInt(status)).toError();
+        \\    return futures.len;
         \\}
         \\
     );
@@ -129,10 +128,21 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
         "void";
     const ret_type = Common.mapCTypeRef(ret_slice, &ret_buf, mapping, true);
     const returns_void = std.mem.eql(u8, ret_type, "void");
-    const returns_status = std.mem.eql(u8, ret_slice, "WGPUStatus");
+    const returns_status = std.mem.endsWith(u8, ret_slice, "Status");
     const is_handle_ret = fn_decl.return_kind == .handle;
 
-    // When WGPUStatus with out-param, return !OutType instead of !void
+    // Dynamically derive the correct Zig enum name strictly from the C type slice.
+    // e.g. "WGPUMapAsyncStatus" -> "types.MapAsyncStatus"
+    var status_types_buf: [256]u8 = undefined;
+    const status_type = if (returns_status) blk: {
+        const base_name = if (std.mem.startsWith(u8, ret_slice, "WGPU"))
+            ret_slice[4..]
+        else
+            ret_slice;
+        break :blk std.fmt.bufPrint(&status_types_buf, "types.{s}", .{base_name}) catch unreachable;
+    } else "";
+
+    // When returning a Status with out-param, return !OutType instead of !void
     var actual_ret_type: []const u8 = ret_type;
     var actual_ret_buf: [256]u8 = undefined;
     var out_param_idx: ?usize = null;
@@ -146,16 +156,17 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
             }
         }
     }
+
     if (out_param_idx) |opi| {
         const out_param = fn_decl.params.items[opi];
         const otype = mapping.ast.getNodeSource(out_param.type);
         var inner_buf: [256]u8 = undefined;
         const mapped_otype = Common.mapCTypeRef(Common.stripCPtrPrefix(otype), &inner_buf, mapping, true);
-        actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "!{s}", .{mapped_otype}) catch unreachable;
-    }
-
-    // When returning a handle, use the handle type name directly (defined in handles.zig)
-    if (is_handle_ret) {
+        actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "{s}Error!{s}", .{status_type, mapped_otype}) catch unreachable;
+    } else if (returns_status) {
+        actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "{s}Error!void", .{status_type}) catch unreachable;
+    } else if (is_handle_ret) {
+        // When returning a handle, use the handle type name directly (defined in handles.zig)
         actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "!{s}", .{Common.typeSliceToHandleName(ret_slice)}) catch unreachable;
     }
 
@@ -191,7 +202,7 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
 
     // Generate body
     if (out_param_idx) |opi| {
-        // Status return with out-param: allocate out struct, check status
+        // Status return with out-param: allocate out struct, map status to proper Error
         const out_param = fn_decl.params.items[opi];
         var ob: [256]u8 = undefined;
         const otype = mapping.ast.getNodeSource(out_param.type);
@@ -207,7 +218,7 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
             }
         }
         try buf.appendSlice(");\n");
-        try buf.appendSlice("        if (status != 1) return error.Unexpected;\n");
+        try buf.print("        try @as({s}, @enumFromInt(status)).toError();\n", .{status_type});
         try buf.appendSlice("        return result;\n");
     } else if (returns_status) {
         // Status return, no out param
@@ -217,7 +228,7 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
             try Common.writeParamExpr(buf, param, mapping);
         }
         try buf.appendSlice(");\n");
-        try buf.appendSlice("        if (status != 1) return error.Unexpected;\n");
+        try buf.print("        try @as({s}, @enumFromInt(status)).toError();\n", .{status_type});
     } else if (returns_void) {
         try buf.print("        c.{s}(@ptrCast(self.ptr)", .{fn_decl.name});
         for (fn_decl.params.items[1..]) |*param| {
@@ -268,10 +279,21 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
         "void";
     const ret_type = Common.mapCTypeRef(ret_slice, &ret_buf, mapping, true);
     const returns_void = std.mem.eql(u8, ret_type, "void");
-    const returns_status = std.mem.eql(u8, ret_slice, "WGPUStatus");
+    const returns_status = std.mem.endsWith(u8, ret_slice, "Status");
     const is_handle_ret = fn_decl.return_kind == .handle;
 
-    // When WGPUStatus with out-param, return !OutType instead of !void
+    // Dynamically derive the correct Zig enum name strictly from the C type slice.
+    // e.g. "WGPUMapAsyncStatus" -> "types.MapAsyncStatus"
+    var status_types_buf: [256]u8 = undefined;
+    const status_type = if (returns_status) blk: {
+        const base_name = if (std.mem.startsWith(u8, ret_slice, "WGPU"))
+            ret_slice[4..]
+        else
+            ret_slice;
+        break :blk std.fmt.bufPrint(&status_types_buf, "types.{s}", .{base_name}) catch unreachable;
+    } else "";
+
+    // When returning a Status with out-param, return !OutType instead of !void
     var actual_ret_type: []const u8 = ret_type;
     var actual_ret_buf: [256]u8 = undefined;
     var standalone_out_param_idx: ?usize = null;
@@ -285,16 +307,20 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
             }
         }
     }
+
     if (standalone_out_param_idx) |opi| {
         const first_param = fn_decl.params.items[opi];
         const otype = mapping.ast.getNodeSource(first_param.type);
         var inner_buf: [256]u8 = undefined;
         const mapped_otype_s = Common.mapCTypeRef(Common.stripCPtrPrefix(otype), &inner_buf, mapping, true);
-        actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "!{s}", .{mapped_otype_s}) catch unreachable;
-    }
 
-    // When returning a handle, use the handle type name directly (defined in same file)
-    if (is_handle_ret) {
+        var zot_buf: [256]u8 = undefined;
+        const zot = Common.mapCRefToTypesRef(mapped_otype_s, &zot_buf);
+        actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "{s}Error!{s}", .{status_type, zot}) catch unreachable;
+    } else if (returns_status) {
+        actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "{s}Error!void", .{status_type}) catch unreachable;
+    } else if (is_handle_ret) {
+        // When returning a handle, use the handle type name directly (defined in same file)
         actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "!{s}", .{Common.typeSliceToHandleName(ret_slice)}) catch unreachable;
     }
 
@@ -335,12 +361,16 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
             }
         }
         try buf.appendSlice(");\n");
-        try buf.appendSlice("        if (status != 1) return error.Unexpected;\n");
+        try buf.print("        try @as({s}, @enumFromInt(status)).toError();\n", .{status_type});
         try buf.appendSlice("        return result;\n");
     } else if (returns_status) {
-        try buf.print("        const status = c.{s}()", .{fn_decl.name});
-        try buf.appendSlice(";\n");
-        try buf.appendSlice("        if (status != 1) return error.Unexpected;\n");
+        try buf.print("        const status = c.{s}(", .{fn_decl.name});
+        for (fn_decl.params.items, 0..) |*param, i| {
+            if (i > 0) try buf.appendSlice(", ");
+            try Common.writeParamExpr(buf, param, mapping);
+        }
+        try buf.appendSlice(");\n");
+        try buf.print("        try @as({s}, @enumFromInt(status).toError();\n", .{status_type});
     } else if (returns_void) {
         try buf.print("        c.{s}(", .{fn_decl.name});
         for (fn_decl.params.items, 0..) |*param, i| {

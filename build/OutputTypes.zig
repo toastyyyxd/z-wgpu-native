@@ -19,16 +19,6 @@ fn writeEnums(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
         const zname = Common.zigEnumName(cname);
 
         var val_iter = decl.values.iterator();
-        // Skip enums with only Force32 sentinel (shouldn't happen, but safety)
-        var has_real: bool = false;
-        while (val_iter.next()) |val| {
-            const fd = val.value_ptr.*;
-            const init_slice = mapping.ast.getNodeSource(fd.init.unwrap().?);
-            if (!std.mem.eql(u8, init_slice, "2147483647")) has_real = true;
-        }
-        if (!has_real) continue;
-
-        try buf.print("pub const {s} = enum(c_uint) {{\n", .{zname});
 
         // Collect values for sorting
         var sorted_vals: std.ArrayListUnmanaged(struct { name: []const u8, value: i64 }) = .empty;
@@ -52,17 +42,64 @@ fn writeEnums(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
                 }
             }.lessThan,
         );
-
-        for (sorted_vals.items) |sv| {
-            var name_buf: [128]u8 = undefined;
-            const vname = Common.zigValueName(sv.name, &name_buf);
-            if (Common.isZigKeyword(vname)) {
-                try buf.print("    @\"{s}\" = {d},\n", .{ vname, sv.value });
-            } else {
-                try buf.print("    {s} = {d},\n", .{ vname, sv.value });
+        
+        const is_status = std.mem.endsWith(u8, cname, "Status");
+        var success_sv_i: ?usize = null; // It's most likely 1 tho
+        if (is_status) {
+            var v_one_sv_i: ?usize = null;
+            for (sorted_vals.items, 0..) |sv, i| {
+                if (sv.value == 1) v_one_sv_i = i;
+                if (std.ascii.indexOfIgnoreCase(sv.name, "success")) |_| {
+                    success_sv_i = i;
+                    break; // This is already sorted
+                }
             }
+            if (success_sv_i == null and v_one_sv_i != null) success_sv_i = v_one_sv_i.?;
+            // if there's somehow no v=1 and no "success" key, warn and put everything in
+            if (success_sv_i == null) std.log.warn("warning: codegen: no success or v=1 key in status enum '{s}'", .{ cname });
+            try buf.print("pub const {s}Error = error{{\n", .{zname});
+            for (sorted_vals.items, 0..) |sv, i| {
+                if (i == success_sv_i) continue;
+                var buf1: [128]u8 = undefined;
+                var buf2: [128]u8 = undefined;
+                const vname = try Common.escapeName(Common.upperFirst(sv.name, &buf1), &buf2);
+                try buf.print("    {s},\n", .{ vname });
+            }
+            try buf.appendSlice("};\n\n");
         }
 
+        try buf.print("pub const {s} = enum(c_uint) {{\n", .{zname});
+        for (sorted_vals.items) |sv| {
+            var buf1: [128]u8 = undefined;
+            var buf2: [128]u8 = undefined;
+            const vname = try Common.escapeName(Common.zigValueName(sv.name, &buf1), &buf2);
+            try buf.print("    {s} = {d},\n", .{ vname, sv.value });
+        }
+        if (is_status) {
+            try buf.print("    pub fn toError(self: {s}) {s}Error!void {{\n        return switch (self) {{\n", .{ zname, zname });
+            for (sorted_vals.items, 0..) |sv, i| {
+                var buf1: [128]u8 = undefined;
+                var buf2: [128]u8 = undefined;
+                var buf3: [128]u8 = undefined;
+                const vname = try Common.escapeName(Common.zigValueName(sv.name, &buf1), &buf2);
+                const ename = try Common.escapeName(Common.upperFirst(sv.name, &buf1), &buf3);
+                try buf.print("            .{s} => return", .{ vname });
+                if (i != success_sv_i) try buf.print(" {s}Error.{s}", .{ zname, ename });
+                try buf.appendSlice(",\n");
+            }
+            try buf.appendSlice("        };\n    }\n");
+            try buf.print("    pub fn fromError(err: {s}Error) {s} {{\n        return switch (err) {{\n", .{ zname, zname });
+            for (sorted_vals.items, 0..) |sv, i| {
+                if (i == success_sv_i) continue;
+                var buf1: [128]u8 = undefined;
+                var buf2: [128]u8 = undefined;
+                var buf3: [128]u8 = undefined;
+                const vname = try Common.escapeName(Common.zigValueName(sv.name, &buf1), &buf2);
+                const ename = try Common.escapeName(Common.upperFirst(sv.name, &buf1), &buf3);
+                try buf.print("            {s}Error.{s} => return .{s},\n", .{ zname, ename, vname });
+            }
+            try buf.appendSlice("        };\n    }\n");
+        }
         try buf.appendSlice("};\n\n");
     }
 }
@@ -249,15 +286,22 @@ fn writeStructs(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
         // Inject StringView helpers inside the struct body
         if (std.mem.eql(u8, zname, "StringView")) {
             try buf.appendSlice(
-                \\
-                \\    pub fn toSlice(sv: StringView) [:0]const u8 {
-                \\        const ptr: [*]const u8 = @ptrCast(sv.data orelse return "");
-                \\        return ptr[0..sv.length :0];
+                \\pub fn toSlice(sv: StringView) ?[]const u8 {
+                \\    const ptr: [*]const u8 = @ptrCast(sv.data orelse return null);
+                \\    if (sv.length == std.math.maxInt(usize)) {
+                \\        return std.mem.span(@as([*:0]const u8, @ptrCast(ptr)));
+                \\    } else {
+                \\        return ptr[0..sv.length];
                 \\    }
+                \\}
                 \\
-                \\    pub fn fromSlice(slice: [:0]const u8) StringView {
-                \\        return .{ .data = @ptrCast(slice.ptr), .length = slice.len };
-                \\    }
+                \\pub fn fromSlice(slice: []const u8) StringView {
+                \\    return .{ .data = @ptrCast(slice.ptr), .length = slice.len };
+                \\}
+                \\
+                \\pub fn fromZStr(slice: [:0]const u8) StringView {
+                \\    return .{ .data = @ptrCast(slice.ptr), .length = std.math.maxInt(usize) };
+                \\}
                 \\
             );
         }

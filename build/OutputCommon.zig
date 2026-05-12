@@ -52,6 +52,13 @@ pub fn snakeCase(input: []const u8, buf: []u8) []u8 {
     return buf[0..out_idx];
 }
 
+pub fn upperFirst(s: []const u8, buf: []u8) []u8 {
+    if (s.len == 0) return buf[0..0];
+    @memcpy(buf[0..s.len], s);
+    buf[0] = std.ascii.toUpper(buf[0]);
+    return buf[0..s.len];
+}
+
 pub fn zigStructName(name: []const u8) []const u8 {
     var n = name;
     if (std.mem.startsWith(u8, n, "struct_")) n = n["struct_".len..];
@@ -114,6 +121,12 @@ pub fn isZigKeyword(name: []const u8) bool {
         if (std.mem.eql(u8, name, kw)) return true;
     }
     return false;
+}
+
+pub fn escapeName(name: []const u8, buf: []u8) ![]u8 {
+    if (isZigKeyword(name)) return try std.fmt.bufPrint(buf, "@\"{s}\"", .{ name });
+    @memcpy(buf[0..name.len], name);
+    return buf[0..name.len];
 }
 
 pub fn parseIntValue(s: []const u8) ?u64 {

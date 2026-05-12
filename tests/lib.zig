@@ -9,7 +9,7 @@ test "NativeDisplayHandle zero-init" {
 test "StringView roundtrip" {
     const original = "hello wgpu";
     const sv = z.types.StringView.fromSlice(original);
-    const back = sv.toSlice();
+    const back = sv.toSlice().?;
     try std.testing.expect(std.mem.eql(u8, original, back));
 }
 
