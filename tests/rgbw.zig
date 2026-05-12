@@ -110,9 +110,9 @@ pub fn main(init: std.process.Init) !void {
     extras.chain.s_type = .instance_extras;
     extras.display_handle.type = .wayland;
     extras.display_handle.data.wayland.display = @ptrCast(wl_dpy);
-    const instance = try z.handles.createInstance(&z.types.InstanceDescriptor{
+    const instance = z.handles.createInstance(&z.types.InstanceDescriptor{
         .next_in_chain = @ptrCast(&extras.chain),
-    });
+    }) orelse unreachable;
 
     const wl_sfc = glfwGetWaylandWindow(window) orelse return error.NoWaylandSurface;
     var surface_source = z.types.SurfaceSourceWaylandSurface{
@@ -120,9 +120,9 @@ pub fn main(init: std.process.Init) !void {
         .display = @ptrCast(wl_dpy),
         .surface = @ptrCast(wl_sfc),
     };
-    const surface = try instance.createSurface(&z.types.SurfaceDescriptor{
+    const surface = instance.createSurface(&z.types.SurfaceDescriptor{
         .next_in_chain = @ptrCast(&surface_source.chain),
-    });
+    }) orelse unreachable;
     defer surface.unconfigure();
 
     var adapter: z.handles.Adapter = undefined;
@@ -131,13 +131,13 @@ pub fn main(init: std.process.Init) !void {
     var dev_ctx = DeviceCtx{};
     var dev_ctx2: u8 = 0;
     _ = adapter.requestDevice(null, z.callbacks.requestDeviceCallback(DeviceCtx, u8, &dev_ctx, &dev_ctx2, struct {
-        fn cb(ctx: *DeviceCtx, _: *u8, s: z.types.RequestDeviceStatus, d: z.handles.Device, _: []const u8) void {
+        fn cb(ctx: *DeviceCtx, _: *u8, s: z.types.RequestDeviceStatus, d: ?z.handles.Device, _: []const u8) void {
             ctx.status = s;
             ctx.device = d;
         }
     }.cb));
     const device = dev_ctx.device orelse return error.NoDevice;
-    const queue = try device.getQueue();
+    const queue = device.getQueue() orelse unreachable;
 
     const caps = try surface.getCapabilities(adapter);
     defer z.handles.surfaceCapabilitiesFreeMembers(caps);
@@ -159,20 +159,20 @@ pub fn main(init: std.process.Init) !void {
         .chain = .{ .s_type = .shader_source_wgsl },
         .code = z.types.StringView.fromSlice(shader_wgsl),
     };
-    const shader_module = try device.createShaderModule(&z.types.ShaderModuleDescriptor{
+    const shader_module = device.createShaderModule(&z.types.ShaderModuleDescriptor{
         .next_in_chain = &shader_source.chain,
-    });
+    }) orelse unreachable;
 
-    const uniform_buf_cube = try device.createBuffer(&std.mem.zeroInit(z.types.BufferDescriptor, .{
+    const uniform_buf_cube = device.createBuffer(&std.mem.zeroInit(z.types.BufferDescriptor, .{
         .usage = .{ .uniform = true, .copy_dst = true },
         .size = @sizeOf(Uniforms),
-    }));
-    const uniform_buf_pyr = try device.createBuffer(&std.mem.zeroInit(z.types.BufferDescriptor, .{
+    })) orelse unreachable;
+    const uniform_buf_pyr = device.createBuffer(&std.mem.zeroInit(z.types.BufferDescriptor, .{
         .usage = .{ .uniform = true, .copy_dst = true },
         .size = @sizeOf(Uniforms),
-    }));
+    })) orelse unreachable;
 
-    const bind_group_layout = try device.createBindGroupLayout(&z.types.BindGroupLayoutDescriptor{
+    const bind_group_layout = device.createBindGroupLayout(&z.types.BindGroupLayoutDescriptor{
         .entry_count = 1,
         .entries = @ptrCast(&[1]z.types.BindGroupLayoutEntry{
             .{
@@ -184,29 +184,29 @@ pub fn main(init: std.process.Init) !void {
                 .storage_texture = .{ .access = .binding_not_used },
             },
         }),
-    });
+    }) orelse unreachable;
 
-    const bind_group_cube = try device.createBindGroup(&z.types.BindGroupDescriptor{
+    const bind_group_cube = device.createBindGroup(&z.types.BindGroupDescriptor{
         .layout = z.handles.OptionalBindGroupLayout.wrap(bind_group_layout),
         .entry_count = 1,
         .entries = @ptrCast(&[1]z.types.BindGroupEntry{
             .{ .binding = 0, .buffer = z.handles.OptionalBuffer.wrap(uniform_buf_cube), .offset = 0, .size = @sizeOf(Uniforms) },
         }),
-    });
-    const bind_group_pyr = try device.createBindGroup(&z.types.BindGroupDescriptor{
+    }) orelse unreachable;
+    const bind_group_pyr = device.createBindGroup(&z.types.BindGroupDescriptor{
         .layout = z.handles.OptionalBindGroupLayout.wrap(bind_group_layout),
         .entry_count = 1,
         .entries = @ptrCast(&[1]z.types.BindGroupEntry{
             .{ .binding = 0, .buffer = z.handles.OptionalBuffer.wrap(uniform_buf_pyr), .offset = 0, .size = @sizeOf(Uniforms) },
         }),
-    });
+    }) orelse unreachable;
 
-    const pipeline_layout = try device.createPipelineLayout(&z.types.PipelineLayoutDescriptor{
+    const pipeline_layout = device.createPipelineLayout(&z.types.PipelineLayoutDescriptor{
         .bind_group_layout_count = 1,
         .bind_group_layouts = @ptrCast(&bind_group_layout),
-    });
+    }) orelse unreachable;
 
-    const render_pipeline = try device.createRenderPipeline(&z.types.RenderPipelineDescriptor{
+    const render_pipeline = device.createRenderPipeline(&z.types.RenderPipelineDescriptor{
         .layout = z.handles.OptionalPipelineLayout.wrap(pipeline_layout),
         .vertex = .{
             .module = z.handles.OptionalShaderModule.wrap(shader_module),
@@ -239,17 +239,17 @@ pub fn main(init: std.process.Init) !void {
             .stencil_front = .{},
             .stencil_back = .{},
         },
-    });
+    }) orelse unreachable;
 
-    const depth_tex = try device.createTexture(&z.types.TextureDescriptor{
+    const depth_tex = device.createTexture(&z.types.TextureDescriptor{
         .usage = .{ .render_attachment = true },
         .dimension = ._2d,
         .size = .{ .width = 640, .height = 480, .depth_or_array_layers = 1 },
         .format = .depth24_plus,
         .mip_level_count = 1,
         .sample_count = 1,
-    });
-    const depth_view = try depth_tex.createView(null);
+    }) orelse unreachable;
+    const depth_view = depth_tex.createView(null) orelse unreachable;
 
     const cube_verts = [_]Vertex{
         .{ .pos = .{ -0.5, -0.5, 0.5 }, .col = .{ 1, 0, 0 } },
@@ -301,26 +301,26 @@ pub fn main(init: std.process.Init) !void {
         0, 3, 2, 2, 1, 0,
     };
 
-    const cube_vb = try device.createBuffer(&std.mem.zeroInit(z.types.BufferDescriptor, .{
+    const cube_vb = device.createBuffer(&std.mem.zeroInit(z.types.BufferDescriptor, .{
         .usage = .{ .vertex = true, .copy_dst = true },
         .size = @sizeOf(@TypeOf(cube_verts)),
-    }));
+    })) orelse unreachable;
     queue.writeBuffer(cube_vb, 0, @ptrCast(&cube_verts), @sizeOf(@TypeOf(cube_verts)));
-    const cube_ib = try device.createBuffer(&std.mem.zeroInit(z.types.BufferDescriptor, .{
+    const cube_ib = device.createBuffer(&std.mem.zeroInit(z.types.BufferDescriptor, .{
         .usage = .{ .index = true, .copy_dst = true },
         .size = @sizeOf(@TypeOf(cube_indices)),
-    }));
+    })) orelse unreachable;
     queue.writeBuffer(cube_ib, 0, @ptrCast(&cube_indices), @sizeOf(@TypeOf(cube_indices)));
 
-    const pyramid_vb = try device.createBuffer(&std.mem.zeroInit(z.types.BufferDescriptor, .{
+    const pyramid_vb = device.createBuffer(&std.mem.zeroInit(z.types.BufferDescriptor, .{
         .usage = .{ .vertex = true, .copy_dst = true },
         .size = @sizeOf(@TypeOf(pyramid_verts)),
-    }));
+    })) orelse unreachable;
     queue.writeBuffer(pyramid_vb, 0, @ptrCast(&pyramid_verts), @sizeOf(@TypeOf(pyramid_verts)));
-    const pyramid_ib = try device.createBuffer(&std.mem.zeroInit(z.types.BufferDescriptor, .{
+    const pyramid_ib = device.createBuffer(&std.mem.zeroInit(z.types.BufferDescriptor, .{
         .usage = .{ .index = true, .copy_dst = true },
         .size = @sizeOf(@TypeOf(pyramid_indices)),
-    }));
+    })) orelse unreachable;
     queue.writeBuffer(pyramid_ib, 0, @ptrCast(&pyramid_indices), @sizeOf(@TypeOf(pyramid_indices)));
 
     const view_matrix = mat4Translation(0, 0, -4);
@@ -345,11 +345,11 @@ pub fn main(init: std.process.Init) !void {
         surface.getCurrentTexture(&surface_tex);
         if (surface_tex.status != .success_optimal) continue;
 
-        const tex_view = try surface_tex.texture.unwrap().createView(null);
+        const tex_view = surface_tex.texture.unwrap().createView(null) orelse unreachable;
 
-        const command_encoder = try device.createCommandEncoder(null);
+        const command_encoder = device.createCommandEncoder(null) orelse unreachable;
         const clear_color = z.types.Color{ .r = 0.05, .g = 0.05, .b = 0.1, .a = 1.0 };
-        const render_pass = try command_encoder.beginRenderPass(&z.types.RenderPassDescriptor{
+        const render_pass = command_encoder.beginRenderPass(&z.types.RenderPassDescriptor{
             .color_attachment_count = 1,
             .color_attachments = @ptrCast(&[1]z.types.RenderPassColorAttachment{.{ .view = z.handles.OptionalTextureView.wrap(tex_view), .depth_slice = 0xFFFFFFFF, .load_op = .clear, .store_op = .store, .clear_value = clear_color }}),
             .depth_stencil_attachment = @ptrCast(&z.types.RenderPassDepthStencilAttachment{
@@ -358,7 +358,7 @@ pub fn main(init: std.process.Init) !void {
                 .depth_store_op = .store,
                 .depth_clear_value = 1.0,
             }),
-        });
+        }) orelse unreachable;
         render_pass.setPipeline(render_pipeline);
 
         // Draw cube (left side, spinning on Y in place)
@@ -386,7 +386,7 @@ pub fn main(init: std.process.Init) !void {
         }
 
         render_pass.end();
-        const command_buffer = try command_encoder.finish(null);
+        const command_buffer = command_encoder.finish(null) orelse unreachable;
         queue.submit(1, &command_buffer);
         _ = try surface.present();
     }

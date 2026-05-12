@@ -7,6 +7,7 @@ pub fn writeTypes(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
     try writeEnums(buf, mapping);
     try writeFlags(buf, mapping);
     try writeStructs(buf, mapping);
+    try writeTypedefs(buf, mapping);
 }
 
 fn writeEnums(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
@@ -327,6 +328,16 @@ fn writeStructs(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
                 \\
             );
         }
+    }
+}
+
+fn writeTypedefs(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
+    var iter = mapping.typedef_decls.iterator();
+    while (iter.next()) |entry| {
+        const cname = entry.key_ptr.*;
+        const decl = entry.value_ptr.*;
+        const zname = Common.stripWgpu(cname);
+        try buf.print("pub const {s} = {s};\n\n", .{ zname, decl.c_type });
     }
 }
 

@@ -3,13 +3,13 @@ const c = @import("c_wgpu_native");
 const types = @import("types.zig");
 const handles = @import("handles.zig");
 
-pub fn uncapturedErrorCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, ?*const handles.Device, types.ErrorType, []const u8) void,
+pub fn uncapturedErrorCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, ?handles.Device, types.ErrorType, []const u8) void,
 ) types.UncapturedErrorCallbackInfo {
     const Trampoline = struct {
-        fn call(device: ?*const c.WGPUDevice, @"type": c.WGPUErrorType, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
+        fn call(device: [*c]const c.WGPUDevice, @"type": c.WGPUErrorType, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
             const c1: *C1 = @ptrCast(@alignCast(userdata1));
             const c2: *C2 = @ptrCast(@alignCast(userdata2));
-            cb(c1, c2, device, @enumFromInt(@"type"), if (message.data) |d| d[0..message.length] else "");
+            cb(c1, c2, if (device) |p| if (p.*) |h| handles.Device.fromPtr(@ptrCast(h)) else null else null, @enumFromInt(@"type"), if (message.data) |d| d[0..message.length] else "");
         }
     };
 
@@ -20,13 +20,13 @@ pub fn uncapturedErrorCallback(comptime C1: type, comptime C2: type, ctx1: *C1, 
     };
 }
 
-pub fn requestDeviceCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.RequestDeviceStatus, handles.Device, []const u8) void,
+pub fn requestDeviceCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.RequestDeviceStatus, ?handles.Device, []const u8) void,
 ) types.RequestDeviceCallbackInfo {
     const Trampoline = struct {
         fn call(status: c.WGPURequestDeviceStatus, device: c.WGPUDevice, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
             const c1: *C1 = @ptrCast(@alignCast(userdata1));
             const c2: *C2 = @ptrCast(@alignCast(userdata2));
-            cb(c1, c2, @enumFromInt(status), handles.Device.fromPtr(@ptrCast(device)), if (message.data) |d| d[0..message.length] else "");
+            cb(c1, c2, @enumFromInt(status), if (device) |h| handles.Device.fromPtr(@ptrCast(h)) else null, if (message.data) |d| d[0..message.length] else "");
         }
     };
 
@@ -54,13 +54,13 @@ pub fn queueWorkDoneCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ct
     };
 }
 
-pub fn deviceLostCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, ?*const handles.Device, types.DeviceLostReason, []const u8) void,
+pub fn deviceLostCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, ?handles.Device, types.DeviceLostReason, []const u8) void,
 ) types.DeviceLostCallbackInfo {
     const Trampoline = struct {
-        fn call(device: ?*const c.WGPUDevice, reason: c.WGPUDeviceLostReason, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
+        fn call(device: [*c]const c.WGPUDevice, reason: c.WGPUDeviceLostReason, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
             const c1: *C1 = @ptrCast(@alignCast(userdata1));
             const c2: *C2 = @ptrCast(@alignCast(userdata2));
-            cb(c1, c2, device, @enumFromInt(reason), if (message.data) |d| d[0..message.length] else "");
+            cb(c1, c2, if (device) |p| if (p.*) |h| handles.Device.fromPtr(@ptrCast(h)) else null else null, @enumFromInt(reason), if (message.data) |d| d[0..message.length] else "");
         }
     };
 
@@ -88,13 +88,13 @@ pub fn compilationInfoCallback(comptime C1: type, comptime C2: type, ctx1: *C1, 
     };
 }
 
-pub fn createRenderPipelineAsyncCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.CreatePipelineAsyncStatus, handles.RenderPipeline, []const u8) void,
+pub fn createRenderPipelineAsyncCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.CreatePipelineAsyncStatus, ?handles.RenderPipeline, []const u8) void,
 ) types.CreateRenderPipelineAsyncCallbackInfo {
     const Trampoline = struct {
         fn call(status: c.WGPUCreatePipelineAsyncStatus, pipeline: c.WGPURenderPipeline, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
             const c1: *C1 = @ptrCast(@alignCast(userdata1));
             const c2: *C2 = @ptrCast(@alignCast(userdata2));
-            cb(c1, c2, @enumFromInt(status), handles.RenderPipeline.fromPtr(@ptrCast(pipeline)), if (message.data) |d| d[0..message.length] else "");
+            cb(c1, c2, @enumFromInt(status), if (pipeline) |h| handles.RenderPipeline.fromPtr(@ptrCast(h)) else null, if (message.data) |d| d[0..message.length] else "");
         }
     };
 
@@ -105,13 +105,13 @@ pub fn createRenderPipelineAsyncCallback(comptime C1: type, comptime C2: type, c
     };
 }
 
-pub fn requestAdapterCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.RequestAdapterStatus, handles.Adapter, []const u8) void,
+pub fn requestAdapterCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.RequestAdapterStatus, ?handles.Adapter, []const u8) void,
 ) types.RequestAdapterCallbackInfo {
     const Trampoline = struct {
         fn call(status: c.WGPURequestAdapterStatus, adapter: c.WGPUAdapter, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
             const c1: *C1 = @ptrCast(@alignCast(userdata1));
             const c2: *C2 = @ptrCast(@alignCast(userdata2));
-            cb(c1, c2, @enumFromInt(status), handles.Adapter.fromPtr(@ptrCast(adapter)), if (message.data) |d| d[0..message.length] else "");
+            cb(c1, c2, @enumFromInt(status), if (adapter) |h| handles.Adapter.fromPtr(@ptrCast(h)) else null, if (message.data) |d| d[0..message.length] else "");
         }
     };
 
@@ -139,13 +139,13 @@ pub fn bufferMapCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: 
     };
 }
 
-pub fn createComputePipelineAsyncCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.CreatePipelineAsyncStatus, handles.ComputePipeline, []const u8) void,
+pub fn createComputePipelineAsyncCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.CreatePipelineAsyncStatus, ?handles.ComputePipeline, []const u8) void,
 ) types.CreateComputePipelineAsyncCallbackInfo {
     const Trampoline = struct {
         fn call(status: c.WGPUCreatePipelineAsyncStatus, pipeline: c.WGPUComputePipeline, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
             const c1: *C1 = @ptrCast(@alignCast(userdata1));
             const c2: *C2 = @ptrCast(@alignCast(userdata2));
-            cb(c1, c2, @enumFromInt(status), handles.ComputePipeline.fromPtr(@ptrCast(pipeline)), if (message.data) |d| d[0..message.length] else "");
+            cb(c1, c2, @enumFromInt(status), if (pipeline) |h| handles.ComputePipeline.fromPtr(@ptrCast(h)) else null, if (message.data) |d| d[0..message.length] else "");
         }
     };
 

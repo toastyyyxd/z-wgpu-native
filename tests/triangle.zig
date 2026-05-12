@@ -48,9 +48,9 @@ pub fn main(init: std.process.Init) !void {
     extras.chain.s_type = .instance_extras;
     extras.display_handle.type = .wayland;
     extras.display_handle.data.wayland.display = @ptrCast(wl_dpy);
-    const instance = try z.handles.createInstance(&z.types.InstanceDescriptor{
+    const instance = z.handles.createInstance(&z.types.InstanceDescriptor{
         .next_in_chain = @ptrCast(&extras.chain),
-    });
+    }) orelse unreachable;
 
     try w.print("creating surface...\n", .{});
     const wl_sfc = glfwGetWaylandWindow(window) orelse return error.NoWaylandSurface;
@@ -59,9 +59,9 @@ pub fn main(init: std.process.Init) !void {
         .display = @ptrCast(wl_dpy),
         .surface = @ptrCast(wl_sfc),
     };
-    const surface = try instance.createSurface(&z.types.SurfaceDescriptor{
+    const surface = instance.createSurface(&z.types.SurfaceDescriptor{
         .next_in_chain = @ptrCast(&surface_source.chain),
-    });
+    }) orelse unreachable;
     defer surface.unconfigure();
 
     try w.print("enumerating adapter...\n", .{});
@@ -76,14 +76,14 @@ pub fn main(init: std.process.Init) !void {
     _ = adapter.requestDevice(null, z.callbacks.requestDeviceCallback(
         DeviceCtx, u8, &dev_ctx, &dev_ctx2,
         struct {
-            fn cb(ctx: *DeviceCtx, _: *u8, s: z.types.RequestDeviceStatus, d: z.handles.Device, _: []const u8) void {
+            fn cb(ctx: *DeviceCtx, _: *u8, s: z.types.RequestDeviceStatus, d: ?z.handles.Device, _: []const u8) void {
                 ctx.status = s;
                 ctx.device = d;
             }
         }.cb,
     ));
     const device = dev_ctx.device orelse return error.NoDevice;
-    const queue = try device.getQueue();
+    const queue = device.getQueue() orelse unreachable;
 
     try w.print("querying surface capabilities...\n", .{});
 
@@ -112,13 +112,13 @@ pub fn main(init: std.process.Init) !void {
         .chain = .{ .s_type = .shader_source_wgsl },
         .code = z.types.StringView.fromSlice(shader_wgsl),
     };
-    const shader_module = try device.createShaderModule(&z.types.ShaderModuleDescriptor{
+    const shader_module = device.createShaderModule(&z.types.ShaderModuleDescriptor{
         .next_in_chain = &shader_source.chain,
-    });
+    }) orelse unreachable;
 
-    const pipeline_layout = try device.createPipelineLayout(&z.types.PipelineLayoutDescriptor{});
+    const pipeline_layout = device.createPipelineLayout(&z.types.PipelineLayoutDescriptor{}) orelse unreachable;
 
-    const render_pipeline = try device.createRenderPipeline(&z.types.RenderPipelineDescriptor{
+    const render_pipeline = device.createRenderPipeline(&z.types.RenderPipelineDescriptor{
         .layout = z.handles.OptionalPipelineLayout.wrap(pipeline_layout),
         .vertex = .{
             .module = z.handles.OptionalShaderModule.wrap(shader_module),
@@ -137,7 +137,7 @@ pub fn main(init: std.process.Init) !void {
             .target_count = 1,
             .targets = @ptrCast(&[1]z.types.ColorTargetState{.{ .format = caps.formats[0], .write_mask = z.types.ColorWriteMask_all }}),
         },
-    });
+    }) orelse unreachable;
 
     try w.print("rendering...\n", .{});
 
@@ -151,19 +151,19 @@ pub fn main(init: std.process.Init) !void {
         surface.getCurrentTexture(&surface_tex);
         if (surface_tex.status != .success_optimal) continue;
 
-        const tex_view = try surface_tex.texture.unwrap().createView(null);
+        const tex_view = surface_tex.texture.unwrap().createView(null) orelse unreachable;
 
         const clear_color = z.types.Color{ .r = 0.0, .g = 0.0, .b = 0.0, .a = 1.0 };
-        const command_encoder = try device.createCommandEncoder(null);
-        const render_pass = try command_encoder.beginRenderPass(&z.types.RenderPassDescriptor{
+        const command_encoder = device.createCommandEncoder(null) orelse unreachable;
+        const render_pass = command_encoder.beginRenderPass(&z.types.RenderPassDescriptor{
             .color_attachment_count = 1,
             .color_attachments = @ptrCast(&[1]z.types.RenderPassColorAttachment{.{ .view = z.handles.OptionalTextureView.wrap(tex_view), .depth_slice = 0xFFFFFFFF, .load_op = .clear, .store_op = .store, .clear_value = clear_color }}),
-        });
+        }) orelse unreachable;
         render_pass.setPipeline(render_pipeline);
         render_pass.draw(3, 1, 0, 0);
         render_pass.end();
 
-        const command_buffer = try command_encoder.finish(null);
+        const command_buffer = command_encoder.finish(null) orelse unreachable;
         queue.submit(1, &command_buffer);
         _ = try surface.present();
     }

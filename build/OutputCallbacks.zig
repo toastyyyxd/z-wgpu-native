@@ -125,7 +125,7 @@ fn mapCallbackZigType(ctype: []const u8, buf: []u8, mapping: *Mapping) []const u
         return std.fmt.bufPrint(buf, "types.{s}", .{Common.stripWgpu(ctype)}) catch unreachable;
     }
     if (std.mem.startsWith(u8, ctype, "WGPU") and Common.isHandleLikeType(ctype, mapping)) {
-        return std.fmt.bufPrint(buf, "handles.{s}", .{Common.zigHandleName(ctype)}) catch unreachable;
+        return std.fmt.bufPrint(buf, "?handles.{s}", .{Common.zigHandleName(ctype)}) catch unreachable;
     }
     if (std.mem.startsWith(u8, ctype, "WGPU") and mapping.struct_decls.contains(ctype)) {
         return std.fmt.bufPrint(buf, "types.{s}", .{Common.zigStructName(ctype)}) catch unreachable;
@@ -140,12 +140,18 @@ fn mapCallbackZigType(ctype: []const u8, buf: []u8, mapping: *Mapping) []const u
         const inner = ctype["[*c]const ".len..];
         var inner_buf: [128]u8 = undefined;
         const zig_inner = mapCallbackZigType(inner, &inner_buf, mapping);
+        if (Common.isHandleLikeType(inner, mapping)) {
+            return std.fmt.bufPrint(buf, "{s}", .{zig_inner}) catch unreachable;
+        }
         return std.fmt.bufPrint(buf, "?*const {s}", .{zig_inner}) catch unreachable;
     }
     if (std.mem.startsWith(u8, ctype, "[*c]")) {
         const inner = ctype["[*c]".len..];
         var inner_buf: [128]u8 = undefined;
         const zig_inner = mapCallbackZigType(inner, &inner_buf, mapping);
+        if (Common.isHandleLikeType(inner, mapping)) {
+            return std.fmt.bufPrint(buf, "{s}", .{zig_inner}) catch unreachable;
+        }
         return std.fmt.bufPrint(buf, "?*const {s}", .{zig_inner}) catch unreachable;
     }
     return ctype;
@@ -155,12 +161,21 @@ fn mapCbExpr(param: *Mapping.CallbackParam, buf: []u8, mapping: *Mapping) []cons
     if (std.mem.eql(u8, param.type, "WGPUStringView")) {
         return std.fmt.bufPrint(buf, "if ({s}.data) |d| d[0..{s}.length] else \"\"", .{ param.name, param.name }) catch unreachable;
     }
+    // [*c]const-wrapped handle: outer pointer and inner handle may both be null
+    if (std.mem.startsWith(u8, param.type, "[*c]const ") or std.mem.startsWith(u8, param.type, "[*c]")) {
+        const prefix_end = if (std.mem.startsWith(u8, param.type, "[*c]const ")) "[*c]const ".len else "[*c]".len;
+        const inner = param.type[prefix_end..];
+        if (std.mem.startsWith(u8, inner, "WGPU") and Common.isHandleLikeType(inner, mapping)) {
+            const hname = Common.zigHandleName(inner);
+            return std.fmt.bufPrint(buf, "if ({s}) |p| if (p.*) |h| handles.{s}.fromPtr(@ptrCast(h)) else null else null", .{ param.name, hname }) catch unreachable;
+        }
+    }
     if (std.mem.startsWith(u8, param.type, "WGPU") and (mapping.enum_decls.contains(param.type) or mapping.flag_decls.contains(param.type))) {
         return std.fmt.bufPrint(buf, "@enumFromInt({s})", .{param.name}) catch unreachable;
     }
     if (std.mem.startsWith(u8, param.type, "WGPU") and Common.isHandleLikeType(param.type, mapping)) {
         const hname = Common.zigHandleName(param.type);
-        return std.fmt.bufPrint(buf, "handles.{s}.fromPtr(@ptrCast({s}))", .{ hname, param.name }) catch unreachable;
+        return std.fmt.bufPrint(buf, "if ({s}) |h| handles.{s}.fromPtr(@ptrCast(h)) else null", .{ param.name, hname }) catch unreachable;
     }
     return param.name;
 }

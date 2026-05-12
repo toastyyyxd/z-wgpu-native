@@ -19,7 +19,7 @@ pub fn main(init: std.process.Init) !void {
 
     try w.print("creating instance...\n", .{});
 
-    const instance = try z.handles.createInstance(null);
+    const instance = z.handles.createInstance(null) orelse unreachable;
     var adapter: z.handles.Adapter = undefined;
     const adapter_count = instance.enumerateAdapters(null, &adapter);
     if (adapter_count == 0) {
@@ -37,17 +37,17 @@ pub fn main(init: std.process.Init) !void {
         &dev_ctx,
         &dev_ctx2,
         struct {
-            fn cb(ctx: *DeviceCtx, _: *u8, s: z.types.RequestDeviceStatus, d: z.handles.Device, _: []const u8) void {
+            fn cb(ctx: *DeviceCtx, _: *u8, s: z.types.RequestDeviceStatus, d: ?z.handles.Device, _: []const u8) void {
                 ctx.status = s;
                 ctx.device = d;
             }
         }.cb,
     ));
     var dev_waits = [_]z.types.FutureWaitInfo{.{ .future = dev_future, .completed = 0 }};
-    _ = try z.handles.waitAny(instance, @ptrCast(&dev_waits), 5_000_000_000);
+    _ = try instance.waitAny(dev_waits.len, @ptrCast(&dev_waits), 5_000_000_000);
 
     const device = dev_ctx.device.?;
-    const queue = try device.getQueue();
+    const queue = device.getQueue() orelse unreachable;
 
     try w.print("loading shader...\n", .{});
 
@@ -56,38 +56,38 @@ pub fn main(init: std.process.Init) !void {
         .chain = .{ .s_type = .shader_source_wgsl },
         .code = z.types.StringView.fromSlice(shader_wgsl),
     };
-    const shader_module = try device.createShaderModule(&z.types.ShaderModuleDescriptor{
+    const shader_module = device.createShaderModule(&z.types.ShaderModuleDescriptor{
         .next_in_chain = &shader_source.chain,
-    });
+    }) orelse unreachable;
 
     try w.print("creating buffers...\n", .{});
 
     const numbers = [_]u32{ 1, 2, 3, 4 };
     const numbers_size = @as(u64, @sizeOf(@TypeOf(numbers)));
 
-    const staging_buffer = try device.createBuffer(&z.types.BufferDescriptor{
+    const staging_buffer = device.createBuffer(&z.types.BufferDescriptor{
         .usage = .{ .map_read = true, .copy_dst = true },
         .size = numbers_size,
         .mapped_at_creation = 0,
-    });
+    }) orelse unreachable;
 
-    const storage_buffer = try device.createBuffer(&z.types.BufferDescriptor{
+    const storage_buffer = device.createBuffer(&z.types.BufferDescriptor{
         .usage = .{ .storage = true, .copy_dst = true, .copy_src = true },
         .size = numbers_size,
         .mapped_at_creation = 0,
-    });
+    }) orelse unreachable;
 
     try w.print("creating compute pipeline...\n", .{});
 
-    const compute_pipeline = try device.createComputePipeline(&z.types.ComputePipelineDescriptor{
+    const compute_pipeline = device.createComputePipeline(&z.types.ComputePipelineDescriptor{
         .compute = .{
             .module = z.handles.OptionalShaderModule.wrap(shader_module),
             .entry_point = z.types.StringView.fromSlice("main"),
         },
-    });
+    }) orelse unreachable;
 
-    const bind_group_layout = try compute_pipeline.getBindGroupLayout(0);
-    const bind_group = try device.createBindGroup(&z.types.BindGroupDescriptor{
+    const bind_group_layout = compute_pipeline.getBindGroupLayout(0) orelse unreachable;
+    const bind_group = device.createBindGroup(&z.types.BindGroupDescriptor{
         .layout = z.handles.OptionalBindGroupLayout.wrap(bind_group_layout),
         .entry_count = 1,
         .entries = @ptrCast(&z.types.BindGroupEntry{
@@ -96,21 +96,21 @@ pub fn main(init: std.process.Init) !void {
             .offset = 0,
             .size = numbers_size,
         }),
-    });
+    }) orelse unreachable;
 
     try w.print("executing compute...\n", .{});
 
     queue.writeBuffer(storage_buffer, 0, @ptrCast(&numbers), numbers_size);
 
-    const command_encoder = try device.createCommandEncoder(null);
-    const compute_pass = try command_encoder.beginComputePass(null);
+    const command_encoder = device.createCommandEncoder(null) orelse unreachable;
+    const compute_pass = command_encoder.beginComputePass(null) orelse unreachable;
     compute_pass.setPipeline(compute_pipeline);
     compute_pass.setBindGroup(0, bind_group, 0, null);
     compute_pass.dispatchWorkgroups(@as(u32, @intCast(numbers.len)), 1, 1);
     compute_pass.end();
 
     command_encoder.copyBufferToBuffer(storage_buffer, 0, staging_buffer, 0, numbers_size);
-    const command_buffer = try command_encoder.finish(null);
+    const command_buffer = command_encoder.finish(null) orelse unreachable;
     queue.submit(1, &command_buffer);
 
     try w.print("reading back results...\n", .{});
@@ -130,7 +130,7 @@ pub fn main(init: std.process.Init) !void {
         }.cb,
     ));
     var map_waits = [_]z.types.FutureWaitInfo{.{ .future = map_future, .completed = 0 }};
-    _ = try z.handles.waitAny(instance, @ptrCast(&map_waits), 5_000_000_000);
+    _ = try instance.waitAny(map_waits.len, @ptrCast(&map_waits), 5_000_000_000);
 
     const mapped = staging_buffer.getMappedRange(0, numbers_size) orelse return error.MapFailed;
     const result: []const u32 = @as([*]const u32, @alignCast(@ptrCast(mapped)))[0..numbers.len];

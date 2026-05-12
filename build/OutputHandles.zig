@@ -96,17 +96,6 @@ pub fn writeHandlesAndFuncs(buf: *std.array_list.Managed(u8), mapping: *Mapping)
         try writeStandaloneFunc(buf, mapping, fn_decl);
     }
 
-    // Future/waitAny helper
-    try buf.appendSlice(
-        \\/// Wait for one or more futures to complete.
-        \\/// Returns the number of completed futures, or an error on timeout.
-        \\pub fn waitAny(instance: Instance, futures: []types.FutureWaitInfo, timeout_ns: u64) types.WaitStatusError!usize {
-        \\    const status = c.wgpuInstanceWaitAny(@ptrCast(instance.ptr), futures.len, @ptrCast(futures.ptr), timeout_ns);
-        \\    try @as(types.WaitStatus, @enumFromInt(status)).toError();
-        \\    return futures.len;
-        \\}
-        \\
-    );
 }
 
 fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_decl: *Mapping.FnDecl, hzname: []const u8) !void {
@@ -156,6 +145,17 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
             }
         }
     }
+    // If the detected out-param is immediately preceded by a usize count
+    // param, it is actually an array+count input pattern (e.g. futureCount + futures).
+    if (out_param_idx) |opi| {
+        if (opi > 1) {
+            const prev = fn_decl.params.items[opi - 1];
+            const prev_type = mapping.ast.getNodeSource(prev.type);
+            if (prev.kind == .primitive and std.mem.eql(u8, prev_type, "usize")) {
+                out_param_idx = null;
+            }
+        }
+    }
 
     if (out_param_idx) |opi| {
         const out_param = fn_decl.params.items[opi];
@@ -167,7 +167,7 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
         actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "{s}Error!void", .{status_type}) catch unreachable;
     } else if (is_handle_ret) {
         // When returning a handle, use the handle type name directly (defined in handles.zig)
-        actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "!{s}", .{Common.typeSliceToHandleName(ret_slice)}) catch unreachable;
+        actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "?{s}", .{Common.typeSliceToHandleName(ret_slice)}) catch unreachable;
     }
 
     // For non-handle struct returns (e.g. c.WGPUFuture -> types.Future)
@@ -244,7 +244,7 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
                 try Common.writeParamExpr(buf, param, mapping);
             }
             try buf.appendSlice(");\n");
-            try buf.appendSlice("        return .{ .ptr = @ptrCast(result.?) };\n");
+            try buf.appendSlice("        if (result) |r| return .{ .ptr = @ptrCast(r) } else return null;\n");
         } else {
             if (ret_type_converted) {
                 try buf.print("        const result = c.{s}(@ptrCast(self.ptr)", .{fn_decl.name});
@@ -307,6 +307,15 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
             }
         }
     }
+    if (standalone_out_param_idx) |opi| {
+        if (opi > 0) {
+            const prev = fn_decl.params.items[opi - 1];
+            const prev_type = mapping.ast.getNodeSource(prev.type);
+            if (prev.kind == .primitive and std.mem.eql(u8, prev_type, "usize")) {
+                standalone_out_param_idx = null;
+            }
+        }
+    }
 
     if (standalone_out_param_idx) |opi| {
         const first_param = fn_decl.params.items[opi];
@@ -321,7 +330,7 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
         actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "{s}Error!void", .{status_type}) catch unreachable;
     } else if (is_handle_ret) {
         // When returning a handle, use the handle type name directly (defined in same file)
-        actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "!{s}", .{Common.typeSliceToHandleName(ret_slice)}) catch unreachable;
+        actual_ret_type = std.fmt.bufPrint(&actual_ret_buf, "?{s}", .{Common.typeSliceToHandleName(ret_slice)}) catch unreachable;
     }
 
     const standalone_ret_converted = !is_handle_ret and !returns_void and !returns_status and standalone_out_param_idx == null and std.mem.startsWith(u8, actual_ret_type, "types.");
@@ -385,7 +394,7 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
             try Common.writeParamExpr(buf, param, mapping);
         }
         try buf.appendSlice(");\n");
-        try buf.appendSlice("        return .{ .ptr = @ptrCast(result.?) };\n");
+        try buf.appendSlice("        if (result) |r| return .{ .ptr = @ptrCast(r) } else return null;\n");
     } else if (standalone_ret_converted) {
         try buf.print("        const result = c.{s}(", .{fn_decl.name});
         for (fn_decl.params.items, 0..) |*param, i| {

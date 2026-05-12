@@ -173,7 +173,7 @@ pub fn mapTypeName(ctype: []const u8, buf: []u8, mapping: *Mapping) []const u8 {
         var inner_buf: [256]u8 = undefined;
         const zig_inner = mapTypeName(inner, &inner_buf, mapping);
         if (isHandleLikeType(inner, mapping)) {
-            return std.fmt.bufPrint(buf, "?*const {s}", .{zig_inner}) catch unreachable;
+            return std.fmt.bufPrint(buf, "[*c]const {s}", .{zig_inner}) catch unreachable;
         }
         return std.fmt.bufPrint(buf, "[*c]const {s}", .{zig_inner}) catch unreachable;
     }
@@ -182,7 +182,7 @@ pub fn mapTypeName(ctype: []const u8, buf: []u8, mapping: *Mapping) []const u8 {
         var inner_buf: [256]u8 = undefined;
         const zig_inner = mapTypeName(inner, &inner_buf, mapping);
         if (isHandleLikeType(inner, mapping)) {
-            return std.fmt.bufPrint(buf, "?*{s}", .{zig_inner}) catch unreachable;
+            return std.fmt.bufPrint(buf, "[*c]{s}", .{zig_inner}) catch unreachable;
         }
         return std.fmt.bufPrint(buf, "[*c]{s}", .{zig_inner}) catch unreachable;
     }
@@ -192,7 +192,7 @@ pub fn mapTypeName(ctype: []const u8, buf: []u8, mapping: *Mapping) []const u8 {
         const zig_inner = mapTypeName(inner, &inner_buf, mapping);
         return std.fmt.bufPrint(buf, "?*{s}", .{zig_inner}) catch unreachable;
     }
-    if (std.mem.eql(u8, ctype, "WGPUBool")) return "c_int";
+    if (std.mem.eql(u8, ctype, "WGPUBool")) return "u32";
     if (std.mem.eql(u8, ctype, "WGPUFlags")) return "u64";
     if (std.mem.eql(u8, ctype, "void")) return "void";
     if (std.mem.startsWith(u8, ctype, "WGPU")) {
@@ -204,6 +204,9 @@ pub fn mapTypeName(ctype: []const u8, buf: []u8, mapping: *Mapping) []const u8 {
         }
         if (mapping.struct_decls.contains(ctype)) {
             return zigStructName(ctype);
+        }
+        if (mapping.typedef_decls.contains(ctype)) {
+            return stripWgpu(ctype);
         }
         return stripWgpu(ctype);
     }
@@ -222,7 +225,7 @@ pub fn mapCTypeRef(ctype: []const u8, buf: []u8, mapping: *Mapping, wrap_handles
         const inner_wrap = wrap_handles and isHandleLikeType(inner, mapping);
         const zig_inner = mapCTypeRef(inner, &inner_buf, mapping, inner_wrap);
         if (isHandleLikeType(inner, mapping)) {
-            return std.fmt.bufPrint(buf, "?*const {s}", .{zig_inner}) catch unreachable;
+            return std.fmt.bufPrint(buf, "[*c]const {s}", .{zig_inner}) catch unreachable;
         }
         return std.fmt.bufPrint(buf, "[*c]const {s}", .{zig_inner}) catch unreachable;
     }
@@ -232,7 +235,7 @@ pub fn mapCTypeRef(ctype: []const u8, buf: []u8, mapping: *Mapping, wrap_handles
         const inner_wrap = wrap_handles and isHandleLikeType(inner, mapping);
         const zig_inner = mapCTypeRef(inner, &inner_buf, mapping, inner_wrap);
         if (isHandleLikeType(inner, mapping)) {
-            return std.fmt.bufPrint(buf, "?*{s}", .{zig_inner}) catch unreachable;
+            return std.fmt.bufPrint(buf, "[*c]{s}", .{zig_inner}) catch unreachable;
         }
         return std.fmt.bufPrint(buf, "[*c]{s}", .{zig_inner}) catch unreachable;
     }
@@ -243,7 +246,7 @@ pub fn mapCTypeRef(ctype: []const u8, buf: []u8, mapping: *Mapping, wrap_handles
         const zig_inner = mapCTypeRef(inner, &inner_buf, mapping, inner_wrap);
         return std.fmt.bufPrint(buf, "?*{s}", .{zig_inner}) catch unreachable;
     }
-    if (std.mem.eql(u8, ctype, "WGPUBool")) return "c_int";
+    if (std.mem.eql(u8, ctype, "WGPUBool")) return "u32";
     if (std.mem.eql(u8, ctype, "WGPUFlags")) return "u64";
     if (std.mem.eql(u8, ctype, "void")) return "void";
     if (std.mem.eql(u8, ctype, "WGPUStatus")) return "!void";

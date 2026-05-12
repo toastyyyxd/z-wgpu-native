@@ -1053,7 +1053,7 @@ pub const BlendComponent = extern struct {
 pub const BufferBindingLayout = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
     type: BufferBindingType = .binding_not_used,
-    has_dynamic_offset: c_int = 0,
+    has_dynamic_offset: u32 = 0,
     min_binding_size: u64 = 0,
 };
 
@@ -1062,7 +1062,7 @@ pub const BufferDescriptor = extern struct {
     label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     usage: BufferUsage = .{},
     size: u64 = 0,
-    mapped_at_creation: c_int = 0,
+    mapped_at_creation: u32 = 0,
 };
 
 pub const Color = extern struct {
@@ -1134,7 +1134,7 @@ pub const MultisampleState = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
     count: u32 = 0,
     mask: u32 = 0,
-    alpha_to_coverage_enabled: c_int = 0,
+    alpha_to_coverage_enabled: u32 = 0,
 };
 
 pub const Origin3D = extern struct {
@@ -1154,7 +1154,7 @@ pub const PipelineLayoutDescriptor = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
     label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     bind_group_layout_count: usize = 0,
-    bind_group_layouts: ?*const handles.OptionalBindGroupLayout = null,
+    bind_group_layouts: [*c]const handles.OptionalBindGroupLayout = null,
     immediate_size: u32 = 0,
 };
 
@@ -1164,7 +1164,7 @@ pub const PrimitiveState = extern struct {
     strip_index_format: IndexFormat = .@"undefined",
     front_face: FrontFace = .@"undefined",
     cull_mode: CullMode = .@"undefined",
-    unclipped_depth: c_int = 0,
+    unclipped_depth: u32 = 0,
 };
 
 pub const QuerySetDescriptor = extern struct {
@@ -1191,8 +1191,8 @@ pub const RenderBundleEncoderDescriptor = extern struct {
     color_formats: [*c]const TextureFormat = null,
     depth_stencil_format: TextureFormat = .@"undefined",
     sample_count: u32 = 0,
-    depth_read_only: c_int = 0,
-    stencil_read_only: c_int = 0,
+    depth_read_only: u32 = 0,
+    stencil_read_only: u32 = 0,
 };
 
 pub const RenderPassDepthStencilAttachment = extern struct {
@@ -1201,11 +1201,11 @@ pub const RenderPassDepthStencilAttachment = extern struct {
     depth_load_op: LoadOp = .@"undefined",
     depth_store_op: StoreOp = .@"undefined",
     depth_clear_value: f32 = 0,
-    depth_read_only: c_int = 0,
+    depth_read_only: u32 = 0,
     stencil_load_op: LoadOp = .@"undefined",
     stencil_store_op: StoreOp = .@"undefined",
     stencil_clear_value: u32 = 0,
-    stencil_read_only: c_int = 0,
+    stencil_read_only: u32 = 0,
 };
 
 pub const RenderPassMaxDrawCount = extern struct {
@@ -1215,7 +1215,7 @@ pub const RenderPassMaxDrawCount = extern struct {
 
 pub const RequestAdapterWebXROptions = extern struct {
     chain: ChainedStruct = undefined,
-    xr_compatible: c_int = 0,
+    xr_compatible: u32 = 0,
 };
 
 pub const SamplerBindingLayout = extern struct {
@@ -1358,7 +1358,7 @@ pub const TextureBindingLayout = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
     sample_type: TextureSampleType = .binding_not_used,
     view_dimension: TextureViewDimension = .@"undefined",
-    multisampled: c_int = 0,
+    multisampled: u32 = 0,
 };
 
 pub const TextureBindingViewDimension = extern struct {
@@ -1442,7 +1442,7 @@ pub const DepthStencilState = extern struct {
 
 pub const FutureWaitInfo = extern struct {
     future: Future = undefined,
-    completed: c_int = 0,
+    completed: u32 = 0,
 };
 
 pub const InstanceDescriptor = extern struct {
@@ -1502,7 +1502,7 @@ pub const RequestAdapterOptions = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
     feature_level: FeatureLevel = .@"undefined",
     power_preference: PowerPreference = .@"undefined",
-    force_fallback_adapter: c_int = 0,
+    force_fallback_adapter: u32 = 0,
     backend_type: BackendType = .@"undefined",
     compatible_surface: handles.OptionalSurface = .{ .ptr = null },
 };
@@ -1844,11 +1844,11 @@ pub const InstanceEnumerateAdapterOptions = extern struct {
 
 pub const BindGroupEntryExtras = extern struct {
     chain: ChainedStruct = undefined,
-    buffers: ?*const handles.OptionalBuffer = null,
+    buffers: [*c]const handles.OptionalBuffer = null,
     buffer_count: usize = 0,
-    samplers: ?*const handles.OptionalSampler = null,
+    samplers: [*c]const handles.OptionalSampler = null,
     sampler_count: usize = 0,
-    texture_views: ?*const handles.OptionalTextureView = null,
+    texture_views: [*c]const handles.OptionalTextureView = null,
     texture_view_count: usize = 0,
 };
 
@@ -1876,7 +1876,7 @@ pub const SurfaceSourceSwapChainPanel = extern struct {
 pub const PrimitiveStateExtras = extern struct {
     chain: ChainedStruct = undefined,
     polygon_mode: PolygonMode = .fill,
-    conservative: c_int = 0,
+    conservative: u32 = 0,
 };
 
 pub const ImageSubresourceRange = extern struct {
@@ -1886,4 +1886,6 @@ pub const ImageSubresourceRange = extern struct {
     base_array_layer: u32 = 0,
     array_layer_count: u32 = 0,
 };
+
+pub const SubmissionIndex = u64;
 

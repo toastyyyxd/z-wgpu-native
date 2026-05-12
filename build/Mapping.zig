@@ -34,6 +34,11 @@ pub const StructDecl = struct {
     kind: ContainerKind = .@"struct",
 };
 
+pub const TypedefDecl = struct {
+    node: Ast.Node.Index,
+    c_type: []const u8,
+};
+
 pub const FnRef = struct {
     name: []const u8,
     node: Ast.Node.Index,
@@ -123,6 +128,7 @@ flag_decls: std.StringHashMapUnmanaged(*FlagsDecl) = .empty,
 handle_decls: std.StringHashMapUnmanaged(*HandleDecl) = .empty,
 fn_decls: std.StringHashMapUnmanaged(*FnDecl) = .empty,
 callback_decls: std.StringHashMapUnmanaged(*CallbackDecl) = .empty,
+typedef_decls: std.StringHashMapUnmanaged(*TypedefDecl) = .empty,
 
 pub fn init(gpa: std.mem.Allocator, arena: std.mem.Allocator, ast: *Ast) !*@This() {
     const self = try arena.create(@This());
@@ -163,6 +169,10 @@ pub fn deinit(self: *@This()) void {
         var it = self.callback_decls.iterator();
         while (it.next()) |e| e.value_ptr.*.params.deinit(self.gpa);
     }
+    {
+        var it = self.typedef_decls.iterator();
+        while (it.next()) |_| {}
+    }
 
     self.symbols.deinit(self.gpa);
     self.decls.deinit(self.gpa);
@@ -176,6 +186,7 @@ pub fn deinit(self: *@This()) void {
     self.handle_decls.deinit(self.gpa);
     self.fn_decls.deinit(self.gpa);
     self.callback_decls.deinit(self.gpa);
+    self.typedef_decls.deinit(self.gpa);
 }
 
 pub fn premap(self: *@This()) !void {
@@ -214,6 +225,24 @@ pub fn premap(self: *@This()) !void {
                 if (std.mem.eql(u8, init_slice, "WGPUFlags")) {
                     try self.flag_names.append(self.gpa, name);
                     continue;
+                }
+            }
+            // Forward WGPU* typedef aliases to primitive types (e.g. WGPUSubmissionIndex = u64)
+            if (std.mem.startsWith(u8, name, "WGPU") and
+                self.ast.nodeTag(init_node) == .identifier)
+            {
+                const init_slice = self.ast.tokenSlice(self.ast.firstToken(init_node));
+                if (init_slice.len > 0 and std.ascii.isLower(init_slice[0]) and
+                    !std.mem.eql(u8, name, "WGPUBool") and
+                    !std.mem.eql(u8, name, "WGPUFlags") and
+                    !std.mem.startsWith(u8, init_slice, "enum_") and
+                    !std.mem.startsWith(u8, init_slice, "struct_") and
+                    !std.mem.startsWith(u8, init_slice, "union_") and
+                    std.mem.indexOfScalar(u8, init_slice, '_') == null)
+                {
+                    const tdef = try self.arena.create(TypedefDecl);
+                    tdef.* = .{ .node = node_idx, .c_type = init_slice };
+                    try self.typedef_decls.put(self.gpa, name, tdef);
                 }
             }
         }
