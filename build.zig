@@ -98,6 +98,18 @@ pub fn build(b: *std.Build) void {
     });
     const run_lib_tests = b.addRunArtifact(lib_tests);
 
+    const abi_mod = b.addModule("z_wgpu_native_abi_test", .{
+        .root_source_file = b.path("tests/abi.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    abi_mod.addImport("z_wgpu_native", mod);
+
+    const abi_tests = b.addTest(.{
+        .root_module = abi_mod,
+    });
+    const run_abi_tests = b.addRunArtifact(abi_tests);
+
     const compute_mod = b.addModule("z_wgpu_native_compute_test", .{
         .root_source_file = b.path("tests/compute.zig"),
         .target = target,
@@ -155,6 +167,7 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&run_generator_tests.step);
     test_step.dependOn(&run_lib_tests.step);
+    test_step.dependOn(&run_abi_tests.step);
     test_step.dependOn(&run_compute_test.step);
     test_step.dependOn(&run_triangle_test.step);
     test_step.dependOn(&run_rgbw_test.step);
