@@ -253,7 +253,11 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
                     try Common.writeParamExpr(buf, param, mapping);
                 }
                 try buf.appendSlice(");\n");
-                try buf.appendSlice("        return @bitCast(result);\n");
+                if (fn_decl.return_kind == .enum_c) {
+                    try buf.appendSlice("        return @enumFromInt(result);\n");
+                } else {
+                    try buf.appendSlice("        return @bitCast(result);\n");
+                }
             } else {
                 try buf.print("        return c.{s}(@ptrCast(self.ptr)", .{fn_decl.name});
                 for (fn_decl.params.items[1..]) |*param| {
@@ -364,7 +368,7 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
         for (fn_decl.params.items, 0..) |*param, i| {
             if (i > 0) try buf.appendSlice(", ");
             if (i == opi) {
-                try buf.appendSlice("&result");
+                try buf.appendSlice("@ptrCast(&result)");
             } else {
                 try Common.writeParamExpr(buf, param, mapping);
             }
@@ -379,7 +383,7 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
             try Common.writeParamExpr(buf, param, mapping);
         }
         try buf.appendSlice(");\n");
-        try buf.print("    try @as({s}, @enumFromInt(status).toError();\n", .{status_type});
+        try buf.print("    try @as({s}, @enumFromInt(status)).toError();\n", .{status_type});
     } else if (returns_void) {
         try buf.print("    c.{s}(", .{fn_decl.name});
         for (fn_decl.params.items, 0..) |*param, i| {
@@ -402,7 +406,11 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
             try Common.writeParamExpr(buf, param, mapping);
         }
         try buf.appendSlice(");\n");
-        try buf.appendSlice("    return @bitCast(result);\n");
+        if (fn_decl.return_kind == .enum_c) {
+            try buf.appendSlice("    return @enumFromInt(result);\n");
+        } else {
+            try buf.appendSlice("    return @bitCast(result);\n");
+        }
     } else {
         try buf.print("    return c.{s}(", .{fn_decl.name});
         for (fn_decl.params.items, 0..) |*param, i| {

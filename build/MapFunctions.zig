@@ -125,6 +125,7 @@ fn resolveReturnKind(mapping: *Mapping, return_node: Ast.Node.Index) Mapping.FnR
             if (std.mem.eql(u8, type_name, "WGPUStringView")) return .string;
             if (std.mem.eql(u8, type_name, "WGPUBool")) return .bool_c;
             if (std.mem.eql(u8, type_name, "WGPUFlags")) return .flags;
+            if (mapping.typedef_decls.contains(type_name)) return .primitive;
             if (std.mem.startsWith(u8, type_name, "WGPU")) return .enum_c;
             return .primitive;
         },

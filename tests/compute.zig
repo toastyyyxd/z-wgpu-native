@@ -11,23 +11,18 @@ const MapCtx = struct {
     mapped: bool = false,
 };
 
-pub fn main(init: std.process.Init) !void {
-    const io = init.io;
-    var buf: [8192]u8 = undefined;
-    var file_writer = std.Io.File.stdout().writer(io, &buf);
-    const w = &file_writer.interface;
-
-    try w.print("creating instance...\n", .{});
+test "compute" {
+    std.log.info("creating instance...", .{});
 
     const instance = z.handles.createInstance(null) orelse unreachable;
     var adapter: z.handles.Adapter = undefined;
     const adapter_count = instance.enumerateAdapters(null, &adapter);
     if (adapter_count == 0) {
-        try w.print("no adapters available, skipping\n", .{});
+        std.log.info("no adapters available, skipping", .{});
         return;
     }
 
-    try w.print("requesting device...\n", .{});
+    std.log.info("requesting device...", .{});
 
     var dev_ctx = DeviceCtx{};
     var dev_ctx2: u8 = 0;
@@ -49,7 +44,7 @@ pub fn main(init: std.process.Init) !void {
     const device = dev_ctx.device.?;
     const queue = device.getQueue() orelse unreachable;
 
-    try w.print("loading shader...\n", .{});
+    std.log.info("loading shader...", .{});
 
     const shader_wgsl = @embedFile("compute.wgsl");
     var shader_source = z.types.ShaderSourceWGSL{
@@ -60,7 +55,7 @@ pub fn main(init: std.process.Init) !void {
         .next_in_chain = &shader_source.chain,
     }) orelse unreachable;
 
-    try w.print("creating buffers...\n", .{});
+    std.log.info("creating buffers...", .{});
 
     const numbers = [_]u32{ 1, 2, 3, 4 };
     const numbers_size = @as(u64, @sizeOf(@TypeOf(numbers)));
@@ -77,7 +72,7 @@ pub fn main(init: std.process.Init) !void {
         .mapped_at_creation = 0,
     }) orelse unreachable;
 
-    try w.print("creating compute pipeline...\n", .{});
+    std.log.info("creating compute pipeline...", .{});
 
     const compute_pipeline = device.createComputePipeline(&z.types.ComputePipelineDescriptor{
         .compute = .{
@@ -98,7 +93,7 @@ pub fn main(init: std.process.Init) !void {
         }),
     }) orelse unreachable;
 
-    try w.print("executing compute...\n", .{});
+    std.log.info("executing compute...", .{});
 
     queue.writeBuffer(storage_buffer, 0, @ptrCast(&numbers), numbers_size);
 
@@ -113,7 +108,7 @@ pub fn main(init: std.process.Init) !void {
     const command_buffer = command_encoder.finish(null) orelse unreachable;
     queue.submit(1, &command_buffer);
 
-    try w.print("reading back results...\n", .{});
+    std.log.info("reading back results...", .{});
 
     var map_ctx = MapCtx{};
     var map_ctx2: u8 = 0;
@@ -135,16 +130,15 @@ pub fn main(init: std.process.Init) !void {
     const mapped = staging_buffer.getMappedRange(0, numbers_size) orelse return error.MapFailed;
     const result: []const u32 = @as([*]const u32, @alignCast(@ptrCast(mapped)))[0..numbers.len];
 
-    try w.print("results: {any}\n", .{result});
+    std.log.info("results: {any}", .{result});
 
     const expected = [_]u32{ 0, 1, 7, 2 };
     for (result, expected) |r, e| {
         if (r != e) {
-            try w.print("FAIL: expected {d}, got {d}\n", .{ e, r });
-            std.process.exit(1);
+            std.log.info("FAIL: expected {d}, got {d}", .{ e, r });
+            return error.TestFailed;
         }
     }
 
-    try w.print("PASS\n", .{});
-    try file_writer.flush();
+    std.log.info("PASS", .{});
 }

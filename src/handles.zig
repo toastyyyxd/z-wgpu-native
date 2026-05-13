@@ -159,7 +159,7 @@ pub const Buffer = struct {
 
     pub fn getMapState(self: Buffer) types.BufferMapState {
         const result = c.wgpuBufferGetMapState(@ptrCast(self.ptr));
-        return @bitCast(result);
+        return @enumFromInt(result);
     }
 
     pub fn destroy(self: Buffer) void {
@@ -865,7 +865,7 @@ pub const QuerySet = struct {
 
     pub fn getType(self: QuerySet) types.QueryType {
         const result = c.wgpuQuerySetGetType(@ptrCast(self.ptr));
-        return @bitCast(result);
+        return @enumFromInt(result);
     }
 
     pub fn destroy(self: QuerySet) void {
@@ -1477,7 +1477,7 @@ pub const Texture = struct {
 
     pub fn getTextureBindingViewDimension(self: Texture) types.TextureViewDimension {
         const result = c.wgpuTextureGetTextureBindingViewDimension(@ptrCast(self.ptr));
-        return @bitCast(result);
+        return @enumFromInt(result);
     }
 
     pub fn getSampleCount(self: Texture) u32 {
@@ -1486,7 +1486,7 @@ pub const Texture = struct {
 
     pub fn getFormat(self: Texture) types.TextureFormat {
         const result = c.wgpuTextureGetFormat(@ptrCast(self.ptr));
-        return @bitCast(result);
+        return @enumFromInt(result);
     }
 
     pub fn createView(self: Texture, descriptor: [*c]const types.TextureViewDescriptor) ?TextureView {
@@ -1496,7 +1496,7 @@ pub const Texture = struct {
 
     pub fn getDimension(self: Texture) types.TextureDimension {
         const result = c.wgpuTextureGetDimension(@ptrCast(self.ptr));
-        return @bitCast(result);
+        return @enumFromInt(result);
     }
 
     pub fn getMipLevelCount(self: Texture) u32 {
@@ -1644,7 +1644,7 @@ pub fn supportedWGSLLanguageFeaturesFreeMembers(supportedWGSLLanguageFeatures: t
 
 pub fn getInstanceLimits() types.StatusError!types.InstanceLimits {
     var result: types.InstanceLimits = undefined;
-    const status = c.wgpuGetInstanceLimits(&result);
+    const status = c.wgpuGetInstanceLimits(@ptrCast(&result));
     try @as(types.Status, @enumFromInt(status)).toError();
     return result;
 }

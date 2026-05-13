@@ -181,7 +181,7 @@ test "abi types.zig" {
     }
 
     const total = enums + packed_count + externs + unions;
-    std.log.warn("ABI types.zig: {d}/{d} passed ({d} enums, {d} packed, {d} extern, {d} unions, {d} skipped)", .{ total - failures, total, enums, packed_count, externs, unions, skipped });
+    std.log.info("ABI types.zig: {d}/{d} passed ({d} enums, {d} packed, {d} extern, {d} unions, {d} skipped)", .{ total - failures, total, enums, packed_count, externs, unions, skipped });
     try std.testing.expectEqual(@as(u32, 0), failures);
 }
 
@@ -218,6 +218,6 @@ test "abi handles.zig Optional*" {
         }
     }
 
-    std.log.warn("ABI handles.zig Optional*: {d}/{d} passed", .{ count - failures, count });
+    std.log.info("ABI handles.zig Optional*: {d}/{d} passed", .{ count - failures, count });
     try std.testing.expectEqual(@as(u32, 0), failures);
 }

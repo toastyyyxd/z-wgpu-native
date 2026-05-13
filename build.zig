@@ -117,14 +117,13 @@ pub fn build(b: *std.Build) void {
     });
     compute_mod.addImport("z_wgpu_native", mod);
 
-    const compute_exe = b.addExecutable(.{
-        .name = "compute-test",
+    const compute_tests = b.addTest(.{
         .root_module = compute_mod,
     });
-    compute_exe.step.dependOn(&run_cargo.step);
-    const run_compute_test = b.addRunArtifact(compute_exe);
+    compute_tests.step.dependOn(&run_cargo.step);
+    const run_compute_tests = b.addRunArtifact(compute_tests);
     const compute_test_step = b.step("compute-test", "Run compute integration test");
-    compute_test_step.dependOn(&run_compute_test.step);
+    compute_test_step.dependOn(&run_compute_tests.step);
 
     const triangle_mod = b.addModule("z_wgpu_native_triangle_test", .{
         .root_source_file = b.path("tests/triangle.zig"),
@@ -136,14 +135,13 @@ pub fn build(b: *std.Build) void {
     triangle_mod.linkSystemLibrary("wayland-client", .{});
     triangle_mod.linkSystemLibrary("wayland-egl", .{});
 
-    const triangle_exe = b.addExecutable(.{
-        .name = "triangle-test",
+    const triangle_tests = b.addTest(.{
         .root_module = triangle_mod,
     });
-    triangle_exe.step.dependOn(&run_cargo.step);
-    const run_triangle_test = b.addRunArtifact(triangle_exe);
+    triangle_tests.step.dependOn(&run_cargo.step);
+    const run_triangle_tests = b.addRunArtifact(triangle_tests);
     const triangle_test_step = b.step("triangle-test", "Run windowed triangle test");
-    triangle_test_step.dependOn(&run_triangle_test.step);
+    triangle_test_step.dependOn(&run_triangle_tests.step);
 
     const rgbw_mod = b.addModule("z_wgpu_native_rgbw_test", .{
         .root_source_file = b.path("tests/rgbw.zig"),
@@ -155,20 +153,19 @@ pub fn build(b: *std.Build) void {
     rgbw_mod.linkSystemLibrary("wayland-client", .{});
     rgbw_mod.linkSystemLibrary("wayland-egl", .{});
 
-    const rgbw_exe = b.addExecutable(.{
-        .name = "rgbw-test",
+    const rgbw_tests = b.addTest(.{
         .root_module = rgbw_mod,
     });
-    rgbw_exe.step.dependOn(&run_cargo.step);
-    const run_rgbw_test = b.addRunArtifact(rgbw_exe);
+    rgbw_tests.step.dependOn(&run_cargo.step);
+    const run_rgbw_tests = b.addRunArtifact(rgbw_tests);
     const rgbw_test_step = b.step("rgbw-test", "Run windowed cube+pyramid test");
-    rgbw_test_step.dependOn(&run_rgbw_test.step);
+    rgbw_test_step.dependOn(&run_rgbw_tests.step);
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&run_generator_tests.step);
     test_step.dependOn(&run_lib_tests.step);
     test_step.dependOn(&run_abi_tests.step);
-    test_step.dependOn(&run_compute_test.step);
-    test_step.dependOn(&run_triangle_test.step);
-    test_step.dependOn(&run_rgbw_test.step);
+    test_step.dependOn(&run_compute_tests.step);
+    test_step.dependOn(&run_triangle_tests.step);
+    test_step.dependOn(&run_rgbw_tests.step);
 }

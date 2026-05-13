@@ -90,13 +90,8 @@ fn mat4RotationX(angle_rad: f32) [4][4]f32 {
     };
 }
 
-pub fn main(init: std.process.Init) !void {
-    const io = init.io;
-    var buf: [8192]u8 = undefined;
-    var file_writer = std.Io.File.stdout().writer(io, &buf);
-    const w = &file_writer.interface;
-
-    try w.print("initializing GLFW...\n", .{});
+test "rgbw" {
+    std.log.info("initializing GLFW...", .{});
     if (glfwInit() == 0) return error.GlfwInitFailed;
     defer glfwTerminate();
 
@@ -325,7 +320,7 @@ pub fn main(init: std.process.Init) !void {
 
     const view_matrix = mat4Translation(0, 0, -4);
 
-    try w.print("rendering...\n", .{});
+    std.log.info("rendering...", .{});
     var frame_count: u32 = 0;
     while (glfwWindowShouldClose(window) == 0) : (frame_count += 1) {
         glfwPollEvents();
@@ -391,8 +386,6 @@ pub fn main(init: std.process.Init) !void {
         _ = try surface.present();
     }
 
-    try w.print("rendered {d} frames\n", .{frame_count});
-    try file_writer.flush();
-    if (frame_count > 0) try w.print("PASS\n", .{}) else try w.print("PASS (window was closed)\n", .{});
-    try file_writer.flush();
+    std.log.info("rendered {d} frames", .{frame_count});
+    if (frame_count > 0) std.log.info("PASS", .{}) else std.log.info("PASS (window was closed)", .{});
 }

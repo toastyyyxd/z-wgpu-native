@@ -31,14 +31,15 @@ pub fn discover(mapping: *Mapping) !void {
         if (params_text.len > 0) {
             var remaining = params_text;
             while (remaining.len > 0) {
-                var comma_idx = std.mem.indexOfScalar(u8, remaining, ',');
-                // Don't split on commas inside nested parens (pointer types)
-                if (comma_idx) |ci| {
-                    // Check if comma is inside nested parentheses
-                    const before = remaining[0..ci];
-                    if (std.mem.count(u8, before, "(") != std.mem.count(u8, before, ")")) {
-                        // Comma is inside nested parens, find next comma
-                        comma_idx = std.mem.indexOfScalarPos(u8, remaining, ci + 1, ',');
+                // Find next comma at paren-depth 0 (handles arbitrary nesting)
+                var comma_idx: ?usize = null;
+                var depth: u32 = 0;
+                for (remaining, 0..) |c, i| {
+                    switch (c) {
+                        '(' => depth += 1,
+                        ')' => depth -|= 1,
+                        ',' => if (depth == 0) { comma_idx = i; break; },
+                        else => {},
                     }
                 }
                 const param_text = if (comma_idx) |ci| remaining[0..ci] else remaining;

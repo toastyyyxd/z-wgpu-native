@@ -26,13 +26,8 @@ const DeviceCtx = struct {
     device: ?z.handles.Device = null,
 };
 
-pub fn main(init: std.process.Init) !void {
-    const io = init.io;
-    var buf: [8192]u8 = undefined;
-    var file_writer = std.Io.File.stdout().writer(io, &buf);
-    const w = &file_writer.interface;
-
-    try w.print("initializing GLFW...\n", .{});
+test "triangle" {
+    std.log.info("initializing GLFW...", .{});
     if (glfwInit() == 0) return error.GlfwInitFailed;
     defer glfwTerminate();
 
@@ -42,7 +37,7 @@ pub fn main(init: std.process.Init) !void {
 
     const wl_dpy = glfwGetWaylandDisplay() orelse return error.NoWaylandDisplay;
 
-    try w.print("creating instance...\n", .{});
+    std.log.info("creating instance...", .{});
 
     var extras: z.types.InstanceExtras = std.mem.zeroes(z.types.InstanceExtras);
     extras.chain.s_type = .instance_extras;
@@ -52,7 +47,7 @@ pub fn main(init: std.process.Init) !void {
         .next_in_chain = @ptrCast(&extras.chain),
     }) orelse unreachable;
 
-    try w.print("creating surface...\n", .{});
+    std.log.info("creating surface...", .{});
     const wl_sfc = glfwGetWaylandWindow(window) orelse return error.NoWaylandSurface;
     var surface_source = z.types.SurfaceSourceWaylandSurface{
         .chain = .{ .s_type = .surface_source_wayland_surface },
@@ -64,12 +59,12 @@ pub fn main(init: std.process.Init) !void {
     }) orelse unreachable;
     defer surface.unconfigure();
 
-    try w.print("enumerating adapter...\n", .{});
+    std.log.info("enumerating adapter...", .{});
     var adapter: z.handles.Adapter = undefined;
     const adapter_count = instance.enumerateAdapters(null, &adapter);
     if (adapter_count == 0) return error.NoAdapter;
 
-    try w.print("requesting device...\n", .{});
+    std.log.info("requesting device...", .{});
 
     var dev_ctx = DeviceCtx{};
     var dev_ctx2: u8 = 0;
@@ -85,11 +80,11 @@ pub fn main(init: std.process.Init) !void {
     const device = dev_ctx.device orelse return error.NoDevice;
     const queue = device.getQueue() orelse unreachable;
 
-    try w.print("querying surface capabilities...\n", .{});
+    std.log.info("querying surface capabilities...", .{});
 
     const caps = try surface.getCapabilities(adapter);
     defer z.handles.surfaceCapabilitiesFreeMembers(caps);
-    std.debug.print("surface: status=1 formats={d} presentModes={d}\n", .{ caps.format_count, caps.present_mode_count });
+    std.log.info("surface: status=1 formats={d} presentModes={d}", .{ caps.format_count, caps.present_mode_count });
 
     if (caps.format_count == 0) return error.NoSurfaceFormats;
     if (caps.present_mode_count == 0) return error.NoPresentModes;
@@ -105,7 +100,7 @@ pub fn main(init: std.process.Init) !void {
         .present_mode = .fifo,
     });
 
-    try w.print("loading shader...\n", .{});
+    std.log.info("loading shader...", .{});
 
     const shader_wgsl = @embedFile("triangle.wgsl");
     var shader_source = z.types.ShaderSourceWGSL{
@@ -139,7 +134,7 @@ pub fn main(init: std.process.Init) !void {
         },
     }) orelse unreachable;
 
-    try w.print("rendering...\n", .{});
+    std.log.info("rendering...", .{});
 
     var frame_count: u32 = 0;
     while (glfwWindowShouldClose(window) == 0) : (frame_count += 1) {
@@ -168,12 +163,10 @@ pub fn main(init: std.process.Init) !void {
         _ = try surface.present();
     }
 
-    try w.print("rendered {d} frames\n", .{frame_count});
-    try file_writer.flush();
+    std.log.info("rendered {d} frames", .{frame_count});
     if (frame_count > 0) {
-        try w.print("PASS\n", .{});
+        std.log.info("PASS", .{});
     } else {
-        try w.print("PASS (window was closed)\n", .{});
+        std.log.info("PASS (window was closed)", .{});
     }
-    try file_writer.flush();
 }
