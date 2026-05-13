@@ -15,12 +15,15 @@ test "compute" {
     std.log.info("creating instance...", .{});
 
     const instance = z.handles.createInstance(null) orelse unreachable;
-    var adapter: z.handles.Adapter = undefined;
-    const adapter_count = instance.enumerateAdapters(null, &adapter);
+    const adapter_count = instance.enumerateAdapters(null, null);
     if (adapter_count == 0) {
         std.log.info("no adapters available, skipping", .{});
         return;
     }
+    const adapters = try std.testing.allocator.alloc(z.handles.Adapter, adapter_count);
+    defer std.testing.allocator.free(adapters);
+    _ = instance.enumerateAdapters(null, adapters.ptr);
+    const adapter = adapters[0];
 
     std.log.info("requesting device...", .{});
 

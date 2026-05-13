@@ -72,12 +72,14 @@ pub fn build(b: *std.Build) void {
     lib.step.dependOn(generate_wrapper_step);
     b.installArtifact(lib);
 
-    const run_cargo = b.addSystemCommand(&[_][]const u8{
-        "cargo", "build",
-        "--manifest-path", "vendor/wgpu-native/Cargo.toml",
-    });
+    const cargo_profile: []const u8 = if (optimize == .Debug) "debug" else "release";
+    const run_cargo_args: []const []const u8 = if (optimize == .Debug)
+        &.{ "cargo", "build", "--manifest-path", "vendor/wgpu-native/Cargo.toml" }
+    else
+        &.{ "cargo", "build", "--release", "--manifest-path", "vendor/wgpu-native/Cargo.toml" };
+    const run_cargo = b.addSystemCommand(run_cargo_args);
 
-    const wgpu_lib = b.path("vendor/wgpu-native/target/debug/libwgpu_native.a");
+    const wgpu_lib = b.path(b.fmt("vendor/wgpu-native/target/{s}/libwgpu_native.a", .{cargo_profile}));
     mod.addObjectFile(wgpu_lib);
     mod.linkSystemLibrary("unwind", .{});
     mod.linkSystemLibrary("gcc_s", .{});
@@ -96,6 +98,7 @@ pub fn build(b: *std.Build) void {
     const lib_tests = b.addTest(.{
         .root_module = lib_test_mod,
     });
+    lib_tests.step.dependOn(&run_cargo.step);
     const run_lib_tests = b.addRunArtifact(lib_tests);
 
     const abi_mod = b.addModule("z_wgpu_native_abi_test", .{
@@ -108,6 +111,7 @@ pub fn build(b: *std.Build) void {
     const abi_tests = b.addTest(.{
         .root_module = abi_mod,
     });
+    abi_tests.step.dependOn(&run_cargo.step);
     const run_abi_tests = b.addRunArtifact(abi_tests);
 
     const compute_mod = b.addModule("z_wgpu_native_compute_test", .{
