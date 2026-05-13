@@ -17,6 +17,7 @@
       # Base
       packages.foreign = env.package { # Clean binaries for shipping outside nix
         src = cleanSource ./.;
+        zigBuildFlags = [ "-Doptimize=ReleaseFast" ];
         nativeBuildInputs = with pkgs; [
           cargo
           clang
