@@ -7,7 +7,8 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const zig_triple = try target.result.zigTriple(b.allocator);
-    const rust_triple = try triples.rust(b.allocator, target.result);
+    const cargo_target_opt = b.option([]const u8, "cargo-target", "Override Cargo target triple");
+    const rust_triple = cargo_target_opt orelse try triples.rust(b.allocator, target.result);
 
     const c_includes = b.option([]const u8, "c-includes", "Path to any headers needed for translate-c and other steps.");
     var c_includes_it = std.mem.splitAny(u8, c_includes orelse &.{}, ",");
@@ -35,7 +36,7 @@ pub fn build(b: *std.Build) !void {
     const generator_mod = b.addModule("z_wgpu_native_gen", .{
         .root_source_file = b.path("build/main.zig"),
         .optimize = optimize,
-        .target = target,
+        .target = host,
     });
     const generator_exe = b.addExecutable(.{
         .root_module = generator_mod,
@@ -115,52 +116,54 @@ pub fn build(b: *std.Build) !void {
     // --- tests ---
     const test_step = b.step("test", "Run library tests");
 
-    // HEADLESS TESTS
-    const lib_test_mod = b.addModule("z_wgpu_native_tests", .{
-        .root_source_file = b.path("tests/lib.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-    lib_test_mod.addImport("z_wgpu_native", mod);
+    if (target.result.cpu.arch == host.result.cpu.arch) {
+        // HEADLESS TESTS
+        const lib_test_mod = b.addModule("z_wgpu_native_tests", .{
+            .root_source_file = b.path("tests/lib.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+        lib_test_mod.addImport("z_wgpu_native", mod);
 
-    const lib_tests = b.addTest(.{
-        .root_module = lib_test_mod,
-    });
-    lib_tests.step.dependOn(&run_cargo.step);
-    const run_lib_tests = b.addRunArtifact(lib_tests);
+        const lib_tests = b.addTest(.{
+            .root_module = lib_test_mod,
+        });
+        lib_tests.step.dependOn(&run_cargo.step);
+        const run_lib_tests = b.addRunArtifact(lib_tests);
 
-    const abi_mod = b.addModule("z_wgpu_native_abi_test", .{
-        .root_source_file = b.path("tests/abi.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-    abi_mod.addImport("z_wgpu_native", mod);
+        const abi_mod = b.addModule("z_wgpu_native_abi_test", .{
+            .root_source_file = b.path("tests/abi.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+        abi_mod.addImport("z_wgpu_native", mod);
 
-    const abi_tests = b.addTest(.{
-        .root_module = abi_mod,
-    });
-    abi_tests.step.dependOn(&run_cargo.step);
-    const run_abi_tests = b.addRunArtifact(abi_tests);
+        const abi_tests = b.addTest(.{
+            .root_module = abi_mod,
+        });
+        abi_tests.step.dependOn(&run_cargo.step);
+        const run_abi_tests = b.addRunArtifact(abi_tests);
 
-    const compute_mod = b.addModule("z_wgpu_native_compute_test", .{
-        .root_source_file = b.path("tests/compute.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-    compute_mod.addImport("z_wgpu_native", mod);
+        const compute_mod = b.addModule("z_wgpu_native_compute_test", .{
+            .root_source_file = b.path("tests/compute.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+        compute_mod.addImport("z_wgpu_native", mod);
 
-    const compute_tests = b.addTest(.{
-        .root_module = compute_mod,
-    });
-    compute_tests.step.dependOn(&run_cargo.step);
-    const run_compute_tests = b.addRunArtifact(compute_tests);
-    const compute_test_step = b.step("compute-test", "Run compute integration test");
-    compute_test_step.dependOn(&run_compute_tests.step);
+        const compute_tests = b.addTest(.{
+            .root_module = compute_mod,
+        });
+        compute_tests.step.dependOn(&run_cargo.step);
+        const run_compute_tests = b.addRunArtifact(compute_tests);
+        const compute_test_step = b.step("compute-test", "Run compute integration test");
+        compute_test_step.dependOn(&run_compute_tests.step);
 
-    test_step.dependOn(&run_generator_tests.step);
-    test_step.dependOn(&run_lib_tests.step);
-    test_step.dependOn(&run_abi_tests.step);
-    test_step.dependOn(&run_compute_tests.step);
+        test_step.dependOn(&run_generator_tests.step);
+        test_step.dependOn(&run_lib_tests.step);
+        test_step.dependOn(&run_abi_tests.step);
+        test_step.dependOn(&run_compute_tests.step);
+    }
 
     // HEADED TESTS
     // wayland only

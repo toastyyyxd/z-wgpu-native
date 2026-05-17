@@ -39,7 +39,7 @@ fn parseCommonComponents(target: Target) !struct {
         },
         .windows => switch (abi) {
             .msvc => "msvc",
-            .gnu => "gnu",
+            .gnu => "gnullvm", // we're using gnullvm for windows
             else => return error.UnsupportedTriple,
         },
         else => "",
