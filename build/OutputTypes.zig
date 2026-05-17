@@ -14,6 +14,9 @@ fn writeEnums(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
     var enum_iter = mapping.enum_decls.iterator();
     while (enum_iter.next()) |entry| {
         const cname = entry.key_ptr.*;
+        if (!std.mem.startsWith(u8, cname, "WGPU") and
+            !std.mem.startsWith(u8, cname, "wgpu") and
+            !std.mem.startsWith(u8, cname, "unnamed_")) continue;
         const decl = entry.value_ptr.*;
         if (decl.values.count() == 0) continue;
 
@@ -109,6 +112,9 @@ fn writeFlags(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
     var flag_iter = mapping.flag_decls.iterator();
     while (flag_iter.next()) |entry| {
         const cname = entry.key_ptr.*;
+        if (!std.mem.startsWith(u8, cname, "WGPU") and
+            !std.mem.startsWith(u8, cname, "wgpu") and
+            !std.mem.startsWith(u8, cname, "unnamed_")) continue;
         const decl = entry.value_ptr.*;
         if (decl.values.count() == 0) continue;
 
@@ -227,6 +233,9 @@ fn parseFlagBit(init_text: []const u8) u8 {
 
 fn writeStructs(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
     for (mapping.struct_names.items) |sname| {
+        if (!std.mem.startsWith(u8, sname, "WGPU") and
+            !std.mem.startsWith(u8, sname, "wgpu") and
+            !std.mem.startsWith(u8, sname, "unnamed_")) continue;
         const decl = mapping.struct_decls.get(sname) orelse continue;
         if (decl.fields.items.len == 0) continue;
 

@@ -972,7 +972,7 @@ pub const InstanceBackend = packed struct(u64) {
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
 };
 
-pub const InstanceBackend_primary: InstanceBackend = @bitCast(@as(u64, @bitCast(@as(c_long, (((@as(c_int, 1) << @intCast(@as(c_int, 0))) | (@as(c_int, 1) << @intCast(@as(c_int, 2)))) | (@as(c_int, 1) << @intCast(@as(c_int, 3)))) | (@as(c_int, 1) << @intCast(@as(c_int, 5)))))));
+pub const InstanceBackend_primary: InstanceBackend = @bitCast(@as(u64, @bitCast(@as(c_longlong, (((@as(c_int, 1) << @intCast(@as(c_int, 0))) | (@as(c_int, 1) << @intCast(@as(c_int, 2)))) | (@as(c_int, 1) << @intCast(@as(c_int, 3)))) | (@as(c_int, 1) << @intCast(@as(c_int, 5)))))));
 
 pub const InstanceFlag = packed struct(u64) {
     debug: bool = false,
@@ -989,6 +989,11 @@ pub const InstanceFlag = packed struct(u64) {
     with_env: bool = false,
     __: u36 = 0,
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
+};
+
+pub const unnamed_1 = extern struct {
+    low: c_uint = 0,
+    high: c_uint = 0,
 };
 
 pub const StringView = extern struct {
@@ -1742,7 +1747,7 @@ pub const WaylandDisplayHandle = extern struct {
     display: ?*anyopaque = null,
 };
 
-pub const unnamed_2 = extern union {
+pub const unnamed_3 = extern union {
     xlib: XlibDisplayHandle,
     xcb: XcbDisplayHandle,
     wayland: WaylandDisplayHandle,
@@ -1750,7 +1755,7 @@ pub const unnamed_2 = extern union {
 
 pub const NativeDisplayHandle = extern struct {
     type: NativeDisplayHandleType = .none,
-    data: unnamed_2 = std.mem.zeroes(unnamed_2),
+    data: unnamed_3 = std.mem.zeroes(unnamed_3),
 };
 
 pub const InstanceExtras = extern struct {

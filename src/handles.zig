@@ -1,6 +1,120 @@
 const c = @import("c_wgpu_native");
 const types = @import("types.zig");
 
+pub const threadmbcinfostruct = struct {
+    ptr: *anyopaque,
+
+    pub fn fromPtr(ptr: *anyopaque) threadmbcinfostruct {
+        return .{ .ptr = ptr };
+    }
+
+};
+
+pub const Optionalthreadmbcinfostruct = extern struct {
+    ptr: ?*anyopaque,
+
+    pub fn wrap(handle: threadmbcinfostruct) Optionalthreadmbcinfostruct {
+        return .{ .ptr = handle.ptr };
+    }
+
+    pub fn none() Optionalthreadmbcinfostruct {
+        return .{ .ptr = null };
+    }
+
+    pub fn isSome(self: Optionalthreadmbcinfostruct) bool {
+        return self.ptr != null;
+    }
+
+    pub fn isNull(self: Optionalthreadmbcinfostruct) bool {
+        return self.ptr == null;
+    }
+
+    pub fn get(self: Optionalthreadmbcinfostruct) ?threadmbcinfostruct {
+        if (self.ptr) |p| return .{ .ptr = p };
+        return null;
+    }
+
+    pub fn unwrap(self: Optionalthreadmbcinfostruct) threadmbcinfostruct {
+        return .{ .ptr = self.ptr.? };
+    }
+};
+
+pub const __lc_time_data = struct {
+    ptr: *anyopaque,
+
+    pub fn fromPtr(ptr: *anyopaque) __lc_time_data {
+        return .{ .ptr = ptr };
+    }
+
+};
+
+pub const Optional__lc_time_data = extern struct {
+    ptr: ?*anyopaque,
+
+    pub fn wrap(handle: __lc_time_data) Optional__lc_time_data {
+        return .{ .ptr = handle.ptr };
+    }
+
+    pub fn none() Optional__lc_time_data {
+        return .{ .ptr = null };
+    }
+
+    pub fn isSome(self: Optional__lc_time_data) bool {
+        return self.ptr != null;
+    }
+
+    pub fn isNull(self: Optional__lc_time_data) bool {
+        return self.ptr == null;
+    }
+
+    pub fn get(self: Optional__lc_time_data) ?__lc_time_data {
+        if (self.ptr) |p| return .{ .ptr = p };
+        return null;
+    }
+
+    pub fn unwrap(self: Optional__lc_time_data) __lc_time_data {
+        return .{ .ptr = self.ptr.? };
+    }
+};
+
+pub const unnamed_2 = struct {
+    ptr: *anyopaque,
+
+    pub fn fromPtr(ptr: *anyopaque) unnamed_2 {
+        return .{ .ptr = ptr };
+    }
+
+};
+
+pub const Optionalunnamed_2 = extern struct {
+    ptr: ?*anyopaque,
+
+    pub fn wrap(handle: unnamed_2) Optionalunnamed_2 {
+        return .{ .ptr = handle.ptr };
+    }
+
+    pub fn none() Optionalunnamed_2 {
+        return .{ .ptr = null };
+    }
+
+    pub fn isSome(self: Optionalunnamed_2) bool {
+        return self.ptr != null;
+    }
+
+    pub fn isNull(self: Optionalunnamed_2) bool {
+        return self.ptr == null;
+    }
+
+    pub fn get(self: Optionalunnamed_2) ?unnamed_2 {
+        if (self.ptr) |p| return .{ .ptr = p };
+        return null;
+    }
+
+    pub fn unwrap(self: Optionalunnamed_2) unnamed_2 {
+        return .{ .ptr = self.ptr.? };
+    }
+};
+
 pub const Adapter = struct {
     ptr: *anyopaque,
 
