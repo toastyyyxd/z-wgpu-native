@@ -38,6 +38,7 @@
         "build.zig",
         "build.zig.zon",
         "build",
+        "src",
         "tests",
         "readme.md",
         "LICENSE-MIT",

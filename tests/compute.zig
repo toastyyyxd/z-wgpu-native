@@ -29,7 +29,8 @@ test "compute" {
 
     var dev_ctx = DeviceCtx{};
     var dev_ctx2: u8 = 0;
-    const dev_future = adapter.requestDevice(null, z.callbacks.requestDeviceCallback(
+    
+    _ = adapter.requestDevice(null, z.callbacks.requestDeviceCallback(
         DeviceCtx,
         u8,
         &dev_ctx,
@@ -41,10 +42,8 @@ test "compute" {
             }
         }.cb,
     ));
-    var dev_waits = [_]z.types.FutureWaitInfo{.{ .future = dev_future, .completed = 0 }};
-    _ = try instance.waitAny(dev_waits.len, @ptrCast(&dev_waits), 5_000_000_000);
 
-    const device = dev_ctx.device.?;
+    const device = dev_ctx.device orelse return error.NoDevice;
     const queue = device.getQueue() orelse unreachable;
 
     std.log.info("loading shader...", .{});
@@ -115,7 +114,7 @@ test "compute" {
 
     var map_ctx = MapCtx{};
     var map_ctx2: u8 = 0;
-    const map_future = staging_buffer.mapAsync(z.types.MapMode{ .read = true }, 0, numbers_size, z.callbacks.bufferMapCallback(
+    _ = staging_buffer.mapAsync(z.types.MapMode{ .read = true }, 0, numbers_size, z.callbacks.bufferMapCallback(
         MapCtx,
         u8,
         &map_ctx,
@@ -127,8 +126,12 @@ test "compute" {
             }
         }.cb,
     ));
-    var map_waits = [_]z.types.FutureWaitInfo{.{ .future = map_future, .completed = 0 }};
-    _ = try instance.waitAny(map_waits.len, @ptrCast(&map_waits), 5_000_000_000);
+
+    while (!map_ctx.mapped) {
+        _ = device.poll(1, null); 
+    }
+
+    if (map_ctx.status != .success) return error.MapFailed;
 
     const mapped = staging_buffer.getMappedRange(0, numbers_size) orelse return error.MapFailed;
     const result: []const u32 = @as([*]const u32, @alignCast(@ptrCast(mapped)))[0..numbers.len];
@@ -143,5 +146,6 @@ test "compute" {
         }
     }
 
+    staging_buffer.unmap();
     std.log.info("PASS", .{});
 }

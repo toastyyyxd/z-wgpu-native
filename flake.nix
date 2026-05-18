@@ -19,14 +19,14 @@
     hostPkgs = env.pkgs;
     inherit (hostPkgs) lib;
 
-    # goddamn triples
+    # Goddamn triples
     zigToRustTriple = {
       "x86_64-linux-musl"   = "x86_64-unknown-linux-musl";
       "aarch64-linux-musl"  = "aarch64-unknown-linux-musl";
       "x86_64-linux-gnu"    = "x86_64-unknown-linux-gnu";
       "aarch64-linux-gnu"   = "aarch64-unknown-linux-gnu";
       "x86_64-windows-gnu"  = "x86_64-pc-windows-gnullvm";
-      "aarch64-windows-gnu" = "aarch64-pc-windows-gnullvm"; 
+      "aarch64-windows-gnu" = "aarch64-pc-windows-gnullvm";
     };
 
     targetTriples = [
@@ -38,22 +38,20 @@
       "aarch64-windows-gnu"
     ];
 
-    # Platform specific dependecies and config
+    # Platform specific dependencies and config
     linuxInputs = { pkgs }: {
       buildInputs = with pkgs; [
-        glfw
-        libx11 libxrandr libxinerama
-        libxi libxcursor libxext
-        libxxf86vm libxkbcommon
-        wayland wayland-protocols
+        vulkan-loader wayland libxkbcommon libx11 libxcursor libxrandr libxi libGL
       ];
     };
 
     windowsInputs = { pkgs }: {
       zigBuildFlags = [ "-fwine" ];
-      buildInputs = [];
+      buildInputs = [ ];
       nativeBuildInputs = with hostPkgs; [
-        wineWow64Packages.stable fontconfig
+        wineWow64Packages.stable
+        fontconfig
+        llvmPackages.bintools
       ];
       env = {
         FONTCONFIG_FILE = hostPkgs.makeFontsConf {
@@ -73,23 +71,33 @@
     # Main
     mkBuild = {
       pkgs,
-      crossTarget ? null,
+      buildTarget ? null,
       preferMusl ? true,
       wrapperBins ? [],
       wrapperLibs ? [],
       wrapperArgs ? [],
       extraEnv ? {},
-      zigBuildFlags ? [ "-Doptimize=ReleaseFast" ],
+      zigBuildFlags ? [ "-Doptimize=ReleaseFast" "-Dtest=true" "-Dmode=full" ],
       extraBuildInputs ? [],
       extraNativeBuildInputs ? [],
       extraInputs ? {},
     }: let
-      isCross = crossTarget != null;
-      zigTarget = if isCross then (env.target crossTarget).zig else null;
-      zigTargetFlag = if isCross then "-target ${zigTarget}" else "";
-
-      rustTriple = if isCross then zigToRustTriple.${crossTarget} else pkgs.stdenv.hostPlatform.rust.rustcTarget;
+      isCross = buildTarget != null && zigToRustTriple.${buildTarget} != hostPkgs.stdenv.hostPlatform.rust.rustcTarget;
       
+      # 1. Get the base target from zig2nix
+      baseZigTarget = if isCross then (env.target buildTarget).zig else "native";
+      
+      # 2. Check if we are cross-compiling specifically to a GNU Linux target
+      isCrossLinuxGnu = isCross && lib.hasSuffix "linux-gnu" buildTarget;
+      
+      # 3. Dynamically append the stdenv's libc version ONLY for cross GNU targets. 
+      zigTarget = if isCrossLinuxGnu 
+                  then "${baseZigTarget}.${pkgs.stdenv.cc.libc.version}" 
+                  else baseZigTarget;
+                  
+      zigTargetFlag = if isCross then "-target ${zigTarget}" else "";
+      
+      rustTriple = if isCross then zigToRustTriple.${buildTarget} else hostPkgs.stdenv.hostPlatform.rust.rustcTarget;      
       upperRustTriple = lib.toUpper (builtins.replaceStrings ["-"] ["_"] rustTriple);
       bindgenRustTriple = builtins.replaceStrings ["-"] ["_"] rustTriple;
 
@@ -98,7 +106,7 @@
         targets = [ rustTriple ];
       };
 
-      dynamicLinker = pkgs.stdenv.cc.bintools.dynamicLinker or "";
+      dynamicLinker = hostPkgs.stdenv.cc.bintools.dynamicLinker or "";
 
       zigWrappers = hostPkgs.runCommand "zig-wrappers-${rustTriple}" {} ''
         mkdir -p $out/bin
@@ -118,7 +126,7 @@
         done
 
         # dyn link workaround for a cross entry that matches the host on nixos
-        if [[ $is_static -eq 0 && "${rustTriple}" == "${pkgs.stdenv.hostPlatform.rust.rustcTarget}" && "${dynamicLinker}" != "" ]]; then
+        if [[ $is_static -eq 0 && "${rustTriple}" == "${hostPkgs.stdenv.hostPlatform.rust.rustcTarget}" && "${dynamicLinker}" != "" ]]; then
            args+=("-Wl,-dynamic-linker,${dynamicLinker}")
         fi
 
@@ -141,7 +149,7 @@
         done
 
         # commented in the cc wrapper part ^
-        if [[ $is_static -eq 0 && "${rustTriple}" == "${pkgs.stdenv.hostPlatform.rust.rustcTarget}" && "${dynamicLinker}" != "" ]]; then
+        if [[ $is_static -eq 0 && "${rustTriple}" == "${hostPkgs.stdenv.hostPlatform.rust.rustcTarget}" && "${dynamicLinker}" != "" ]]; then
            args+=("-Wl,-dynamic-linker,${dynamicLinker}")
         fi
 
@@ -180,30 +188,40 @@
         "BINDGEN_EXTRA_CLANG_ARGS_${bindgenRustTriple}" = "--target=${clangTarget}";
       });
 
-      buildInputs = extraBuildInputs ++ (extraInputs.buildInputs or []);
+      buildInputs = [
+        (if isCross && lib.hasInfix "windows" buildTarget 
+         then (env.zigCrossPkgsForTarget buildTarget).glfw.overrideAttrs (oldAttrs: {
+           # linux's glib's mesonEmulatorHook for some reason gets the wrong target when using zigCrossPkgs
+           # and window's mingw_w64 fails to build on aarch64 and plain crossPkgs/nixpkgs.pkgsCross
+           postPatch = (oldAttrs.postPatch or "") + ''
+             # Remove the Windows resource file from the build to bypass zig rc wrapper issues
+             find . -name "CMakeLists.txt" -exec sed -i '/glfw\.rc/d' {} +
+           '';
+         }) 
+         else pkgs.glfw) 
+      ] ++ extraBuildInputs ++ (extraInputs.buildInputs or []);
       
-      nativeBuildInputs = with pkgs.buildPackages; [
+      nativeBuildInputs = with hostPkgs.buildPackages; [
         rustToolchain
         zigWrappers
         llvmPackages.libclang.lib
         rustPlatform.cargoSetupHook
+        rustPlatform.bindgenHook
       ] ++ [ (extraInputs.clang or hostPkgs.llvmPackages.clang) ] ++ extraNativeBuildInputs ++ (extraInputs.nativeBuildInputs or []);
       
       finalEnv = {
-        LIBCLANG_PATH = "${pkgs.buildPackages.llvmPackages.libclang.lib}/lib";
+        LIBCLANG_PATH = "${hostPkgs.buildPackages.llvmPackages.libclang.lib}/lib";
         CARGO_BUILD_TARGET = rustTriple;
       } // cargoEnv // extraEnv // (extraInputs.env or {});
 
     in env.package {
       src = lib.cleanSource ./.;
-      zigTarget = zigTarget;
+      inherit zigTarget nativeBuildInputs buildInputs;
       zigBuildFlags = zigBuildFlags ++ [ "-Dcargo-target=${rustTriple}" ] ++ (extraInputs.zigBuildFlags or []);
       zigPreferMusl = preferMusl;
       zigWrapperBins = wrapperBins;
       zigWrapperLibs = wrapperLibs;
       zigWrapperArgs = wrapperArgs;
-      nativeBuildInputs = nativeBuildInputs;
-      buildInputs = buildInputs;
       env = finalEnv;
       cargoRoot = "vendor/wgpu-native";
       cargoDeps = hostPkgs.rustPlatform.importCargoLock {
@@ -213,11 +231,10 @@
         set +e # no crashy
         echo "Extracting Zig C/C++ include paths for ${rustTriple}..."
         
-        # AIGC:
         # Ask Zig CC for the target's include directories. 
         # Using awk instead of grep prevents 'exit code 1' if no match is found, 
         # and filtering by '^ +/' ensures we only grab actual absolute directory paths.
-        ZIG_INCLUDES=$( ${zigWrappers}/bin/${rustTriple}-cc -v -E -xc /dev/null 2>&1 | awk '/^ +\// {print "-isystem", $1}' | tr '\n' ' ' )
+        ZIG_INCLUDES=$(${zigWrappers}/bin/${rustTriple}-cc -v -E -xc /dev/null 2>&1 | awk '/^ +\// {print "-isystem", $1}' | tr '\n' ' ')
         
         echo "Zig includes found: $ZIG_INCLUDES"
         set -e
@@ -226,18 +243,20 @@
       '' else "") + "\n" + (extraInputs.preBuild or "");
     };
 
-    mkCross = triple: mkBuild {
+    mkCross = triple: let
+      crossPkgs = env.crossPkgsForTarget triple;
+    in mkBuild {
       # we use zig to cross compile, for some reason mingw_w64 on nixpkgs for aarch64 SEEMS to have x86 asm which crashes the build
-      pkgs = hostPkgs;
-      crossTarget = triple;
+      pkgs = crossPkgs;
+      buildTarget = triple;
       preferMusl = lib.hasInfix "musl" triple;
       extraInputs = { clang = hostPkgs.llvmPackages.clang-unwrapped; } //
-        (if lib.hasInfix "linux" triple then linuxInputs { pkgs = hostPkgs; }
-        else if lib.hasInfix "windows" triple then windowsInputs { pkgs = hostPkgs; }
+        (if lib.hasInfix "linux" triple then linuxInputs { pkgs = crossPkgs; }
+        else if lib.hasInfix "windows" triple then windowsInputs { pkgs = crossPkgs; }
         else {});
     };
 
-    # outputs
+    # Outputs
     hostExtraInputs =
       if hostPkgs.stdenv.isLinux then (linuxInputs { pkgs = hostPkgs; })
       else if hostPkgs.stdenv.isWindows then (windowsInputs { pkgs = hostPkgs; })
@@ -267,10 +286,8 @@
         type = "app";
         program = "${packages.default}/bin/default";
       };
-      default = env.app [] "zig build run -- \"$@\"";
       build   = env.app [] "zig build \"$@\"";
-      test    = env.app [] "zig build test -- \"$@\"";
-      docs    = env.app [] "zig build docs -- \"$@\"";
+      test    = env.app [] "zig build -Dtest=true -- \"$@\"";
       zig2nix = env.app [] "zig2nix \"$@\"";
     };
 

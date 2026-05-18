@@ -1,9 +1,9 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const z = @import("z_wgpu_native");
+const surface_util = @import("./surface.zig"); 
 
 const GLFWwindow = opaque {};
-const wl_display = opaque {};
-const wl_surface = opaque {};
 
 extern "c" fn glfwInit() c_int;
 extern "c" fn glfwTerminate() void;
@@ -13,8 +13,6 @@ extern "c" fn glfwDestroyWindow(window: ?*GLFWwindow) void;
 extern "c" fn glfwPollEvents() void;
 extern "c" fn glfwWindowShouldClose(window: ?*GLFWwindow) c_int;
 extern "c" fn glfwGetKey(window: ?*GLFWwindow, key: c_int) c_int;
-extern "c" fn glfwGetWaylandDisplay() ?*wl_display;
-extern "c" fn glfwGetWaylandWindow(window: ?*GLFWwindow) ?*wl_surface;
 extern "c" fn glfwGetFramebufferSize(window: ?*GLFWwindow, width: *c_int, height: *c_int) void;
 
 const GLFW_CLIENT_API = 0x00022001;
@@ -99,25 +97,11 @@ test "rgbw" {
     const window = glfwCreateWindow(640, 480, "z-wgpu-native rgbw cube+pyramid", null, null) orelse return error.GlfwWindowFailed;
     defer glfwDestroyWindow(window);
 
-    const wl_dpy = glfwGetWaylandDisplay() orelse return error.NoWaylandDisplay;
+    std.log.info("creating instance...", .{});
+    const instance = z.handles.createInstance(null) orelse unreachable;
 
-    var extras: z.types.InstanceExtras = std.mem.zeroes(z.types.InstanceExtras);
-    extras.chain.s_type = .instance_extras;
-    extras.display_handle.type = .wayland;
-    extras.display_handle.data.wayland.display = @ptrCast(wl_dpy);
-    const instance = z.handles.createInstance(&z.types.InstanceDescriptor{
-        .next_in_chain = @ptrCast(&extras.chain),
-    }) orelse unreachable;
-
-    const wl_sfc = glfwGetWaylandWindow(window) orelse return error.NoWaylandSurface;
-    var surface_source = z.types.SurfaceSourceWaylandSurface{
-        .chain = .{ .s_type = .surface_source_wayland_surface },
-        .display = @ptrCast(wl_dpy),
-        .surface = @ptrCast(wl_sfc),
-    };
-    const surface = instance.createSurface(&z.types.SurfaceDescriptor{
-        .next_in_chain = @ptrCast(&surface_source.chain),
-    }) orelse unreachable;
+    std.log.info("creating surface...", .{});
+    const surface = try surface_util.createSurfaceFromGlfw(instance, window);
     defer surface.unconfigure();
 
     const adapter_count = instance.enumerateAdapters(null, null);
@@ -360,7 +344,7 @@ test "rgbw" {
         }) orelse unreachable;
         render_pass.setPipeline(render_pipeline);
 
-        // Draw cube (left side, spinning on Y in place)
+        // Draw cube
         {
             const model = mat4Mul(mat4Translation(-0.7, 0, 0), mat4RotationY(angle_cube));
             const uniforms = Uniforms{ .mvp = mat4Mul(mat4Mul(proj, view_matrix), model) };
@@ -372,7 +356,7 @@ test "rgbw" {
             render_pass.drawIndexed(cube_indices.len, 1, 0, 0, 0);
         }
 
-        // Draw pyramid (right side, spinning on X in place)
+        // Draw pyramid
         {
             const model = mat4Mul(mat4Translation(0.7, 0, 0), mat4RotationX(angle_pyr));
             const uniforms = Uniforms{ .mvp = mat4Mul(mat4Mul(proj, view_matrix), model) };

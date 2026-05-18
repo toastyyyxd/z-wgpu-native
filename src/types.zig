@@ -9,7 +9,7 @@ pub const MapAsyncStatusError = error{
     Aborted,
 };
 
-pub const MapAsyncStatus = enum(c_uint) {
+pub const MapAsyncStatus = enum(u32) {
     success = 1,
     callback_cancelled = 2,
     @"error" = 3,
@@ -31,20 +31,20 @@ pub const MapAsyncStatus = enum(c_uint) {
     }
 };
 
-pub const PolygonMode = enum(c_uint) {
+pub const PolygonMode = enum(u32) {
     fill = 0,
     line = 1,
     point = 2,
 };
 
-pub const CullMode = enum(c_uint) {
+pub const CullMode = enum(u32) {
     @"undefined" = 0,
     none = 1,
     front = 2,
     back = 3,
 };
 
-pub const BackendType = enum(c_uint) {
+pub const BackendType = enum(u32) {
     @"undefined" = 0,
     @"null" = 1,
     web_gpu = 2,
@@ -56,37 +56,37 @@ pub const BackendType = enum(c_uint) {
     open_gles = 8,
 };
 
-pub const BufferMapState = enum(c_uint) {
+pub const BufferMapState = enum(u32) {
     unmapped = 1,
     pending = 2,
     mapped = 3,
 };
 
-pub const OptionalBool = enum(c_uint) {
+pub const OptionalBool = enum(u32) {
     @"false" = 0,
     @"true" = 1,
     @"undefined" = 2,
 };
 
-pub const ErrorFilter = enum(c_uint) {
+pub const ErrorFilter = enum(u32) {
     validation = 1,
     out_of_memory = 2,
     internal = 3,
 };
 
-pub const Dx12SwapchainKind = enum(c_uint) {
+pub const Dx12SwapchainKind = enum(u32) {
     @"undefined" = 0,
     dxgi_from_hwnd = 1,
     dxgi_from_visual = 2,
 };
 
-pub const PowerPreference = enum(c_uint) {
+pub const PowerPreference = enum(u32) {
     @"undefined" = 0,
     low_power = 1,
     high_performance = 2,
 };
 
-pub const Gles3MinorVersion = enum(c_uint) {
+pub const Gles3MinorVersion = enum(u32) {
     automatic = 0,
     version0 = 1,
     version1 = 2,
@@ -97,7 +97,7 @@ pub const CompilationInfoRequestStatusError = error{
     CallbackCancelled,
 };
 
-pub const CompilationInfoRequestStatus = enum(c_uint) {
+pub const CompilationInfoRequestStatus = enum(u32) {
     success = 1,
     callback_cancelled = 2,
     pub fn toError(self: CompilationInfoRequestStatus) CompilationInfoRequestStatusError!void {
@@ -113,7 +113,7 @@ pub const CompilationInfoRequestStatus = enum(c_uint) {
     }
 };
 
-pub const NativeTextureFormat = enum(c_uint) {
+pub const NativeTextureFormat = enum(u32) {
     r16_unorm = 196609,
     r16_snorm = 196610,
     rg16_unorm = 196611,
@@ -124,19 +124,19 @@ pub const NativeTextureFormat = enum(c_uint) {
     p010 = 196616,
 };
 
-pub const CompilationMessageType = enum(c_uint) {
+pub const CompilationMessageType = enum(u32) {
     @"error" = 1,
     warning = 2,
     info = 3,
 };
 
-pub const MipmapFilterMode = enum(c_uint) {
+pub const MipmapFilterMode = enum(u32) {
     @"undefined" = 0,
     nearest = 1,
     linear = 2,
 };
 
-pub const WGSLLanguageFeatureName = enum(c_uint) {
+pub const WGSLLanguageFeatureName = enum(u32) {
     readonly_and_readwrite_storage_textures = 1,
     packed4x8_integer_dot_product = 2,
     unrestricted_pointer_parameters = 3,
@@ -148,14 +148,14 @@ pub const WGSLLanguageFeatureName = enum(c_uint) {
     texture_formats_tier1 = 9,
 };
 
-pub const AddressMode = enum(c_uint) {
+pub const AddressMode = enum(u32) {
     @"undefined" = 0,
     clamp_to_edge = 1,
     repeat = 2,
     mirror_repeat = 3,
 };
 
-pub const TextureSampleType = enum(c_uint) {
+pub const TextureSampleType = enum(u32) {
     binding_not_used = 0,
     @"undefined" = 1,
     float = 2,
@@ -165,7 +165,7 @@ pub const TextureSampleType = enum(c_uint) {
     uint = 6,
 };
 
-pub const ErrorType = enum(c_uint) {
+pub const ErrorType = enum(u32) {
     no_error = 1,
     validation = 2,
     out_of_memory = 3,
@@ -178,7 +178,7 @@ pub const PopErrorScopeStatusError = error{
     Error,
 };
 
-pub const PopErrorScopeStatus = enum(c_uint) {
+pub const PopErrorScopeStatus = enum(u32) {
     success = 1,
     callback_cancelled = 2,
     @"error" = 3,
@@ -202,7 +202,7 @@ pub const RequestDeviceStatusError = error{
     Error,
 };
 
-pub const RequestDeviceStatus = enum(c_uint) {
+pub const RequestDeviceStatus = enum(u32) {
     success = 1,
     callback_cancelled = 2,
     @"error" = 3,
@@ -221,13 +221,13 @@ pub const RequestDeviceStatus = enum(c_uint) {
     }
 };
 
-pub const VertexStepMode = enum(c_uint) {
+pub const VertexStepMode = enum(u32) {
     @"undefined" = 0,
     vertex = 1,
     instance = 2,
 };
 
-pub const LogLevel = enum(c_uint) {
+pub const LogLevel = enum(u32) {
     off = 0,
     @"error" = 1,
     warn = 2,
@@ -236,7 +236,7 @@ pub const LogLevel = enum(c_uint) {
     trace = 5,
 };
 
-pub const NativeFeature = enum(c_uint) {
+pub const NativeFeature = enum(u32) {
     immediates = 196609,
     texture_adapter_specific_format_features = 196610,
     multi_draw_indirect_count = 196612,
@@ -286,7 +286,7 @@ pub const NativeFeature = enum(c_uint) {
     memory_decoration_volatile = 196672,
 };
 
-pub const BlendOperation = enum(c_uint) {
+pub const BlendOperation = enum(u32) {
     @"undefined" = 0,
     add = 1,
     subtract = 2,
@@ -295,13 +295,13 @@ pub const BlendOperation = enum(c_uint) {
     max = 5,
 };
 
-pub const CallbackMode = enum(c_uint) {
+pub const CallbackMode = enum(u32) {
     wait_any_only = 1,
     allow_process_events = 2,
     allow_spontaneous = 3,
 };
 
-pub const BlendFactor = enum(c_uint) {
+pub const BlendFactor = enum(u32) {
     @"undefined" = 0,
     zero = 1,
     one = 2,
@@ -322,7 +322,7 @@ pub const BlendFactor = enum(c_uint) {
     one_minus_src1_alpha = 17,
 };
 
-pub const TextureFormat = enum(c_uint) {
+pub const TextureFormat = enum(u32) {
     @"undefined" = 0,
     r8_unorm = 1,
     r8_snorm = 2,
@@ -427,13 +427,13 @@ pub const TextureFormat = enum(c_uint) {
     astc12x12_unorm_srgb = 101,
 };
 
-pub const StoreOp = enum(c_uint) {
+pub const StoreOp = enum(u32) {
     @"undefined" = 0,
     store = 1,
     discard = 2,
 };
 
-pub const StorageTextureAccess = enum(c_uint) {
+pub const StorageTextureAccess = enum(u32) {
     binding_not_used = 0,
     @"undefined" = 1,
     write_only = 2,
@@ -446,7 +446,7 @@ pub const QueueWorkDoneStatusError = error{
     Error,
 };
 
-pub const QueueWorkDoneStatus = enum(c_uint) {
+pub const QueueWorkDoneStatus = enum(u32) {
     success = 1,
     callback_cancelled = 2,
     @"error" = 3,
@@ -465,27 +465,27 @@ pub const QueueWorkDoneStatus = enum(c_uint) {
     }
 };
 
-pub const TextureDimension = enum(c_uint) {
+pub const TextureDimension = enum(u32) {
     @"undefined" = 0,
     _1d = 1,
     _2d = 2,
     _3d = 3,
 };
 
-pub const DeviceLostReason = enum(c_uint) {
+pub const DeviceLostReason = enum(u32) {
     unknown = 1,
     destroyed = 2,
     callback_cancelled = 3,
     failed_creation = 4,
 };
 
-pub const InstanceFeatureName = enum(c_uint) {
+pub const InstanceFeatureName = enum(u32) {
     timed_wait_any = 1,
     shader_source_spirv = 2,
     multiple_devices_per_adapter = 3,
 };
 
-pub const ToneMappingMode = enum(c_uint) {
+pub const ToneMappingMode = enum(u32) {
     standard = 1,
     extended = 2,
 };
@@ -494,7 +494,7 @@ pub const StatusError = error{
     Error,
 };
 
-pub const Status = enum(c_uint) {
+pub const Status = enum(u32) {
     success = 1,
     @"error" = 2,
     pub fn toError(self: Status) StatusError!void {
@@ -519,7 +519,7 @@ pub const SurfaceGetCurrentTextureStatusError = error{
     Occluded,
 };
 
-pub const SurfaceGetCurrentTextureStatus = enum(c_uint) {
+pub const SurfaceGetCurrentTextureStatus = enum(u32) {
     success_optimal = 1,
     success_suboptimal = 2,
     timeout = 3,
@@ -555,7 +555,7 @@ pub const WaitStatusError = error{
     Error,
 };
 
-pub const WaitStatus = enum(c_uint) {
+pub const WaitStatus = enum(u32) {
     success = 1,
     timed_out = 2,
     @"error" = 3,
@@ -574,7 +574,7 @@ pub const WaitStatus = enum(c_uint) {
     }
 };
 
-pub const BufferBindingType = enum(c_uint) {
+pub const BufferBindingType = enum(u32) {
     binding_not_used = 0,
     @"undefined" = 1,
     uniform = 2,
@@ -582,7 +582,7 @@ pub const BufferBindingType = enum(c_uint) {
     read_only_storage = 4,
 };
 
-pub const StencilOperation = enum(c_uint) {
+pub const StencilOperation = enum(u32) {
     @"undefined" = 0,
     keep = 1,
     zero = 2,
@@ -594,19 +594,19 @@ pub const StencilOperation = enum(c_uint) {
     decrement_wrap = 8,
 };
 
-pub const GLFenceBehaviour = enum(c_uint) {
+pub const GLFenceBehaviour = enum(u32) {
     normal = 0,
     auto_finish = 1,
 };
 
-pub const AdapterType = enum(c_uint) {
+pub const AdapterType = enum(u32) {
     discrete_gpu = 1,
     integrated_gpu = 2,
     cpu = 3,
     unknown = 4,
 };
 
-pub const VertexFormat = enum(c_uint) {
+pub const VertexFormat = enum(u32) {
     uint8 = 1,
     uint8x2 = 2,
     uint8x4 = 3,
@@ -650,17 +650,17 @@ pub const VertexFormat = enum(c_uint) {
     unorm8x4bgra = 41,
 };
 
-pub const NativeQueryType = enum(c_uint) {
+pub const NativeQueryType = enum(u32) {
     pipeline_statistics = 196608,
 };
 
-pub const IndexFormat = enum(c_uint) {
+pub const IndexFormat = enum(u32) {
     @"undefined" = 0,
     uint16 = 1,
     uint32 = 2,
 };
 
-pub const TextureViewDimension = enum(c_uint) {
+pub const TextureViewDimension = enum(u32) {
     @"undefined" = 0,
     _1d = 1,
     _2d = 2,
@@ -670,12 +670,12 @@ pub const TextureViewDimension = enum(c_uint) {
     _3d = 6,
 };
 
-pub const PredefinedColorSpace = enum(c_uint) {
+pub const PredefinedColorSpace = enum(u32) {
     srgb = 1,
     display_p3 = 2,
 };
 
-pub const ComponentSwizzle = enum(c_uint) {
+pub const ComponentSwizzle = enum(u32) {
     @"undefined" = 0,
     zero = 1,
     one = 2,
@@ -685,14 +685,14 @@ pub const ComponentSwizzle = enum(c_uint) {
     a = 6,
 };
 
-pub const TextureAspect = enum(c_uint) {
+pub const TextureAspect = enum(u32) {
     @"undefined" = 0,
     all = 1,
     stencil_only = 2,
     depth_only = 3,
 };
 
-pub const SType = enum(c_uint) {
+pub const SType = enum(u32) {
     shader_source_spirv = 1,
     shader_source_wgsl = 2,
     render_pass_max_draw_count = 3,
@@ -722,13 +722,13 @@ pub const SType = enum(c_uint) {
     primitive_state_extras = 196620,
 };
 
-pub const Dx12Compiler = enum(c_uint) {
+pub const Dx12Compiler = enum(u32) {
     @"undefined" = 0,
     fxc = 1,
     dxc = 2,
 };
 
-pub const NativeDisplayHandleType = enum(c_uint) {
+pub const NativeDisplayHandleType = enum(u32) {
     none = 0,
     xlib = 1,
     xcb = 2,
@@ -741,7 +741,7 @@ pub const RequestAdapterStatusError = error{
     Error,
 };
 
-pub const RequestAdapterStatus = enum(c_uint) {
+pub const RequestAdapterStatus = enum(u32) {
     success = 1,
     callback_cancelled = 2,
     unavailable = 3,
@@ -763,7 +763,7 @@ pub const RequestAdapterStatus = enum(c_uint) {
     }
 };
 
-pub const LoadOp = enum(c_uint) {
+pub const LoadOp = enum(u32) {
     @"undefined" = 0,
     load = 1,
     clear = 2,
@@ -775,7 +775,7 @@ pub const CreatePipelineAsyncStatusError = error{
     InternalError,
 };
 
-pub const CreatePipelineAsyncStatus = enum(c_uint) {
+pub const CreatePipelineAsyncStatus = enum(u32) {
     success = 1,
     callback_cancelled = 2,
     validation_error = 3,
@@ -797,7 +797,7 @@ pub const CreatePipelineAsyncStatus = enum(c_uint) {
     }
 };
 
-pub const DxcMaxShaderModel = enum(c_uint) {
+pub const DxcMaxShaderModel = enum(u32) {
     v6_0 = 0,
     v6_1 = 1,
     v6_2 = 2,
@@ -808,7 +808,7 @@ pub const DxcMaxShaderModel = enum(c_uint) {
     v6_7 = 7,
 };
 
-pub const FeatureName = enum(c_uint) {
+pub const FeatureName = enum(u32) {
     core_features_and_limits = 1,
     depth_clip_control = 2,
     depth32_float_stencil8 = 3,
@@ -833,7 +833,7 @@ pub const FeatureName = enum(c_uint) {
     texture_component_swizzle = 22,
 };
 
-pub const PipelineStatisticName = enum(c_uint) {
+pub const PipelineStatisticName = enum(u32) {
     vertex_shader_invocations = 0,
     clipper_invocations = 1,
     clipper_primitives_out = 2,
@@ -841,12 +841,12 @@ pub const PipelineStatisticName = enum(c_uint) {
     compute_shader_invocations = 4,
 };
 
-pub const QueryType = enum(c_uint) {
+pub const QueryType = enum(u32) {
     occlusion = 1,
     timestamp = 2,
 };
 
-pub const SamplerBindingType = enum(c_uint) {
+pub const SamplerBindingType = enum(u32) {
     binding_not_used = 0,
     @"undefined" = 1,
     filtering = 2,
@@ -854,7 +854,7 @@ pub const SamplerBindingType = enum(c_uint) {
     comparison = 4,
 };
 
-pub const CompositeAlphaMode = enum(c_uint) {
+pub const CompositeAlphaMode = enum(u32) {
     auto = 0,
     @"opaque" = 1,
     premultiplied = 2,
@@ -862,25 +862,25 @@ pub const CompositeAlphaMode = enum(c_uint) {
     inherit = 4,
 };
 
-pub const FeatureLevel = enum(c_uint) {
+pub const FeatureLevel = enum(u32) {
     @"undefined" = 0,
     compatibility = 1,
     core = 2,
 };
 
-pub const FrontFace = enum(c_uint) {
+pub const FrontFace = enum(u32) {
     @"undefined" = 0,
     ccw = 1,
     cw = 2,
 };
 
-pub const FilterMode = enum(c_uint) {
+pub const FilterMode = enum(u32) {
     @"undefined" = 0,
     nearest = 1,
     linear = 2,
 };
 
-pub const CompareFunction = enum(c_uint) {
+pub const CompareFunction = enum(u32) {
     @"undefined" = 0,
     never = 1,
     less = 2,
@@ -892,7 +892,7 @@ pub const CompareFunction = enum(c_uint) {
     always = 8,
 };
 
-pub const PresentMode = enum(c_uint) {
+pub const PresentMode = enum(u32) {
     @"undefined" = 0,
     fifo = 1,
     fifo_relaxed = 2,
@@ -900,7 +900,7 @@ pub const PresentMode = enum(c_uint) {
     mailbox = 4,
 };
 
-pub const PrimitiveTopology = enum(c_uint) {
+pub const PrimitiveTopology = enum(u32) {
     @"undefined" = 0,
     point_list = 1,
     line_list = 2,
@@ -918,7 +918,7 @@ pub const ColorWriteMask = packed struct(u64) {
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
 };
 
-pub const ColorWriteMask_all: ColorWriteMask = @bitCast(@as(u64, 15));
+pub const ColorWriteMask_all: ColorWriteMask = @bitCast(@as(u64, @intCast(15)));
 
 pub const ShaderStage = packed struct(u64) {
     vertex: bool = false,
@@ -972,7 +972,7 @@ pub const InstanceBackend = packed struct(u64) {
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
 };
 
-pub const InstanceBackend_primary: InstanceBackend = @bitCast(@as(u64, @bitCast(@as(c_longlong, (((@as(c_int, 1) << @intCast(@as(c_int, 0))) | (@as(c_int, 1) << @intCast(@as(c_int, 2)))) | (@as(c_int, 1) << @intCast(@as(c_int, 3)))) | (@as(c_int, 1) << @intCast(@as(c_int, 5)))))));
+pub const InstanceBackend_primary: InstanceBackend = @bitCast(@as(u64, @intCast(@as(c_long, (((@as(c_int, 1) << @intCast(@as(c_int, 0))) | (@as(c_int, 1) << @intCast(@as(c_int, 2)))) | (@as(c_int, 1) << @intCast(@as(c_int, 3)))) | (@as(c_int, 1) << @intCast(@as(c_int, 5)))))));
 
 pub const InstanceFlag = packed struct(u64) {
     debug: bool = false,
@@ -989,11 +989,6 @@ pub const InstanceFlag = packed struct(u64) {
     with_env: bool = false,
     __: u36 = 0,
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
-};
-
-pub const unnamed_1 = extern struct {
-    low: c_uint = 0,
-    high: c_uint = 0,
 };
 
 pub const StringView = extern struct {
@@ -1747,7 +1742,7 @@ pub const WaylandDisplayHandle = extern struct {
     display: ?*anyopaque = null,
 };
 
-pub const unnamed_3 = extern union {
+pub const unnamed_2 = extern union {
     xlib: XlibDisplayHandle,
     xcb: XcbDisplayHandle,
     wayland: WaylandDisplayHandle,
@@ -1755,7 +1750,7 @@ pub const unnamed_3 = extern union {
 
 pub const NativeDisplayHandle = extern struct {
     type: NativeDisplayHandleType = .none,
-    data: unnamed_3 = std.mem.zeroes(unnamed_3),
+    data: unnamed_2 = std.mem.zeroes(unnamed_2),
 };
 
 pub const InstanceExtras = extern struct {

@@ -72,7 +72,7 @@ fn writeEnums(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
             try buf.appendSlice("};\n\n");
         }
 
-        try buf.print("pub const {s} = enum(c_uint) {{\n", .{zname});
+        try buf.print("pub const {s} = enum(u32) {{\n", .{zname});
         for (sorted_vals.items) |sv| {
             var buf1: [128]u8 = undefined;
             var buf2: [128]u8 = undefined;
@@ -147,8 +147,6 @@ fn writeFlags(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
             }
         }
 
-        // Backing is always u64; all WGPU flags are uint64_t.
-        // has_force32 only guarantees minimum 32-bit width, never shrinks from u64.
         const backing = "u64";
         const backing_bits: u8 = 64;
 
@@ -203,7 +201,9 @@ fn writeFlags(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
             for (sorted_comps.items) |comp| {
                 var name_buf: [128]u8 = undefined;
                 const vname = Common.zigValueName(comp.name, &name_buf);
-                try buf.print("pub const {s}_{s}: {s} = @bitCast(@as(u64, {s}));\n", .{ zname, vname, zname, comp.init_text });
+                const cut_prefix = std.mem.cutPrefix(u8, comp.init_text, "@bitCast(");
+                const cut_suffix = if (cut_prefix) |s| std.mem.cutSuffix(u8, s, ")") else null;
+                try buf.print("pub const {s}_{s}: {s} = @bitCast(@as(u64, @intCast({s})));\n", .{ zname, vname, zname, cut_suffix orelse comp.init_text });
             }
             try buf.appendSlice("\n");
         }

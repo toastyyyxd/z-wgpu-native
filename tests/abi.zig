@@ -7,9 +7,9 @@ fn cType(comptime zig_name: [:0]const u8) ?type {
     return null;
 }
 
-fn cEnumValue(comptime zig_enum_name: [:0]const u8, comptime field_name: [:0]const u8) ?c_uint {
+fn cEnumValue(comptime zig_enum_name: [:0]const u8, comptime field_name: [:0]const u8) ?u32 {
     const c_name = "WGPU" ++ zig_enum_name ++ "_" ++ field_name;
-    if (@hasDecl(z.c, c_name)) return @as(c_uint, @intCast(@field(z.c, c_name)));
+    if (@hasDecl(z.c, c_name)) return @as(u32, @intCast(@field(z.c, c_name)));
     return null;
 }
 
@@ -35,8 +35,8 @@ fn cFieldOffset(comptime ct: type, comptime zig_field: [:0]const u8) ?comptime_i
 
 fn verifyEnum(comptime T: type, comptime name: [:0]const u8, failures: *u32) void {
     const tag = @typeInfo(T).@"enum".tag_type;
-    if (tag != c_uint) {
-        std.log.err("types.{s}: tag_type {s}, expected c_uint", .{ name, @typeName(tag) });
+    if (tag != u32) {
+        std.log.err("types.{s}: tag_type {s}, expected u32", .{ name, @typeName(tag) });
         failures.* += 1;
     }
     if (@sizeOf(T) != @sizeOf(c_uint)) {

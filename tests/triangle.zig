@@ -1,9 +1,9 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const z = @import("z_wgpu_native");
+const surface_util = @import("./surface.zig"); 
 
 const GLFWwindow = opaque {};
-const wl_display = opaque {};
-const wl_surface = opaque {};
 
 extern "c" fn glfwInit() c_int;
 extern "c" fn glfwTerminate() void;
@@ -13,8 +13,6 @@ extern "c" fn glfwDestroyWindow(window: ?*GLFWwindow) void;
 extern "c" fn glfwPollEvents() void;
 extern "c" fn glfwWindowShouldClose(window: ?*GLFWwindow) c_int;
 extern "c" fn glfwGetKey(window: ?*GLFWwindow, key: c_int) c_int;
-extern "c" fn glfwGetWaylandDisplay() ?*wl_display;
-extern "c" fn glfwGetWaylandWindow(window: ?*GLFWwindow) ?*wl_surface;
 
 const GLFW_CLIENT_API = 0x00022001;
 const GLFW_NO_API = 0;
@@ -35,37 +33,42 @@ test "triangle" {
     const window = glfwCreateWindow(640, 480, "z-wgpu-native triangle", null, null) orelse return error.GlfwWindowFailed;
     defer glfwDestroyWindow(window);
 
-    const wl_dpy = glfwGetWaylandDisplay() orelse return error.NoWaylandDisplay;
-
     std.log.info("creating instance...", .{});
-
-    var extras: z.types.InstanceExtras = std.mem.zeroes(z.types.InstanceExtras);
-    extras.chain.s_type = .instance_extras;
-    extras.display_handle.type = .wayland;
-    extras.display_handle.data.wayland.display = @ptrCast(wl_dpy);
-    const instance = z.handles.createInstance(&z.types.InstanceDescriptor{
-        .next_in_chain = @ptrCast(&extras.chain),
-    }) orelse unreachable;
+    const instance = z.handles.createInstance(null) orelse unreachable;
 
     std.log.info("creating surface...", .{});
-    const wl_sfc = glfwGetWaylandWindow(window) orelse return error.NoWaylandSurface;
-    var surface_source = z.types.SurfaceSourceWaylandSurface{
-        .chain = .{ .s_type = .surface_source_wayland_surface },
-        .display = @ptrCast(wl_dpy),
-        .surface = @ptrCast(wl_sfc),
-    };
-    const surface = instance.createSurface(&z.types.SurfaceDescriptor{
-        .next_in_chain = @ptrCast(&surface_source.chain),
-    }) orelse unreachable;
+    const surface = try surface_util.createSurfaceFromGlfw(instance, window);
     defer surface.unconfigure();
 
-    std.log.info("enumerating adapter...", .{});
-    const adapter_count = instance.enumerateAdapters(null, null);
-    if (adapter_count == 0) return error.NoAdapter;
-    const adapters = try std.testing.allocator.alloc(z.handles.Adapter, adapter_count);
-    defer std.testing.allocator.free(adapters);
-    _ = instance.enumerateAdapters(null, adapters.ptr);
-    const adapter = adapters[0];
+
+    std.log.info("requesting adapter...", .{});
+
+    const AdapterCtx = struct {
+        status: z.types.RequestAdapterStatus = undefined,
+        adapter: ?z.handles.Adapter = null,
+    };
+    
+    var adapter_ctx = AdapterCtx{};
+    var adapter_ctx2: u8 = 0;
+
+    const adapter_opts = z.types.RequestAdapterOptions{
+        .compatible_surface = z.handles.OptionalSurface.wrap(surface), 
+    };
+
+    _ = instance.requestAdapter(&adapter_opts, z.callbacks.requestAdapterCallback(
+        AdapterCtx, u8, &adapter_ctx, &adapter_ctx2,
+        struct {
+            fn cb(ctx: *AdapterCtx, _: *u8, s: z.types.RequestAdapterStatus, a: ?z.handles.Adapter, _: []const u8) void {
+                ctx.status = s;
+                ctx.adapter = a;
+            }
+        }.cb,
+    ));
+
+    const adapter = adapter_ctx.adapter orelse {
+        std.log.err("Failed to find a compatible adapter. Status: {any}", .{adapter_ctx.status});
+        return error.NoCompatibleAdapter;
+    };
 
     std.log.info("requesting device...", .{});
 
