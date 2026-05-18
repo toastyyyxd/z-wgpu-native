@@ -8,34 +8,36 @@ imo llms are good for repetitive work, search, and pattern recognition, not for 
 
 ## Build
 
-Requires `clang` and `cargo` on `$PATH`.
+Requires `clang` and `cargo` on `$PATH` along with linking dependencies.
 
 ```sh
-zig build                # build the wrapper library
-zig build codegen        # regenerate src/* from vendor headers
-zig build test           # run all tests including headed tests that link glfw + etc
-zig build compute-test   # run only the headless compute test
-zig build translate      # run only the C-to-Zig translation step
-
+zig build --help
+  -Dtarget=[string]            The CPU architecture, OS, and ABI to build for
+  -Dcpu=[string]               Target CPU features to add or subtract
+  -Dofmt=[string]              Target object format
+  -Ddynamic-linker=[string]    Path to interpreter on the target system
+  -Doptimize=[enum]            Prioritize performance, safety, or binary size
+  -Dtest=[bool]                Run tests.
+  -Dforce-cross-tests=[bool]   Force run tests when crosscompiling regardless of emulation flags.
+  -Dheaded-tests=[bool]        Run headed tests on top of default headless tests
+  -Dcargo-target=[string]      Override a more reliable Cargo target triple if `triples.zig` does not translate it correctly.
+  -Dc-includes=[string]        Path to any headers needed for translate-c and other steps.
+  -Dwgpu=[lazy_path]           Provide a prebuilt wgpu-native library to skip the cargo and rust dependencies.
+  -Dmode=[enum]
+    `minimal` : Consumers can usually build from the existing src/, though it could be out-of-sync with vendor/ or codegen.
+    `codegen` : Generates src/ and builds; requires git submodules to run translate-c.
+    `full`    : Suitable for hermetic builds and building tests; requires cargo and rust dependencies.
+     Note: You can provide a prebuilt wgpu_native library with `-Dwgpu=<path-to-file>` for tests.
+           For hermetic or deterministic builds, flake.nix provides coverage for crosscompilation as well.
+    Supported Values:
+        minimal
+        codegen
+        full
 ```
 
-## Structure
+## Quirks
 
-* `build/main.zig` handles top control flow mostly
-* `build/Map*.zig` mapping strategies for kinds of things
-* `build/Output*.zig` generates zig code from mapped information
-* `src/types.zig` enums, flags (packed structs), data structs with converted fields
-* `src/handles.zig` handle structs with method wrappers + standalone functions
-* `src/callbacks.zig` comptime closure trampolines for C callback types
-* `src/root.zig` re-exports everything
-* `tests/lib.zig` unit tests
-* `tests/compute.zig` compute shader test
-* `tests/triangle.zig` headed basic rendering of a red triangle test
-* `tests/rgbw.zig` headed spinning pyramid and colorful cube test
-
-## Wrapper quirks
-
-A few things work differently from raw wgpu-native as far as I know of...
+A few things work differently from raw wgpu-native:
 
 ### Handle fields in descriptors use `Optional{Handle}`
 
@@ -48,21 +50,16 @@ The C headers use null pointers for optional handles. In Zig that's a `?*anyopaq
 .d = .{ .device = wgpu.handles.OptionalDevice.none() },
 // read it back
 const dev = surface_tex.texture.unwrap();       // panics if null
-const dev = surface_tex.texture.get();           // returns ?Texture
+const dev = surface_tex.texture.get();          // returns ?Texture
 ```
 
-### `WGPUBool` is `c_int`, not `bool`
+### `WGPUBool` is `u32`, not `bool`
 
-C `WGPUBool` is `uint32_t`. Wrap it as Zig `bool` (1 byte) and padding bits get read as garbage by the C side. All `WGPUBool` fields are `c_int`, so write `0` / `1` instead of `false` / `true`:
-
+C `WGPUBool` is `u32`, `1` or `0`.
 ```zig
-.alpha_to_coverage_enabled = 0,
-.mapped_at_creation = 0,
+.alpha_to_coverage_enabled = 1, // true
+.mapped_at_creation = 0,        // false
 ```
-
-### Descriptor casts are automatic
-
-The wrapper converts `types.*` descriptors to `c.*` in method bodies. You don't need `@ptrCast` for descriptor arguments — just pass the wrapper type directly. Same for handles in method args: pass the wrapper, not the raw `.ptr`.
 
 ## Usage
 

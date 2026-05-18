@@ -66,6 +66,7 @@ pub fn build(b: *std.Build) !void {
     state.library_step = null;
 
     state.mode = b.option(Mode, "mode",
+        \\
         \\`minimal` : Consumers can usually build from the existing src/, though it could be out-of-sync with vendor/ or codegen.
         \\`codegen` : Generates src/ and builds; requires git submodules to run translate-c.
         \\`full`    : Suitable for hermetic builds and building tests; requires cargo and rust dependencies.
@@ -78,7 +79,8 @@ pub fn build(b: *std.Build) !void {
     std.log.info("Running a {any} build, change this with -Dmode=<minimal|codegen|full>.", .{ state.mode });
 
     if (state.mode == .full and state.do_tests) {
-        std.log.info(\\If you would like to more efficently run tests or are having issues with the required rust toolchain,
+        std.log.info(\\
+                     \\If you would like to more efficently run tests or are having issues with the required rust toolchain,
                      \\consider providing a prebuilt wgpu-native library with -Dwgpu=<path-to-file> to skip the cargo step.
         , .{});
     }
