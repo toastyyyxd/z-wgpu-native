@@ -17,7 +17,7 @@ pub fn main(init: std.process.Init) !void {
     const content = try readFileAll(init.gpa, init.io, root_bindings);
     defer init.gpa.free(content);
 
-    var ast = try std.zig.Ast.parse(init.gpa, content, .zig);
+    var ast = try std.zig.Ast.parse(init.gpa, content, .{ .mode = .zig });
     defer ast.deinit(init.gpa);
 
     const mapping = try Mapping.init(init.gpa, init.arena.allocator(), &ast);

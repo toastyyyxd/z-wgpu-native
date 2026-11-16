@@ -25,7 +25,7 @@ fn writeEnums(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
         var val_iter = decl.values.iterator();
 
         // Collect values for sorting
-        var sorted_vals: std.ArrayListUnmanaged(struct { name: []const u8, value: i64 }) = .empty;
+        var sorted_vals: std.ArrayList(struct { name: []const u8, value: i64 }) = .empty;
         defer sorted_vals.deinit(mapping.gpa);
 
         val_iter = decl.values.iterator();
@@ -53,7 +53,7 @@ fn writeEnums(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
             var v_one_sv_i: ?usize = null;
             for (sorted_vals.items, 0..) |sv, i| {
                 if (sv.value == 1) v_one_sv_i = i;
-                if (std.ascii.indexOfIgnoreCase(sv.name, "success")) |_| {
+                if (Common.indexOfIgnoreCase(sv.name, "success")) |_| {
                     success_sv_i = i;
                     break; // This is already sorted
                 }
@@ -122,7 +122,7 @@ fn writeFlags(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
 
         // Collect sorted values
         const SortedVal = struct { name: []const u8, bit: u8 };
-        var sorted_vals: std.ArrayListUnmanaged(SortedVal) = .empty;
+        var sorted_vals: std.ArrayList(SortedVal) = .empty;
         defer sorted_vals.deinit(mapping.gpa);
 
         var val_iter = decl.values.iterator();
@@ -139,7 +139,7 @@ fn writeFlags(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
         }.lt);
 
         // Deduplicate by bit position (keep first occurrence)
-        var deduped: std.ArrayListUnmanaged(SortedVal) = .empty;
+        var deduped: std.ArrayList(SortedVal) = .empty;
         defer deduped.deinit(mapping.gpa);
         for (sorted_vals.items) |sv| {
             if (deduped.items.len == 0 or deduped.items[deduped.items.len - 1].bit != sv.bit) {
@@ -150,7 +150,7 @@ fn writeFlags(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
         const backing = "u64";
         const backing_bits: u8 = 64;
 
-        try buf.print("pub const {s} = packed struct({s}) {{\n", .{ zname, backing });
+        try buf.print("pub const {s} = bitpack struct({s}) {{\n", .{ zname, backing });
 
         var current_bit: u8 = 0;
         for (deduped.items) |sv| {
@@ -182,7 +182,7 @@ fn writeFlags(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
         // Composite/preset flag constants (sorted by name)
         if (decl.composites.count() > 0) {
             const SortedComp = struct { name: []const u8, init_text: []const u8 };
-            var sorted_comps: std.ArrayListUnmanaged(SortedComp) = .empty;
+            var sorted_comps: std.ArrayList(SortedComp) = .empty;
             defer sorted_comps.deinit(mapping.gpa);
 
             var comp_iter = decl.composites.iterator();

@@ -258,8 +258,8 @@
 
     # Outputs
     hostExtraInputs =
-      if hostPkgs.stdenv.isLinux then (linuxInputs { pkgs = hostPkgs; })
-      else if hostPkgs.stdenv.isWindows then (windowsInputs { pkgs = hostPkgs; })
+      if hostPkgs.stdenv.hostPlatform.isLinux then (linuxInputs { pkgs = hostPkgs; })
+      else if hostPkgs.stdenv.hostPlatform.isWindows then (windowsInputs { pkgs = hostPkgs; })
       else {};
 
     packages = let

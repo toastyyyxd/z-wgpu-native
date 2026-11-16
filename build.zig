@@ -12,7 +12,7 @@ const State = struct {
     build: *std.Build,
     host: std.Build.ResolvedTarget,
     target: std.Build.ResolvedTarget,
-    optimize: std.builtin.OptimizeMode,
+    optimize: std.lang.Optimize,
     zig_triple: []const u8,
     rust_triple: []const u8,
     do_tests: bool,
@@ -38,12 +38,11 @@ pub fn build(b: *std.Build) !void {
     state.target = b.standardTargetOptions(.{});
     state.optimize = b.standardOptimizeOption(.{});
     state.do_tests = b.option(bool, "test", "Run tests.") orelse false;
-    state.test_cross = b.option(bool, "force-cross-tests", "Force run tests when crosscompiling regardless of emulation flags.") orelse false or
-        (b.enable_qemu and state.target.result.cpu.arch == state.host.result.cpu.arch) and
-        (b.enable_darling or !(state.target.result.os.tag == .macos and state.target.result.cpu.arch == .aarch64)) and
-        (b.enable_rosetta or !(state.target.result.os.tag == .macos and state.target.result.cpu.arch == .x86_64)) and
-        (b.enable_wasmtime or (state.target.result.cpu.arch != .wasm32 and state.target.result.cpu.arch != .wasm64)) and
-        (b.enable_wine or state.target.result.os.tag != .windows);
+    // Zig 0.18: emulation flags are no longer exposed on `*std.Build`; they live in the
+    // serialized build Configuration and the Run step appends the relevant `-fqemu`/`-fwine`/...
+    // arguments itself. Cross tests are therefore opt-in here, or implied by the emitted
+    // configuration when the build runner has an emulator available.
+    state.test_cross = b.option(bool, "force-cross-tests", "Force run tests when crosscompiling regardless of emulation flags.") orelse false;
     state.test_headed = b.option(bool, "headed-tests", "Run headed tests on top of default headless tests") orelse false;
 
     state.zig_triple = try state.target.result.zigTriple(b.allocator);
@@ -119,9 +118,9 @@ pub fn build(b: *std.Build) !void {
 }
 
 fn cargoBuild(state: *State) !*Step {
-    const cargo_profile: []const u8 = if (state.optimize == .Debug) "debug" else "release";
+    const cargo_profile: []const u8 = if (state.optimize == .debug) "debug" else "release";
 
-    const run_cargo_args: []const []const u8 = if (state.optimize == .Debug)
+    const run_cargo_args: []const []const u8 = if (state.optimize == .debug)
         &.{ "cargo", "build", "--target", state.rust_triple, "--manifest-path", "vendor/wgpu-native/Cargo.toml" }
     else
         &.{ "cargo", "build", "--target", state.rust_triple, "--release", "--manifest-path", "vendor/wgpu-native/Cargo.toml" };

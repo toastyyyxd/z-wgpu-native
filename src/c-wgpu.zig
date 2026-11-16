@@ -2930,8 +2930,10 @@ pub const __x86_64__ = @as(c_int, 1);
 pub const __x86_64 = @as(c_int, 1);
 pub const __SEG_GS = @as(c_int, 1);
 pub const __SEG_FS = @as(c_int, 1);
-pub const __seg_gs = @compileError("unable to translate macro: undefined identifier `address_space`"); // <builtin>:33:9
-pub const __seg_fs = @compileError("unable to translate macro: undefined identifier `address_space`"); // <builtin>:34:9
+pub const __seg_gs = @compileError("unable to translate macro: undefined identifier `address_space`");
+// <builtin>:33:9
+pub const __seg_fs = @compileError("unable to translate macro: undefined identifier `address_space`");
+// <builtin>:34:9
 pub const __LAHF_SAHF__ = @as(c_int, 1);
 pub const __AES__ = @as(c_int, 1);
 pub const __VAES__ = @as(c_int, 1);
@@ -3071,10 +3073,12 @@ pub const __SIZEOF_INT128__ = @as(c_int, 16);
 pub const __INTPTR_TYPE__ = c_long;
 pub const __UINTPTR_TYPE__ = c_ulong;
 pub const __INTMAX_TYPE__ = c_long;
-pub const __INTMAX_C_SUFFIX__ = @compileError("unable to translate macro: undefined identifier `L`"); // <builtin>:175:9
+pub const __INTMAX_C_SUFFIX__ = @compileError("unable to translate macro: undefined identifier `L`");
+// <builtin>:175:9
 pub const __INTMAX_C = __helpers.L_SUFFIX;
 pub const __UINTMAX_TYPE__ = c_ulong;
-pub const __UINTMAX_C_SUFFIX__ = @compileError("unable to translate macro: undefined identifier `UL`"); // <builtin>:178:9
+pub const __UINTMAX_C_SUFFIX__ = @compileError("unable to translate macro: undefined identifier `UL`");
+// <builtin>:178:9
 pub const __UINTMAX_C = __helpers.UL_SUFFIX;
 pub const __PTRDIFF_TYPE__ = c_long;
 pub const __SIZE_TYPE__ = c_ulong;
@@ -3109,8 +3113,8 @@ pub inline fn __INT32_C(c: anytype) @TypeOf(c) {
 pub const __INT64_TYPE__ = c_long;
 pub const __INT64_FMTd__ = "ld";
 pub const __INT64_FMTi__ = "li";
-pub const __INT64_C_SUFFIX__ = @compileError("unable to translate macro: undefined identifier `L`"); // <builtin>:204:9
-pub const __INT64_C = __helpers.L_SUFFIX;
+pub const __INT64_C_SUFFIX__ = @compileError("unable to translate macro: undefined identifier `L`");
+// <builtin>:204:9
 pub const __UINT8_TYPE__ = u8;
 pub const __UINT8_FMTo__ = "hho";
 pub const __UINT8_FMTu__ = "hhu";
@@ -3140,7 +3144,8 @@ pub const __UINT32_FMTo__ = "o";
 pub const __UINT32_FMTu__ = "u";
 pub const __UINT32_FMTx__ = "x";
 pub const __UINT32_FMTX__ = "X";
-pub const __UINT32_C_SUFFIX__ = @compileError("unable to translate macro: undefined identifier `U`"); // <builtin>:229:9
+pub const __UINT32_C_SUFFIX__ = @compileError("unable to translate macro: undefined identifier `U`");
+// <builtin>:229:9
 pub const __UINT32_C = __helpers.U_SUFFIX;
 pub const __UINT32_MAX__ = __helpers.promoteIntLiteral(c_uint, 4294967295, .decimal);
 pub const __INT32_MAX__ = __helpers.promoteIntLiteral(c_int, 2147483647, .decimal);
@@ -3149,8 +3154,8 @@ pub const __UINT64_FMTo__ = "lo";
 pub const __UINT64_FMTu__ = "lu";
 pub const __UINT64_FMTx__ = "lx";
 pub const __UINT64_FMTX__ = "lX";
-pub const __UINT64_C_SUFFIX__ = @compileError("unable to translate macro: undefined identifier `UL`"); // <builtin>:238:9
-pub const __UINT64_C = __helpers.UL_SUFFIX;
+pub const __UINT64_C_SUFFIX__ = @compileError("unable to translate macro: undefined identifier `UL`");
+// <builtin>:238:9
 pub const __UINT64_MAX__ = __helpers.promoteIntLiteral(c_ulong, 18446744073709551615, .decimal);
 pub const __INT64_MAX__ = __helpers.promoteIntLiteral(c_long, 9223372036854775807, .decimal);
 pub const __INT_LEAST8_TYPE__ = i8;
@@ -3302,7 +3307,7 @@ pub const __FLT_RADIX__ = @as(c_int, 2);
 pub const __DECIMAL_DIG__ = __LDBL_DECIMAL_DIG__;
 pub const __pic__ = @as(c_int, 2);
 pub const __PIC__ = @as(c_int, 2);
-pub const __GLIBC_MINOR__ = @as(c_int, 42);
+pub const __GLIBC_MINOR__ = @as(c_int, 44);
 pub const WGPU_H_ = "";
 pub const WEBGPU_H_ = "";
 pub const WGPU_EXPORT = "";
@@ -3325,14 +3330,15 @@ pub inline fn __glibc_clang_prereq(maj: anytype, min: anytype) @TypeOf(@as(c_int
     _ = &min;
     return @as(c_int, 0);
 }
-pub const __GLIBC_USE = @compileError("unable to translate macro: undefined identifier `__GLIBC_USE_`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/features.h:191:9
+pub const __GLIBC_USE = @compileError("unable to translate macro: undefined identifier `__GLIBC_USE_`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/features.h:197:9
 pub const _DEFAULT_SOURCE = @as(c_int, 1);
 pub const __GLIBC_USE_ISOC2Y = @as(c_int, 0);
 pub const __GLIBC_USE_ISOC23 = @as(c_int, 0);
 pub const __USE_ISOC11 = @as(c_int, 1);
 pub const __USE_POSIX_IMPLICITLY = @as(c_int, 1);
 pub const _POSIX_SOURCE = @as(c_int, 1);
-pub const _POSIX_C_SOURCE = @as(c_long, 200809);
+pub const _POSIX_C_SOURCE = @as(c_long, 202405);
 pub const __USE_POSIX = @as(c_int, 1);
 pub const __USE_POSIX2 = @as(c_int, 1);
 pub const __USE_POSIX199309 = @as(c_int, 1);
@@ -3342,6 +3348,7 @@ pub const __USE_ISOC95 = @as(c_int, 1);
 pub const __USE_ISOC99 = @as(c_int, 1);
 pub const __USE_XOPEN2K8 = @as(c_int, 1);
 pub const _ATFILE_SOURCE = @as(c_int, 1);
+pub const __USE_XOPEN2K24 = @as(c_int, 1);
 pub const __WORDSIZE = @as(c_int, 64);
 pub const __WORDSIZE_TIME64_COMPAT32 = @as(c_int, 1);
 pub const __SYSCALL_WORDSIZE = @as(c_int, 64);
@@ -3367,19 +3374,28 @@ pub inline fn __GLIBC_PREREQ(maj: anytype, min: anytype) @TypeOf(((__GLIBC__ << 
     return ((__GLIBC__ << @as(c_int, 16)) + __GLIBC_MINOR__) >= ((maj << @as(c_int, 16)) + min);
 }
 pub const _SYS_CDEFS_H = @as(c_int, 1);
-pub const __glibc_has_attribute = @compileError("unable to translate macro: undefined identifier `__has_attribute`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:45:10
+pub const __glibc_has_attribute = @compileError("unable to translate macro: undefined identifier `__has_attribute`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:45:10
 pub inline fn __glibc_has_builtin(name: anytype) @TypeOf(__builtin.has_builtin(name)) {
     _ = &name;
     return __builtin.has_builtin(name);
 }
-pub const __glibc_has_extension = @compileError("unable to translate macro: undefined identifier `__has_extension`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:55:10
-pub const __LEAF = @compileError("unable to translate macro: undefined identifier `__leaf__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:65:11
-pub const __LEAF_ATTR = @compileError("unable to translate macro: undefined identifier `__leaf__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:66:11
-pub const __THROW = @compileError("unable to translate macro: undefined identifier `__nothrow__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:79:11
-pub const __THROWNL = @compileError("unable to translate macro: undefined identifier `__nothrow__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:80:11
-pub const __NTH = @compileError("unable to translate macro: undefined identifier `__nothrow__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:81:11
-pub const __NTHNL = @compileError("unable to translate macro: undefined identifier `__nothrow__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:82:11
-pub const __COLD = @compileError("unable to translate macro: undefined identifier `__cold__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:102:11
+pub const __glibc_has_extension = @compileError("unable to translate macro: undefined identifier `__has_extension`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:55:10
+pub const __LEAF = @compileError("unable to translate macro: undefined identifier `__leaf__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:65:11
+pub const __LEAF_ATTR = @compileError("unable to translate macro: undefined identifier `__leaf__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:66:11
+pub const __THROW = @compileError("unable to translate macro: undefined identifier `__nothrow__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:79:11
+pub const __THROWNL = @compileError("unable to translate macro: undefined identifier `__nothrow__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:80:11
+pub const __NTH = @compileError("unable to translate macro: undefined identifier `__nothrow__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:81:11
+pub const __NTHNL = @compileError("unable to translate macro: undefined identifier `__nothrow__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:82:11
+pub const __COLD = @compileError("unable to translate macro: undefined identifier `__cold__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:102:11
 pub inline fn __P(args: anytype) @TypeOf(args) {
     _ = &args;
     return args;
@@ -3388,8 +3404,10 @@ pub inline fn __PMT(args: anytype) @TypeOf(args) {
     _ = &args;
     return args;
 }
-pub const __CONCAT = @compileError("unable to translate C expr: unexpected token '##'"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:131:9
-pub const __STRING = @compileError("unable to translate C expr: unexpected token ''"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:132:9
+pub const __CONCAT = @compileError("unable to translate C expr: unexpected token '##'");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:131:9
+pub const __STRING = @compileError("unable to translate C expr: unexpected token ''");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:132:9
 pub const __ptr_t = ?*anyopaque;
 pub const __BEGIN_DECLS = "";
 pub const __END_DECLS = "";
@@ -3410,14 +3428,21 @@ pub inline fn __glibc_objsize(__o: anytype) @TypeOf(__bos(__o)) {
     _ = &__o;
     return __bos(__o);
 }
-pub const __warnattr = @compileError("unable to translate macro: undefined identifier `__warning__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:366:10
-pub const __errordecl = @compileError("unable to translate macro: undefined identifier `__error__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:367:10
-pub const __flexarr = @compileError("unable to translate C expr: unexpected token '['"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:379:10
+pub const __warnattr = @compileError("unable to translate macro: undefined identifier `__warning__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:366:10
+pub const __errordecl = @compileError("unable to translate macro: undefined identifier `__error__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:367:10
+pub const __flexarr = @compileError("unable to translate C expr: unexpected token '['");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:379:10
 pub const __glibc_c99_flexarr_available = @as(c_int, 1);
-pub const __REDIRECT = @compileError("unable to translate C expr: unexpected token '__asm__'"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:410:10
-pub const __REDIRECT_NTH = @compileError("unable to translate C expr: unexpected token '__asm__'"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:417:11
-pub const __REDIRECT_NTHNL = @compileError("unable to translate C expr: unexpected token '__asm__'"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:419:11
-pub const __ASMNAME = @compileError("unable to translate macro: undefined identifier `__USER_LABEL_PREFIX__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:422:10
+pub const __REDIRECT = @compileError("unable to translate C expr: unexpected token '__asm__'");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:410:10
+pub const __REDIRECT_NTH = @compileError("unable to translate C expr: unexpected token '__asm__'");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:417:11
+pub const __REDIRECT_NTHNL = @compileError("unable to translate C expr: unexpected token '__asm__'");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:419:11
+pub const __ASMNAME = @compileError("unable to translate macro: undefined identifier `__USER_LABEL_PREFIX__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:422:10
 pub inline fn __ASMNAME2(prefix: anytype, cname: anytype) @TypeOf(__STRING(prefix) ++ cname) {
     _ = &prefix;
     _ = &cname;
@@ -3425,34 +3450,56 @@ pub inline fn __ASMNAME2(prefix: anytype, cname: anytype) @TypeOf(__STRING(prefi
 }
 pub const __REDIRECT_FORTIFY = __REDIRECT;
 pub const __REDIRECT_FORTIFY_NTH = __REDIRECT_NTH;
-pub const __attribute_malloc__ = @compileError("unable to translate macro: undefined identifier `__malloc__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:452:10
-pub const __attribute_alloc_size__ = @compileError("unable to translate macro: undefined identifier `__alloc_size__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:460:10
-pub const __attribute_alloc_align__ = @compileError("unable to translate macro: undefined identifier `__alloc_align__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:469:10
-pub const __attribute_pure__ = @compileError("unable to translate macro: undefined identifier `__pure__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:479:10
-pub const __attribute_const__ = @compileError("unable to translate C expr: unexpected token '__attribute__'"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:486:10
-pub const __attribute_maybe_unused__ = @compileError("unable to translate macro: undefined identifier `__unused__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:492:10
-pub const __attribute_used__ = @compileError("unable to translate macro: undefined identifier `__used__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:501:10
-pub const __attribute_noinline__ = @compileError("unable to translate macro: undefined identifier `__noinline__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:502:10
-pub const __attribute_deprecated__ = @compileError("unable to translate macro: undefined identifier `__deprecated__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:510:10
-pub const __attribute_deprecated_msg__ = @compileError("unable to translate macro: undefined identifier `__deprecated__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:520:10
-pub const __attribute_format_arg__ = @compileError("unable to translate macro: undefined identifier `__format_arg__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:533:10
-pub const __attribute_format_strfmon__ = @compileError("unable to translate macro: undefined identifier `__format__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:543:10
-pub const __attribute_nonnull__ = @compileError("unable to translate macro: undefined identifier `__nonnull__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:555:11
+pub const __attribute_malloc__ = @compileError("unable to translate macro: undefined identifier `__malloc__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:452:10
+pub const __attribute_alloc_size__ = @compileError("unable to translate macro: undefined identifier `__alloc_size__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:460:10
+pub const __attribute_alloc_align__ = @compileError("unable to translate macro: undefined identifier `__alloc_align__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:469:10
+pub const __attribute_pure__ = @compileError("unable to translate macro: undefined identifier `__pure__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:479:10
+pub const __attribute_const__ = @compileError("unable to translate C expr: unexpected token '__attribute__'");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:486:10
+pub const __attribute_maybe_unused__ = @compileError("unable to translate macro: undefined identifier `__unused__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:492:10
+pub const __attribute_used__ = @compileError("unable to translate macro: undefined identifier `__used__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:501:10
+pub const __attribute_noinline__ = @compileError("unable to translate macro: undefined identifier `__noinline__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:502:10
+pub const __attribute_deprecated__ = @compileError("unable to translate macro: undefined identifier `__deprecated__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:510:10
+pub const __attribute_deprecated_msg__ = @compileError("unable to translate macro: undefined identifier `__deprecated__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:520:10
+pub const __attribute_format_arg__ = @compileError("unable to translate macro: undefined identifier `__format_arg__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:533:10
+pub const __attribute_format_strfmon__ = @compileError("unable to translate macro: undefined identifier `__format__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:543:10
+pub const __attribute_nonnull__ = @compileError("unable to translate macro: undefined identifier `__nonnull__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:555:11
 pub inline fn __nonnull(params: anytype) @TypeOf(__attribute_nonnull__(params)) {
     _ = &params;
     return __attribute_nonnull__(params);
 }
-pub const __returns_nonnull = @compileError("unable to translate macro: undefined identifier `__returns_nonnull__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:568:10
-pub const __attribute_warn_unused_result__ = @compileError("unable to translate macro: undefined identifier `__warn_unused_result__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:577:10
+pub const __returns_nonnull = @compileError("unable to translate macro: undefined identifier `__returns_nonnull__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:568:10
+pub const __attribute_warn_unused_result__ = @compileError("unable to translate macro: undefined identifier `__warn_unused_result__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:577:10
 pub const __wur = "";
-pub const __always_inline = @compileError("unable to translate macro: undefined identifier `__always_inline__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:595:10
-pub const __attribute_artificial__ = @compileError("unable to translate macro: undefined identifier `__artificial__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:604:10
-pub const __extern_inline = @compileError("unable to translate C expr: unexpected token 'extern'"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:626:11
-pub const __extern_always_inline = @compileError("unable to translate C expr: unexpected token 'extern'"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:627:11
+pub const __always_inline = @compileError("unable to translate macro: undefined identifier `__always_inline__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:595:10
+pub const __attribute_artificial__ = @compileError("unable to translate macro: undefined identifier `__artificial__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:604:10
+pub const __extern_inline = @compileError("unable to translate C expr: unexpected token 'extern'");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:626:11
+pub const __extern_always_inline = @compileError("unable to translate C expr: unexpected token 'extern'");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:627:11
 pub const __fortify_function = __extern_always_inline ++ __attribute_artificial__;
-pub const __va_arg_pack = @compileError("unable to translate macro: undefined identifier `__builtin_va_arg_pack`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:638:10
-pub const __va_arg_pack_len = @compileError("unable to translate macro: undefined identifier `__builtin_va_arg_pack_len`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:639:10
-pub const __restrict_arr = @compileError("unable to translate C expr: unexpected token '__restrict'"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:666:10
+pub const __va_arg_pack = @compileError("unable to translate macro: undefined identifier `__builtin_va_arg_pack`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:638:10
+pub const __va_arg_pack_len = @compileError("unable to translate macro: undefined identifier `__builtin_va_arg_pack_len`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:639:10
+pub const __restrict_arr = @compileError("unable to translate C expr: unexpected token '__restrict'");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:666:10
 pub inline fn __glibc_unlikely(cond: anytype) @TypeOf(__builtin.expect(cond, @as(c_int, 0))) {
     _ = &cond;
     return __builtin.expect(cond, @as(c_int, 0));
@@ -3509,9 +3556,13 @@ pub inline fn __REDIRECT_NTH_LDBL(name: anytype, proto: anytype, alias: anytype)
     _ = &alias;
     return __REDIRECT_NTH(name, proto, alias);
 }
-pub const __glibc_macro_warning1 = @compileError("unable to translate macro: undefined identifier `_Pragma`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:807:10
-pub const __glibc_macro_warning = @compileError("unable to translate macro: undefined identifier `GCC`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:808:10
+pub const __glibc_macro_warning1 = @compileError("unable to translate macro: undefined identifier `_Pragma`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:807:10
+pub const __glibc_macro_warning = @compileError("unable to translate macro: undefined identifier `GCC`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:808:10
 pub const __HAVE_GENERIC_SELECTION = @as(c_int, 1);
+pub const __glibc_const_generic = @compileError("unable to translate C expr: expected type instead got 'const'");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:837:10
 pub inline fn __fortified_attr_access(a: anytype, o: anytype, s: anytype) void {
     _ = &a;
     _ = &o;
@@ -3532,8 +3583,10 @@ pub inline fn __attr_dealloc(dealloc: anytype, argno: anytype) void {
     return;
 }
 pub const __attr_dealloc_free = "";
-pub const __attribute_returns_twice__ = @compileError("unable to translate macro: undefined identifier `__returns_twice__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:872:10
-pub const __attribute_struct_may_alias__ = @compileError("unable to translate macro: undefined identifier `__may_alias__`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/sys/cdefs.h:881:10
+pub const __attribute_returns_twice__ = @compileError("unable to translate macro: undefined identifier `__returns_twice__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:884:10
+pub const __attribute_struct_may_alias__ = @compileError("unable to translate macro: undefined identifier `__may_alias__`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/sys/cdefs.h:893:10
 pub const __stub___compat_bdflush = "";
 pub const __stub_chflags = "";
 pub const __stub_fchflags = "";
@@ -3590,7 +3643,8 @@ pub const __KEY_T_TYPE = __S32_TYPE;
 pub const __CLOCKID_T_TYPE = __S32_TYPE;
 pub const __TIMER_T_TYPE = ?*anyopaque;
 pub const __BLKSIZE_T_TYPE = __SYSCALL_SLONG_TYPE;
-pub const __FSID_T_TYPE = @compileError("unable to translate macro: undefined identifier `__val`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/typesizes.h:73:9
+pub const __FSID_T_TYPE = @compileError("unable to translate macro: undefined identifier `__val`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/typesizes.h:73:9
 pub const __SSIZE_T_TYPE = __SWORD_TYPE;
 pub const __CPU_MASK_TYPE = __SYSCALL_ULONG_TYPE;
 pub const __OFF_T_MATCHES_OFF64_T = @as(c_int, 1);
@@ -3608,6 +3662,8 @@ pub const _BITS_STDINT_INTN_H = @as(c_int, 1);
 pub const _BITS_STDINT_UINTN_H = @as(c_int, 1);
 pub const _BITS_STDINT_LEAST_H = @as(c_int, 1);
 pub const __intptr_t_defined = "";
+pub const __INT64_C = __helpers.L_SUFFIX;
+pub const __UINT64_C = __helpers.UL_SUFFIX;
 pub const INT8_MIN = -@as(c_int, 128);
 pub const INT16_MIN = -@as(c_int, 32767) - @as(c_int, 1);
 pub const INT32_MIN = -__helpers.promoteIntLiteral(c_int, 2147483647, .decimal) - @as(c_int, 1);
@@ -3686,7 +3742,8 @@ pub const INTMAX_C = __helpers.L_SUFFIX;
 pub const UINTMAX_C = __helpers.UL_SUFFIX;
 pub const __STDC_VERSION_STDDEF_H__ = @as(c_long, 202311);
 pub const NULL = __helpers.cast(?*anyopaque, @as(c_int, 0));
-pub const offsetof = @compileError("unable to translate macro: undefined identifier `__builtin_offsetof`"); // /nix/store/nllnya5hr3hg2dp0vz8ajap4n2dqraw6-zig-0.17.0-dev.269+ebff43698/lib/compiler/aro/include/stddef.h:18:9
+pub const offsetof = @compileError("unable to translate macro: undefined identifier `__builtin_offsetof`");
+// /nix/store/0j9p7gldffigkxqrahjfzldq3y232dxp-zig-0.18.0-dev.1153+c62948217/lib/compiler/aro/include/stddef.h:18:9
 pub const _MATH_H = @as(c_int, 1);
 pub const __GLIBC_USE_LIB_EXT2 = @as(c_int, 0);
 pub const __GLIBC_USE_IEC_60559_BFP_EXT = @as(c_int, 0);
@@ -3756,6 +3813,16 @@ pub const __DECL_SIMD_powf128 = "";
 pub const __DECL_SIMD_powf32x = "";
 pub const __DECL_SIMD_powf64x = "";
 pub const __DECL_SIMD_powf128x = "";
+pub const __DECL_SIMD_powr = "";
+pub const __DECL_SIMD_powrf = "";
+pub const __DECL_SIMD_powrl = "";
+pub const __DECL_SIMD_powrf16 = "";
+pub const __DECL_SIMD_powrf32 = "";
+pub const __DECL_SIMD_powrf64 = "";
+pub const __DECL_SIMD_powrf128 = "";
+pub const __DECL_SIMD_powrf32x = "";
+pub const __DECL_SIMD_powrf64x = "";
+pub const __DECL_SIMD_powrf128x = "";
 pub const __DECL_SIMD_acos = "";
 pub const __DECL_SIMD_acosf = "";
 pub const __DECL_SIMD_acosl = "";
@@ -3836,6 +3903,26 @@ pub const __DECL_SIMD_expm1f128 = "";
 pub const __DECL_SIMD_expm1f32x = "";
 pub const __DECL_SIMD_expm1f64x = "";
 pub const __DECL_SIMD_expm1f128x = "";
+pub const __DECL_SIMD_exp2m1 = "";
+pub const __DECL_SIMD_exp2m1f = "";
+pub const __DECL_SIMD_exp2m1l = "";
+pub const __DECL_SIMD_exp2m1f16 = "";
+pub const __DECL_SIMD_exp2m1f32 = "";
+pub const __DECL_SIMD_exp2m1f64 = "";
+pub const __DECL_SIMD_exp2m1f128 = "";
+pub const __DECL_SIMD_exp2m1f32x = "";
+pub const __DECL_SIMD_exp2m1f64x = "";
+pub const __DECL_SIMD_exp2m1f128x = "";
+pub const __DECL_SIMD_exp10m1 = "";
+pub const __DECL_SIMD_exp10m1f = "";
+pub const __DECL_SIMD_exp10m1l = "";
+pub const __DECL_SIMD_exp10m1f16 = "";
+pub const __DECL_SIMD_exp10m1f32 = "";
+pub const __DECL_SIMD_exp10m1f64 = "";
+pub const __DECL_SIMD_exp10m1f128 = "";
+pub const __DECL_SIMD_exp10m1f32x = "";
+pub const __DECL_SIMD_exp10m1f64x = "";
+pub const __DECL_SIMD_exp10m1f128x = "";
 pub const __DECL_SIMD_sinh = "";
 pub const __DECL_SIMD_sinhf = "";
 pub const __DECL_SIMD_sinhl = "";
@@ -3866,6 +3953,16 @@ pub const __DECL_SIMD_atan2f128 = "";
 pub const __DECL_SIMD_atan2f32x = "";
 pub const __DECL_SIMD_atan2f64x = "";
 pub const __DECL_SIMD_atan2f128x = "";
+pub const __DECL_SIMD_rsqrt = "";
+pub const __DECL_SIMD_rsqrtf = "";
+pub const __DECL_SIMD_rsqrtl = "";
+pub const __DECL_SIMD_rsqrtf16 = "";
+pub const __DECL_SIMD_rsqrtf32 = "";
+pub const __DECL_SIMD_rsqrtf64 = "";
+pub const __DECL_SIMD_rsqrtf128 = "";
+pub const __DECL_SIMD_rsqrtf32x = "";
+pub const __DECL_SIMD_rsqrtf64x = "";
+pub const __DECL_SIMD_rsqrtf128x = "";
 pub const __DECL_SIMD_log10 = "";
 pub const __DECL_SIMD_log10f = "";
 pub const __DECL_SIMD_log10l = "";
@@ -3876,6 +3973,16 @@ pub const __DECL_SIMD_log10f128 = "";
 pub const __DECL_SIMD_log10f32x = "";
 pub const __DECL_SIMD_log10f64x = "";
 pub const __DECL_SIMD_log10f128x = "";
+pub const __DECL_SIMD_log10p1 = "";
+pub const __DECL_SIMD_log10p1f = "";
+pub const __DECL_SIMD_log10p1l = "";
+pub const __DECL_SIMD_log10p1f16 = "";
+pub const __DECL_SIMD_log10p1f32 = "";
+pub const __DECL_SIMD_log10p1f64 = "";
+pub const __DECL_SIMD_log10p1f128 = "";
+pub const __DECL_SIMD_log10p1f32x = "";
+pub const __DECL_SIMD_log10p1f64x = "";
+pub const __DECL_SIMD_log10p1f128x = "";
 pub const __DECL_SIMD_log2 = "";
 pub const __DECL_SIMD_log2f = "";
 pub const __DECL_SIMD_log2l = "";
@@ -3886,6 +3993,16 @@ pub const __DECL_SIMD_log2f128 = "";
 pub const __DECL_SIMD_log2f32x = "";
 pub const __DECL_SIMD_log2f64x = "";
 pub const __DECL_SIMD_log2f128x = "";
+pub const __DECL_SIMD_log2p1 = "";
+pub const __DECL_SIMD_log2p1f = "";
+pub const __DECL_SIMD_log2p1l = "";
+pub const __DECL_SIMD_log2p1f16 = "";
+pub const __DECL_SIMD_log2p1f32 = "";
+pub const __DECL_SIMD_log2p1f64 = "";
+pub const __DECL_SIMD_log2p1f128 = "";
+pub const __DECL_SIMD_log2p1f32x = "";
+pub const __DECL_SIMD_log2p1f64x = "";
+pub const __DECL_SIMD_log2p1f128x = "";
 pub const __DECL_SIMD_log1p = "";
 pub const __DECL_SIMD_log1pf = "";
 pub const __DECL_SIMD_log1pl = "";
@@ -4051,8 +4168,10 @@ pub const __HAVE_FLOAT128 = @as(c_int, 1);
 pub const __HAVE_DISTINCT_FLOAT128 = @as(c_int, 1);
 pub const __HAVE_FLOAT64X = @as(c_int, 1);
 pub const __HAVE_FLOAT64X_LONG_DOUBLE = @as(c_int, 1);
-pub const __f128 = @compileError("unable to translate macro: undefined identifier `f128`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/floatn.h:72:12
-pub const __CFLOAT128 = @compileError("unable to translate: invalid numeric type"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/floatn.h:86:12
+pub const __f128 = @compileError("unable to translate macro: undefined identifier `f128`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/floatn.h:72:12
+pub const __CFLOAT128 = @compileError("unable to translate: invalid numeric type");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/floatn.h:86:12
 pub const _BITS_FLOATN_COMMON_H = "";
 pub const __HAVE_FLOAT16 = @as(c_int, 0);
 pub const __HAVE_FLOAT32 = @as(c_int, 1);
@@ -4067,17 +4186,27 @@ pub const __HAVE_DISTINCT_FLOAT64X = @as(c_int, 0);
 pub const __HAVE_DISTINCT_FLOAT128X = __HAVE_FLOAT128X;
 pub const __HAVE_FLOAT128_UNLIKE_LDBL = (__HAVE_DISTINCT_FLOAT128 != 0) and (__LDBL_MANT_DIG__ != @as(c_int, 113));
 pub const __HAVE_FLOATN_NOT_TYPEDEF = @as(c_int, 1);
-pub const __f32 = @compileError("unable to translate macro: undefined identifier `f32`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/floatn-common.h:93:12
-pub const __f64 = @compileError("unable to translate macro: undefined identifier `f64`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/floatn-common.h:105:12
-pub const __f32x = @compileError("unable to translate macro: undefined identifier `f32x`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/floatn-common.h:113:12
-pub const __f64x = @compileError("unable to translate macro: undefined identifier `f64x`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/floatn-common.h:125:12
-pub const __CFLOAT32 = @compileError("unable to translate: invalid numeric type"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/floatn-common.h:151:12
-pub const __CFLOAT64 = @compileError("unable to translate: invalid numeric type"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/floatn-common.h:163:12
-pub const __CFLOAT32X = @compileError("unable to translate: invalid numeric type"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/floatn-common.h:171:12
-pub const __CFLOAT64X = @compileError("unable to translate: invalid numeric type"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/floatn-common.h:183:12
-pub const HUGE_VAL = @compileError("unable to translate macro: undefined identifier `__builtin_huge_val`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/math.h:48:10
+pub const __f32 = @compileError("unable to translate macro: undefined identifier `f32`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/floatn-common.h:93:12
+pub const __f64 = @compileError("unable to translate macro: undefined identifier `f64`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/floatn-common.h:105:12
+pub const __f32x = @compileError("unable to translate macro: undefined identifier `f32x`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/floatn-common.h:113:12
+pub const __f64x = @compileError("unable to translate macro: undefined identifier `f64x`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/floatn-common.h:125:12
+pub const __CFLOAT32 = @compileError("unable to translate: invalid numeric type");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/floatn-common.h:151:12
+pub const __CFLOAT64 = @compileError("unable to translate: invalid numeric type");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/floatn-common.h:163:12
+pub const __CFLOAT32X = @compileError("unable to translate: invalid numeric type");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/floatn-common.h:171:12
+pub const __CFLOAT64X = @compileError("unable to translate: invalid numeric type");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/floatn-common.h:183:12
+pub const HUGE_VAL = @compileError("unable to translate macro: undefined identifier `__builtin_huge_val`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/math.h:49:10
 pub const HUGE_VALF = __builtin.huge_valf();
-pub const HUGE_VALL = @compileError("unable to translate macro: undefined identifier `__builtin_huge_vall`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/math.h:60:11
+pub const HUGE_VALL = @compileError("unable to translate macro: undefined identifier `__builtin_huge_vall`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/math.h:61:11
 pub const INFINITY = __builtin.inff();
 pub const NAN = __builtin.nanf("");
 pub const __GLIBC_FLT_EVAL_METHOD = __FLT_EVAL_METHOD__;
@@ -4085,23 +4214,35 @@ pub const __FP_LOGB0_IS_MIN = @as(c_int, 1);
 pub const __FP_LOGBNAN_IS_MIN = @as(c_int, 1);
 pub const FP_ILOGB0 = -__helpers.promoteIntLiteral(c_int, 2147483647, .decimal) - @as(c_int, 1);
 pub const FP_ILOGBNAN = -__helpers.promoteIntLiteral(c_int, 2147483647, .decimal) - @as(c_int, 1);
-pub const __SIMD_DECL = @compileError("unable to translate macro: undefined identifier `__DECL_SIMD_`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/mathcalls-macros.h:19:9
-pub const __MATHCALL_VEC = @compileError("unable to translate macro: undefined identifier `__MATH_PRECNAME`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/mathcalls-macros.h:21:9
-pub const __MATHDECL_VEC = @compileError("unable to translate macro: undefined identifier `__MATH_PRECNAME`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/mathcalls-macros.h:25:9
-pub const __MATHCALLX = @compileError("unable to translate macro: undefined identifier `_Mdouble_`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/mathcalls-macros.h:34:9
-pub const __MATHDECLX = @compileError("unable to translate macro: undefined identifier `__MATHDECL_1`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/mathcalls-macros.h:36:9
-pub const __MATHREDIR = @compileError("unable to translate macro: undefined identifier `__MATH_PRECNAME`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/bits/mathcalls-macros.h:47:9
+pub const __SIMD_DECL = @compileError("unable to translate macro: undefined identifier `__DECL_SIMD_`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/mathcalls-macros.h:19:9
+pub const __MATHCALL_VEC = @compileError("unable to translate macro: undefined identifier `__MATH_PRECNAME`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/mathcalls-macros.h:21:9
+pub const __MATHDECL_VEC = @compileError("unable to translate macro: undefined identifier `__MATH_PRECNAME`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/mathcalls-macros.h:25:9
+pub const __MATHCALLX = @compileError("unable to translate macro: undefined identifier `_Mdouble_`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/mathcalls-macros.h:34:9
+pub const __MATHDECLX = @compileError("unable to translate macro: undefined identifier `__MATHDECL_1`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/mathcalls-macros.h:36:9
+pub const __MATHREDIR = @compileError("unable to translate macro: undefined identifier `__MATH_PRECNAME`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/bits/mathcalls-macros.h:47:9
 pub const __MATH_DECLARE_LDOUBLE = @as(c_int, 1);
-pub const __MATH_TG_F32 = @compileError("unable to translate macro: undefined identifier `f`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/math.h:853:12
-pub const __MATH_TG_F64X = @compileError("unable to translate macro: undefined identifier `l`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/math.h:859:13
-pub const __MATH_TG = @compileError("unable to translate macro: undefined identifier `f`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/math.h:866:11
-pub const fpclassify = @compileError("unable to translate macro: undefined identifier `__builtin_fpclassify`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/math.h:936:11
+pub const __MATH_TG_F32 = @compileError("unable to translate macro: undefined identifier `f`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/math.h:1021:12
+pub const __MATH_TG_F64X = @compileError("unable to translate macro: undefined identifier `l`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/math.h:1027:13
+pub const __MATH_TG = @compileError("unable to translate macro: undefined identifier `f`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/math.h:1034:11
+pub const fpclassify = @compileError("unable to translate macro: undefined identifier `__builtin_fpclassify`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/math.h:1104:11
 pub inline fn signbit(x: anytype) @TypeOf(__builtin.signbit(x)) {
     _ = &x;
     return __builtin.signbit(x);
 }
-pub const isfinite = @compileError("unable to translate macro: undefined identifier `__builtin_isfinite`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/math.h:963:11
-pub const isnormal = @compileError("unable to translate macro: undefined identifier `__builtin_isnormal`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/math.h:971:11
+pub const isfinite = @compileError("unable to translate macro: undefined identifier `__builtin_isfinite`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/math.h:1131:11
+pub const isnormal = @compileError("unable to translate macro: undefined identifier `__builtin_isnormal`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/math.h:1139:11
 pub const MATH_ERRNO = @as(c_int, 1);
 pub const MATH_ERREXCEPT = @as(c_int, 2);
 pub const math_errhandling = MATH_ERRNO | MATH_ERREXCEPT;
@@ -4118,15 +4259,24 @@ pub const M_2_PI = @as(f64, 0.63661977236758134308);
 pub const M_2_SQRTPI = @as(f64, 1.12837916709551257390);
 pub const M_SQRT2 = @as(f64, 1.41421356237309504880);
 pub const M_SQRT1_2 = @as(f64, 0.70710678118654752440);
-pub const isgreater = @compileError("unable to translate macro: undefined identifier `__builtin_isgreater`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/math.h:1275:11
-pub const isgreaterequal = @compileError("unable to translate macro: undefined identifier `__builtin_isgreaterequal`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/math.h:1276:11
-pub const isless = @compileError("unable to translate macro: undefined identifier `__builtin_isless`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/math.h:1277:11
-pub const islessequal = @compileError("unable to translate macro: undefined identifier `__builtin_islessequal`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/math.h:1278:11
-pub const islessgreater = @compileError("unable to translate macro: undefined identifier `__builtin_islessgreater`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/math.h:1279:11
-pub const isunordered = @compileError("unable to translate macro: undefined identifier `__builtin_isunordered`"); // /nix/store/fbbw928argckfii0j322346ihmllg7a7-glibc-2.42-61-dev/include/math.h:1280:11
-pub const _wgpu_COMMA = @compileError("unable to translate C expr: unexpected token ','"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:68:9
-pub const _wgpu_ENUM_ZERO_INIT = @compileError("unable to translate C expr: unexpected token 'a number'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:78:11
-pub const _wgpu_STRUCT_ZERO_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:79:11
+pub const isgreater = @compileError("unable to translate macro: undefined identifier `__builtin_isgreater`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/math.h:1443:11
+pub const isgreaterequal = @compileError("unable to translate macro: undefined identifier `__builtin_isgreaterequal`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/math.h:1444:11
+pub const isless = @compileError("unable to translate macro: undefined identifier `__builtin_isless`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/math.h:1445:11
+pub const islessequal = @compileError("unable to translate macro: undefined identifier `__builtin_islessequal`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/math.h:1446:11
+pub const islessgreater = @compileError("unable to translate macro: undefined identifier `__builtin_islessgreater`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/math.h:1447:11
+pub const isunordered = @compileError("unable to translate macro: undefined identifier `__builtin_isunordered`");
+// /nix/store/2f69qaci676cq5kr8svry3gbf6i6iqzi-glibc-2.44-57-dev/include/math.h:1448:11
+pub const _wgpu_COMMA = @compileError("unable to translate C expr: unexpected token ','");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:68:9
+pub const _wgpu_ENUM_ZERO_INIT = @compileError("unable to translate C expr: unexpected token 'a number'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:78:11
+pub const _wgpu_STRUCT_ZERO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:79:11
 pub inline fn _wgpu_MAKE_INIT_STRUCT(@"type": anytype, value: anytype) @TypeOf(@"type" ++ value) {
     _ = &@"type";
     _ = &value;
@@ -4145,98 +4295,190 @@ pub const WGPU_QUERY_SET_INDEX_UNDEFINED = UINT32_MAX;
 pub const WGPU_STRLEN = SIZE_MAX;
 pub const WGPU_WHOLE_MAP_SIZE = SIZE_MAX;
 pub const WGPU_WHOLE_SIZE = UINT64_MAX;
-pub const WGPU_STRING_VIEW_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:201:9
-pub const WGPU_BUFFER_MAP_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1548:9
-pub const WGPU_COMPILATION_INFO_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1572:9
-pub const WGPU_CREATE_COMPUTE_PIPELINE_ASYNC_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1596:9
-pub const WGPU_CREATE_RENDER_PIPELINE_ASYNC_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1620:9
-pub const WGPU_DEVICE_LOST_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1644:9
-pub const WGPU_POP_ERROR_SCOPE_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1668:9
-pub const WGPU_QUEUE_WORK_DONE_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1692:9
-pub const WGPU_REQUEST_ADAPTER_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1716:9
-pub const WGPU_REQUEST_DEVICE_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1740:9
-pub const WGPU_UNCAPTURED_ERROR_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1758:9
-pub const WGPU_ADAPTER_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1825:9
-pub const WGPU_BLEND_COMPONENT_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1869:9
-pub const WGPU_BUFFER_BINDING_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1900:9
-pub const WGPU_BUFFER_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1939:9
-pub const WGPU_COLOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1976:9
-pub const WGPU_COMMAND_BUFFER_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1999:9
-pub const WGPU_COMMAND_ENCODER_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2020:9
-pub const WGPU_COMPATIBILITY_MODE_LIMITS_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2055:9
-pub const WGPU_COMPILATION_MESSAGE_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2117:9
-pub const WGPU_CONSTANT_ENTRY_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2151:9
-pub const WGPU_EXTENT_3D_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2178:9
-pub const WGPU_EXTERNAL_TEXTURE_BINDING_ENTRY_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2200:9
-pub const WGPU_EXTERNAL_TEXTURE_BINDING_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2220:9
-pub const WGPU_FUTURE_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2244:9
-pub const WGPU_INSTANCE_LIMITS_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2264:9
-pub const WGPU_MULTISAMPLE_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2291:9
-pub const WGPU_ORIGIN_3D_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2319:9
-pub const WGPU_PASS_TIMESTAMP_WRITES_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2349:9
-pub const WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2384:9
-pub const WGPU_PRIMITIVE_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2431:9
-pub const WGPU_QUERY_SET_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2464:9
-pub const WGPU_QUEUE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2487:9
-pub const WGPU_RENDER_BUNDLE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2508:9
-pub const WGPU_RENDER_BUNDLE_ENCODER_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2553:9
-pub const WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2617:9
-pub const WGPU_RENDER_PASS_MAX_DRAW_COUNT_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2644:9
-pub const WGPU_REQUEST_ADAPTER_WEBXR_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2670:9
-pub const WGPU_SAMPLER_BINDING_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2695:9
-pub const WGPU_SAMPLER_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2782:9
-pub const WGPU_SHADER_SOURCE_SPIRV_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2815:9
-pub const WGPU_SHADER_SOURCE_WGSL_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2840:9
-pub const WGPU_STENCIL_FACE_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2885:9
-pub const WGPU_STORAGE_TEXTURE_BINDING_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2920:9
-pub const WGPU_SUPPORTED_FEATURES_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2944:9
-pub const WGPU_SUPPORTED_INSTANCE_FEATURES_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2966:9
-pub const WGPU_SUPPORTED_WGSL_LANGUAGE_FEATURES_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2988:9
-pub const WGPU_SURFACE_CAPABILITIES_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3044:9
-pub const WGPU_SURFACE_COLOR_MANAGEMENT_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3075:9
-pub const WGPU_SURFACE_CONFIGURATION_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3156:9
-pub const WGPU_SURFACE_SOURCE_ANDROID_NATIVE_WINDOW_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3187:9
-pub const WGPU_SURFACE_SOURCE_METAL_LAYER_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3213:9
-pub const WGPU_SURFACE_SOURCE_WAYLAND_SURFACE_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3245:9
-pub const WGPU_SURFACE_SOURCE_WINDOWS_HWND_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3279:9
-pub const WGPU_SURFACE_SOURCE_XCB_WINDOW_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3312:9
-pub const WGPU_SURFACE_SOURCE_XLIB_WINDOW_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3345:9
-pub const WGPU_SURFACE_TEXTURE_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3380:9
-pub const WGPU_TEXEL_COPY_BUFFER_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3407:9
-pub const WGPU_TEXTURE_BINDING_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3441:9
-pub const WGPU_TEXTURE_BINDING_VIEW_DIMENSION_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3466:9
-pub const WGPU_TEXTURE_COMPONENT_SWIZZLE_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3524:9
-pub const WGPU_VERTEX_ATTRIBUTE_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3553:9
-pub const WGPU_BIND_GROUP_ENTRY_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3612:9
-pub const WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3662:9
-pub const WGPU_BLEND_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3690:9
-pub const WGPU_COMPILATION_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3716:9
-pub const WGPU_COMPUTE_PASS_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3742:9
-pub const WGPU_COMPUTE_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3776:9
-pub const WGPU_DEPTH_STENCIL_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3842:9
-pub const WGPU_FUTURE_WAIT_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3879:9
-pub const WGPU_INSTANCE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3906:9
-pub const WGPU_LIMITS_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4051:9
-pub const WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4124:9
-pub const WGPU_REQUEST_ADAPTER_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4180:9
-pub const WGPU_SHADER_MODULE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4205:9
-pub const WGPU_SURFACE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4232:9
-pub const WGPU_TEXEL_COPY_BUFFER_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4254:9
-pub const WGPU_TEXEL_COPY_TEXTURE_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4287:9
-pub const WGPU_TEXTURE_COMPONENT_SWIZZLE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4308:9
-pub const WGPU_TEXTURE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4367:9
-pub const WGPU_VERTEX_BUFFER_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4419:9
-pub const WGPU_BIND_GROUP_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4455:9
-pub const WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4487:9
-pub const WGPU_COLOR_TARGET_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4520:9
-pub const WGPU_COMPUTE_PIPELINE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4551:9
-pub const WGPU_DEVICE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4603:9
-pub const WGPU_RENDER_PASS_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4650:9
-pub const WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4711:9
-pub const WGPU_VERTEX_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4760:9
-pub const WGPU_FRAGMENT_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4806:9
-pub const WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4856:9
-pub const WGPU_NATIVE_LIMITS_INIT = @compileError("unable to translate C expr: unexpected token '{'"); // /home/toasty/z-wgpu-native/vendor/wgpu-native/ffi/wgpu.h:1223:9
+pub const WGPU_STRING_VIEW_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:201:9
+pub const WGPU_BUFFER_MAP_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1548:9
+pub const WGPU_COMPILATION_INFO_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1572:9
+pub const WGPU_CREATE_COMPUTE_PIPELINE_ASYNC_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1596:9
+pub const WGPU_CREATE_RENDER_PIPELINE_ASYNC_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1620:9
+pub const WGPU_DEVICE_LOST_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1644:9
+pub const WGPU_POP_ERROR_SCOPE_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1668:9
+pub const WGPU_QUEUE_WORK_DONE_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1692:9
+pub const WGPU_REQUEST_ADAPTER_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1716:9
+pub const WGPU_REQUEST_DEVICE_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1740:9
+pub const WGPU_UNCAPTURED_ERROR_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1758:9
+pub const WGPU_ADAPTER_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1825:9
+pub const WGPU_BLEND_COMPONENT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1869:9
+pub const WGPU_BUFFER_BINDING_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1900:9
+pub const WGPU_BUFFER_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1939:9
+pub const WGPU_COLOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1976:9
+pub const WGPU_COMMAND_BUFFER_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1999:9
+pub const WGPU_COMMAND_ENCODER_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2020:9
+pub const WGPU_COMPATIBILITY_MODE_LIMITS_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2055:9
+pub const WGPU_COMPILATION_MESSAGE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2117:9
+pub const WGPU_CONSTANT_ENTRY_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2151:9
+pub const WGPU_EXTENT_3D_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2178:9
+pub const WGPU_EXTERNAL_TEXTURE_BINDING_ENTRY_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2200:9
+pub const WGPU_EXTERNAL_TEXTURE_BINDING_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2220:9
+pub const WGPU_FUTURE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2244:9
+pub const WGPU_INSTANCE_LIMITS_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2264:9
+pub const WGPU_MULTISAMPLE_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2291:9
+pub const WGPU_ORIGIN_3D_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2319:9
+pub const WGPU_PASS_TIMESTAMP_WRITES_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2349:9
+pub const WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2384:9
+pub const WGPU_PRIMITIVE_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2431:9
+pub const WGPU_QUERY_SET_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2464:9
+pub const WGPU_QUEUE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2487:9
+pub const WGPU_RENDER_BUNDLE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2508:9
+pub const WGPU_RENDER_BUNDLE_ENCODER_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2553:9
+pub const WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2617:9
+pub const WGPU_RENDER_PASS_MAX_DRAW_COUNT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2644:9
+pub const WGPU_REQUEST_ADAPTER_WEBXR_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2670:9
+pub const WGPU_SAMPLER_BINDING_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2695:9
+pub const WGPU_SAMPLER_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2782:9
+pub const WGPU_SHADER_SOURCE_SPIRV_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2815:9
+pub const WGPU_SHADER_SOURCE_WGSL_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2840:9
+pub const WGPU_STENCIL_FACE_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2885:9
+pub const WGPU_STORAGE_TEXTURE_BINDING_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2920:9
+pub const WGPU_SUPPORTED_FEATURES_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2944:9
+pub const WGPU_SUPPORTED_INSTANCE_FEATURES_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2966:9
+pub const WGPU_SUPPORTED_WGSL_LANGUAGE_FEATURES_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2988:9
+pub const WGPU_SURFACE_CAPABILITIES_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3044:9
+pub const WGPU_SURFACE_COLOR_MANAGEMENT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3075:9
+pub const WGPU_SURFACE_CONFIGURATION_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3156:9
+pub const WGPU_SURFACE_SOURCE_ANDROID_NATIVE_WINDOW_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3187:9
+pub const WGPU_SURFACE_SOURCE_METAL_LAYER_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3213:9
+pub const WGPU_SURFACE_SOURCE_WAYLAND_SURFACE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3245:9
+pub const WGPU_SURFACE_SOURCE_WINDOWS_HWND_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3279:9
+pub const WGPU_SURFACE_SOURCE_XCB_WINDOW_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3312:9
+pub const WGPU_SURFACE_SOURCE_XLIB_WINDOW_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3345:9
+pub const WGPU_SURFACE_TEXTURE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3380:9
+pub const WGPU_TEXEL_COPY_BUFFER_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3407:9
+pub const WGPU_TEXTURE_BINDING_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3441:9
+pub const WGPU_TEXTURE_BINDING_VIEW_DIMENSION_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3466:9
+pub const WGPU_TEXTURE_COMPONENT_SWIZZLE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3524:9
+pub const WGPU_VERTEX_ATTRIBUTE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3553:9
+pub const WGPU_BIND_GROUP_ENTRY_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3612:9
+pub const WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3662:9
+pub const WGPU_BLEND_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3690:9
+pub const WGPU_COMPILATION_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3716:9
+pub const WGPU_COMPUTE_PASS_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3742:9
+pub const WGPU_COMPUTE_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3776:9
+pub const WGPU_DEPTH_STENCIL_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3842:9
+pub const WGPU_FUTURE_WAIT_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3879:9
+pub const WGPU_INSTANCE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3906:9
+pub const WGPU_LIMITS_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4051:9
+pub const WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4124:9
+pub const WGPU_REQUEST_ADAPTER_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4180:9
+pub const WGPU_SHADER_MODULE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4205:9
+pub const WGPU_SURFACE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4232:9
+pub const WGPU_TEXEL_COPY_BUFFER_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4254:9
+pub const WGPU_TEXEL_COPY_TEXTURE_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4287:9
+pub const WGPU_TEXTURE_COMPONENT_SWIZZLE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4308:9
+pub const WGPU_TEXTURE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4367:9
+pub const WGPU_VERTEX_BUFFER_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4419:9
+pub const WGPU_BIND_GROUP_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4455:9
+pub const WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4487:9
+pub const WGPU_COLOR_TARGET_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4520:9
+pub const WGPU_COMPUTE_PIPELINE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4551:9
+pub const WGPU_DEVICE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4603:9
+pub const WGPU_RENDER_PASS_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4650:9
+pub const WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4711:9
+pub const WGPU_VERTEX_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4760:9
+pub const WGPU_FRAGMENT_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4806:9
+pub const WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4856:9
+pub const WGPU_NATIVE_LIMITS_INIT = @compileError("unable to translate C expr: unexpected token '{'");
+// vendor/wgpu-native/ffi/wgpu.h:1223:9
 pub const WGPUAdapterImpl = struct_WGPUAdapterImpl;
 pub const WGPUBindGroupImpl = struct_WGPUBindGroupImpl;
 pub const WGPUBindGroupLayoutImpl = struct_WGPUBindGroupLayoutImpl;

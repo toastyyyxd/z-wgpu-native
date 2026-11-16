@@ -30,7 +30,7 @@ pub const ContainerKind = enum { @"struct", @"union" };
 
 pub const StructDecl = struct {
     node: Ast.Node.Index,
-    fields: std.ArrayListUnmanaged(StructField) = .empty,
+    fields: std.ArrayList(StructField) = .empty,
     kind: ContainerKind = .@"struct",
 };
 
@@ -65,7 +65,7 @@ pub const FnParamKind = enum {
 pub const FnDecl = struct {
     node: Ast.Node.Index,
     name: []const u8,
-    params: std.ArrayListUnmanaged(FnParam) = .empty,
+    params: std.ArrayList(FnParam) = .empty,
     return_type: Ast.Node.OptionalIndex,
     return_kind: FnReturnKind = .void,
 };
@@ -86,7 +86,7 @@ pub const FnReturnKind = enum {
 
 pub const HandleDecl = struct {
     node: Ast.Node.Index,
-    methods: std.ArrayListUnmanaged(FnRef) = .empty,
+    methods: std.ArrayList(FnRef) = .empty,
 };
 
 pub const CallbackParam = struct {
@@ -98,7 +98,7 @@ pub const CallbackParam = struct {
 pub const CallbackDecl = struct {
     node: Ast.Node.Index,
     name: []const u8,
-    params: std.ArrayListUnmanaged(CallbackParam) = .empty,
+    params: std.ArrayList(CallbackParam) = .empty,
     userdata_count: u2 = 0,
 };
 
@@ -117,10 +117,10 @@ ast: *Ast,
 symbols: std.StringHashMapUnmanaged(Ast.Node.Index) = .empty,
 decls: std.AutoHashMapUnmanaged(Ast.Node.Index, Decl) = .empty,
 
-enum_names: std.ArrayListUnmanaged([]const u8) = .empty,
-struct_names: std.ArrayListUnmanaged([]const u8) = .empty,
-flag_names: std.ArrayListUnmanaged([]const u8) = .empty,
-handle_names: std.ArrayListUnmanaged([]const u8) = .empty,
+enum_names: std.ArrayList([]const u8) = .empty,
+struct_names: std.ArrayList([]const u8) = .empty,
+flag_names: std.ArrayList([]const u8) = .empty,
+handle_names: std.ArrayList([]const u8) = .empty,
 
 enum_decls: std.StringHashMapUnmanaged(*EnumDecl) = .empty,
 struct_decls: std.StringHashMapUnmanaged(*StructDecl) = .empty,

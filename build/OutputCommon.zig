@@ -107,7 +107,7 @@ pub fn isZigKeyword(name: []const u8) bool {
         "null",    "error",   "undefined", "true",  "false",
         "void",    "type",    "anytype",   "anyframe",
         "comptime","inline",  "noalias",   "noinline",
-        "export",  "extern",  "packed",    "opaque",
+        "export",  "extern",  "packed",    "opaque",  "bitpack",
         "async",   "await",   "suspend",   "resume",
         "try",     "catch",   "and",       "or",     "orelse",
         "if",      "else",    "switch",    "for",    "while",
@@ -295,13 +295,13 @@ pub fn writeParamExpr(buf: *std.array_list.Managed(u8), param: *Mapping.FnParam,
     } else if (param.kind == .pointer) {
         try buf.print("@ptrCast({s})", .{param.name});
     } else if (param.kind == .string) {
-        try buf.print("@bitCast({s})", .{param.name});
+        try buf.print("asC(c.{s}, {s})", .{ ptype, param.name });
     } else if (param.kind == .data_struct) {
-        try buf.print("@bitCast({s})", .{param.name});
+        try buf.print("asC(c.{s}, {s})", .{ ptype, param.name });
     } else if (param.kind == .enum_c) {
         try buf.print("@intFromEnum({s})", .{param.name});
     } else if (param.kind == .flags) {
-        try buf.print("@bitCast({s})", .{param.name});
+        try buf.print("asC(c.{s}, {s})", .{ ptype, param.name });
     } else {
         try buf.print("{s}", .{param.name});
     }
@@ -320,4 +320,17 @@ pub fn stripCPtrPrefix(ctype: []const u8) []const u8 {
     if (std.mem.startsWith(u8, ctype, "[*c]const ")) return ctype["[*c]const ".len..];
     if (std.mem.startsWith(u8, ctype, "[*c]")) return ctype["[*c]".len..];
     return ctype;
+}
+
+/// Case-insensitive substring search.
+/// `std.ascii.indexOfIgnoreCase` was removed in Zig 0.18 (only `eqlIgnoreCase`,
+/// `startsWithIgnoreCase` etc. remain), so codegen carries its own.
+pub fn indexOfIgnoreCase(haystack: []const u8, needle: []const u8) ?usize {
+    if (needle.len == 0) return 0;
+    if (needle.len > haystack.len) return null;
+    var i: usize = 0;
+    while (i + needle.len <= haystack.len) : (i += 1) {
+        if (std.ascii.eqlIgnoreCase(haystack[i..][0..needle.len], needle)) return i;
+    }
+    return null;
 }

@@ -4,16 +4,31 @@ const Common = @import("OutputCommon.zig");
 
 pub fn writeHandlesAndFuncs(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
     try buf.appendSlice("const c = @import(\"c_wgpu_native\");\nconst types = @import(\"types.zig\");\n\n");
+    try buf.appendSlice(
+        \\/// Zig 0.18 no longer allows `@bitCast` between `extern struct`s, so the
+        \\/// ABI-compatible conversions between the ergonomic `types.*` structs and
+        \\/// the translated C structs go through a bytewise copy. Only valid for
+        \\/// types with identical layout, which `tests/abi.zig` verifies against
+        \\/// the C definitions.
+        \\inline fn asC(comptime C: type, value: anytype) C {
+        \\    var out: C = undefined;
+        \\    var v = value;
+        \\    @memcpy(@import("std").mem.asBytes(&out), @import("std").mem.asBytes(&v));
+        \\    return out;
+        \\}
+        \\
+        \\
+    );
 
     // Build a map: handle zig name -> list of function names
-    var handle_funcs = std.StringHashMapUnmanaged(std.ArrayListUnmanaged([]const u8)){};
+    var handle_funcs = std.StringHashMapUnmanaged(std.ArrayList([]const u8)){};
     defer {
         var it = handle_funcs.iterator();
         while (it.next()) |e| e.value_ptr.*.deinit(mapping.gpa);
         handle_funcs.deinit(mapping.gpa);
     }
 
-    var standalone_funcs: std.ArrayListUnmanaged([]const u8) = .empty;
+    var standalone_funcs: std.ArrayList([]const u8) = .empty;
     defer standalone_funcs.deinit(mapping.gpa);
 
     var fn_iter = mapping.fn_decls.iterator();
@@ -256,7 +271,7 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
                 if (fn_decl.return_kind == .enum_c) {
                     try buf.appendSlice("        return @enumFromInt(result);\n");
                 } else {
-                    try buf.appendSlice("        return @bitCast(result);\n");
+                    try buf.print("        return asC({s}, result);\n", .{actual_ret_type});
                 }
             } else {
                 try buf.print("        return c.{s}(@ptrCast(self.ptr)", .{fn_decl.name});
@@ -409,7 +424,7 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
         if (fn_decl.return_kind == .enum_c) {
             try buf.appendSlice("    return @enumFromInt(result);\n");
         } else {
-            try buf.appendSlice("    return @bitCast(result);\n");
+            try buf.print("    return asC({s}, result);\n", .{actual_ret_type});
         }
     } else {
         try buf.print("    return c.{s}(", .{fn_decl.name});

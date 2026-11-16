@@ -1,6 +1,18 @@
 const c = @import("c_wgpu_native");
 const types = @import("types.zig");
 
+/// Zig 0.18 no longer allows `@bitCast` between `extern struct`s, so the
+/// ABI-compatible conversions between the ergonomic `types.*` structs and
+/// the translated C structs go through a bytewise copy. Only valid for
+/// types with identical layout, which `tests/abi.zig` verifies against
+/// the C definitions.
+inline fn asC(comptime C: type, value: anytype) C {
+    var out: C = undefined;
+    var v = value;
+    @memcpy(@import("std").mem.asBytes(&out), @import("std").mem.asBytes(&v));
+    return out;
+}
+
 pub const Adapter = struct {
     ptr: *anyopaque,
 
@@ -31,8 +43,8 @@ pub const Adapter = struct {
     }
 
     pub fn requestDevice(self: Adapter, descriptor: [*c]const types.DeviceDescriptor, callbackInfo: types.RequestDeviceCallbackInfo) types.Future {
-        const result = c.wgpuAdapterRequestDevice(@ptrCast(self.ptr), @ptrCast(descriptor), @bitCast(callbackInfo));
-        return @bitCast(result);
+        const result = c.wgpuAdapterRequestDevice(@ptrCast(self.ptr), @ptrCast(descriptor), asC(c.WGPURequestDeviceCallbackInfo, callbackInfo));
+        return asC(types.Future, result);
     }
 
 };
@@ -74,7 +86,7 @@ pub const BindGroup = struct {
     }
 
     pub fn setLabel(self: BindGroup, label: types.StringView) void {
-        c.wgpuBindGroupSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuBindGroupSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
 };
@@ -116,7 +128,7 @@ pub const BindGroupLayout = struct {
     }
 
     pub fn setLabel(self: BindGroupLayout, label: types.StringView) void {
-        c.wgpuBindGroupLayoutSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuBindGroupLayoutSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
 };
@@ -172,8 +184,8 @@ pub const Buffer = struct {
     }
 
     pub fn mapAsync(self: Buffer, mode: types.MapMode, offset: usize, size: usize, callbackInfo: types.BufferMapCallbackInfo) types.Future {
-        const result = c.wgpuBufferMapAsync(@ptrCast(self.ptr), @bitCast(mode), offset, size, @bitCast(callbackInfo));
-        return @bitCast(result);
+        const result = c.wgpuBufferMapAsync(@ptrCast(self.ptr), asC(c.WGPUMapMode, mode), offset, size, asC(c.WGPUBufferMapCallbackInfo, callbackInfo));
+        return asC(types.Future, result);
     }
 
     pub fn getSize(self: Buffer) u64 {
@@ -191,7 +203,7 @@ pub const Buffer = struct {
 
     pub fn getUsage(self: Buffer) types.BufferUsage {
         const result = c.wgpuBufferGetUsage(@ptrCast(self.ptr));
-        return @bitCast(result);
+        return asC(types.BufferUsage, result);
     }
 
     pub fn unmap(self: Buffer) void {
@@ -199,7 +211,7 @@ pub const Buffer = struct {
     }
 
     pub fn setLabel(self: Buffer, label: types.StringView) void {
-        c.wgpuBufferSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuBufferSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
     pub fn getMappedRange(self: Buffer, offset: usize, size: usize) ?*anyopaque {
@@ -245,7 +257,7 @@ pub const CommandBuffer = struct {
     }
 
     pub fn setLabel(self: CommandBuffer, label: types.StringView) void {
-        c.wgpuCommandBufferSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuCommandBufferSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
 };
@@ -304,7 +316,7 @@ pub const CommandEncoder = struct {
     }
 
     pub fn pushDebugGroup(self: CommandEncoder, groupLabel: types.StringView) void {
-        c.wgpuCommandEncoderPushDebugGroup(@ptrCast(self.ptr), @bitCast(groupLabel));
+        c.wgpuCommandEncoderPushDebugGroup(@ptrCast(self.ptr), asC(c.WGPUStringView, groupLabel));
     }
 
     pub fn copyBufferToBuffer(self: CommandEncoder, source: Buffer, sourceOffset: u64, destination: Buffer, destinationOffset: u64, size: u64) void {
@@ -334,11 +346,11 @@ pub const CommandEncoder = struct {
     }
 
     pub fn setLabel(self: CommandEncoder, label: types.StringView) void {
-        c.wgpuCommandEncoderSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuCommandEncoderSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
     pub fn insertDebugMarker(self: CommandEncoder, markerLabel: types.StringView) void {
-        c.wgpuCommandEncoderInsertDebugMarker(@ptrCast(self.ptr), @bitCast(markerLabel));
+        c.wgpuCommandEncoderInsertDebugMarker(@ptrCast(self.ptr), asC(c.WGPUStringView, markerLabel));
     }
 
     pub fn writeTimestamp(self: CommandEncoder, querySet: QuerySet, queryIndex: u32) void {
@@ -388,7 +400,7 @@ pub const ComputePassEncoder = struct {
     }
 
     pub fn setLabel(self: ComputePassEncoder, label: types.StringView) void {
-        c.wgpuComputePassEncoderSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuComputePassEncoderSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
     pub fn setPipeline(self: ComputePassEncoder, pipeline: ComputePipeline) void {
@@ -416,7 +428,7 @@ pub const ComputePassEncoder = struct {
     }
 
     pub fn insertDebugMarker(self: ComputePassEncoder, markerLabel: types.StringView) void {
-        c.wgpuComputePassEncoderInsertDebugMarker(@ptrCast(self.ptr), @bitCast(markerLabel));
+        c.wgpuComputePassEncoderInsertDebugMarker(@ptrCast(self.ptr), asC(c.WGPUStringView, markerLabel));
     }
 
     pub fn dispatchWorkgroupsIndirect(self: ComputePassEncoder, indirectBuffer: Buffer, indirectOffset: u64) void {
@@ -424,7 +436,7 @@ pub const ComputePassEncoder = struct {
     }
 
     pub fn pushDebugGroup(self: ComputePassEncoder, groupLabel: types.StringView) void {
-        c.wgpuComputePassEncoderPushDebugGroup(@ptrCast(self.ptr), @bitCast(groupLabel));
+        c.wgpuComputePassEncoderPushDebugGroup(@ptrCast(self.ptr), asC(c.WGPUStringView, groupLabel));
     }
 
     pub fn dispatchWorkgroups(self: ComputePassEncoder, workgroupCountX: u32, workgroupCountY: u32, workgroupCountZ: u32) void {
@@ -478,7 +490,7 @@ pub const ComputePipeline = struct {
     }
 
     pub fn setLabel(self: ComputePipeline, label: types.StringView) void {
-        c.wgpuComputePipelineSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuComputePipelineSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
     pub fn getBindGroupLayout(self: ComputePipeline, groupIndex: u32) ?BindGroupLayout {
@@ -575,8 +587,8 @@ pub const Device = struct {
     }
 
     pub fn createComputePipelineAsync(self: Device, descriptor: [*c]const types.ComputePipelineDescriptor, callbackInfo: types.CreateComputePipelineAsyncCallbackInfo) types.Future {
-        const result = c.wgpuDeviceCreateComputePipelineAsync(@ptrCast(self.ptr), @ptrCast(descriptor), @bitCast(callbackInfo));
-        return @bitCast(result);
+        const result = c.wgpuDeviceCreateComputePipelineAsync(@ptrCast(self.ptr), @ptrCast(descriptor), asC(c.WGPUCreateComputePipelineAsyncCallbackInfo, callbackInfo));
+        return asC(types.Future, result);
     }
 
     pub fn createPipelineLayout(self: Device, descriptor: [*c]const types.PipelineLayoutDescriptor) ?PipelineLayout {
@@ -602,17 +614,17 @@ pub const Device = struct {
     }
 
     pub fn createRenderPipelineAsync(self: Device, descriptor: [*c]const types.RenderPipelineDescriptor, callbackInfo: types.CreateRenderPipelineAsyncCallbackInfo) types.Future {
-        const result = c.wgpuDeviceCreateRenderPipelineAsync(@ptrCast(self.ptr), @ptrCast(descriptor), @bitCast(callbackInfo));
-        return @bitCast(result);
+        const result = c.wgpuDeviceCreateRenderPipelineAsync(@ptrCast(self.ptr), @ptrCast(descriptor), asC(c.WGPUCreateRenderPipelineAsyncCallbackInfo, callbackInfo));
+        return asC(types.Future, result);
     }
 
     pub fn setLabel(self: Device, label: types.StringView) void {
-        c.wgpuDeviceSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuDeviceSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
     pub fn popErrorScope(self: Device, callbackInfo: types.PopErrorScopeCallbackInfo) types.Future {
-        const result = c.wgpuDevicePopErrorScope(@ptrCast(self.ptr), @bitCast(callbackInfo));
-        return @bitCast(result);
+        const result = c.wgpuDevicePopErrorScope(@ptrCast(self.ptr), asC(c.WGPUPopErrorScopeCallbackInfo, callbackInfo));
+        return asC(types.Future, result);
     }
 
     pub fn getQueue(self: Device) ?Queue {
@@ -622,7 +634,7 @@ pub const Device = struct {
 
     pub fn getLostFuture(self: Device) types.Future {
         const result = c.wgpuDeviceGetLostFuture(@ptrCast(self.ptr));
-        return @bitCast(result);
+        return asC(types.Future, result);
     }
 
     pub fn createCommandEncoder(self: Device, descriptor: [*c]const types.CommandEncoderDescriptor) ?CommandEncoder {
@@ -703,7 +715,7 @@ pub const ExternalTexture = struct {
     }
 
     pub fn setLabel(self: ExternalTexture, label: types.StringView) void {
-        c.wgpuExternalTextureSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuExternalTextureSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
 };
@@ -754,8 +766,8 @@ pub const Instance = struct {
     }
 
     pub fn requestAdapter(self: Instance, options: [*c]const types.RequestAdapterOptions, callbackInfo: types.RequestAdapterCallbackInfo) types.Future {
-        const result = c.wgpuInstanceRequestAdapter(@ptrCast(self.ptr), @ptrCast(options), @bitCast(callbackInfo));
-        return @bitCast(result);
+        const result = c.wgpuInstanceRequestAdapter(@ptrCast(self.ptr), @ptrCast(options), asC(c.WGPURequestAdapterCallbackInfo, callbackInfo));
+        return asC(types.Future, result);
     }
 
     pub fn getWGSLLanguageFeatures(self: Instance, features: [*c]types.SupportedWGSLLanguageFeatures) void {
@@ -818,7 +830,7 @@ pub const PipelineLayout = struct {
     }
 
     pub fn setLabel(self: PipelineLayout, label: types.StringView) void {
-        c.wgpuPipelineLayoutSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuPipelineLayoutSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
 };
@@ -873,7 +885,7 @@ pub const QuerySet = struct {
     }
 
     pub fn setLabel(self: QuerySet, label: types.StringView) void {
-        c.wgpuQuerySetSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuQuerySetSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
 };
@@ -919,8 +931,8 @@ pub const Queue = struct {
     }
 
     pub fn onSubmittedWorkDone(self: Queue, callbackInfo: types.QueueWorkDoneCallbackInfo) types.Future {
-        const result = c.wgpuQueueOnSubmittedWorkDone(@ptrCast(self.ptr), @bitCast(callbackInfo));
-        return @bitCast(result);
+        const result = c.wgpuQueueOnSubmittedWorkDone(@ptrCast(self.ptr), asC(c.WGPUQueueWorkDoneCallbackInfo, callbackInfo));
+        return asC(types.Future, result);
     }
 
     pub fn getNativeMetalCommandQueue(self: Queue) ?*anyopaque {
@@ -928,7 +940,7 @@ pub const Queue = struct {
     }
 
     pub fn setLabel(self: Queue, label: types.StringView) void {
-        c.wgpuQueueSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuQueueSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
     pub fn writeBuffer(self: Queue, buffer: Buffer, bufferOffset: u64, data: ?*const anyopaque, size: usize) void {
@@ -945,7 +957,7 @@ pub const Queue = struct {
 
     pub fn submitForIndex(self: Queue, commandCount: usize, commands: [*c]const CommandBuffer) types.SubmissionIndex {
         const result = c.wgpuQueueSubmitForIndex(@ptrCast(self.ptr), commandCount, @ptrCast(commands));
-        return @bitCast(result);
+        return asC(types.SubmissionIndex, result);
     }
 
 };
@@ -987,7 +999,7 @@ pub const RenderBundle = struct {
     }
 
     pub fn setLabel(self: RenderBundle, label: types.StringView) void {
-        c.wgpuRenderBundleSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuRenderBundleSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
 };
@@ -1033,15 +1045,15 @@ pub const RenderBundleEncoder = struct {
     }
 
     pub fn insertDebugMarker(self: RenderBundleEncoder, markerLabel: types.StringView) void {
-        c.wgpuRenderBundleEncoderInsertDebugMarker(@ptrCast(self.ptr), @bitCast(markerLabel));
+        c.wgpuRenderBundleEncoderInsertDebugMarker(@ptrCast(self.ptr), asC(c.WGPUStringView, markerLabel));
     }
 
     pub fn pushDebugGroup(self: RenderBundleEncoder, groupLabel: types.StringView) void {
-        c.wgpuRenderBundleEncoderPushDebugGroup(@ptrCast(self.ptr), @bitCast(groupLabel));
+        c.wgpuRenderBundleEncoderPushDebugGroup(@ptrCast(self.ptr), asC(c.WGPUStringView, groupLabel));
     }
 
     pub fn setLabel(self: RenderBundleEncoder, label: types.StringView) void {
-        c.wgpuRenderBundleEncoderSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuRenderBundleEncoderSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
     pub fn finish(self: RenderBundleEncoder, descriptor: [*c]const types.RenderBundleDescriptor) ?RenderBundle {
@@ -1144,7 +1156,7 @@ pub const RenderPassEncoder = struct {
     }
 
     pub fn insertDebugMarker(self: RenderPassEncoder, markerLabel: types.StringView) void {
-        c.wgpuRenderPassEncoderInsertDebugMarker(@ptrCast(self.ptr), @bitCast(markerLabel));
+        c.wgpuRenderPassEncoderInsertDebugMarker(@ptrCast(self.ptr), asC(c.WGPUStringView, markerLabel));
     }
 
     pub fn multiDrawIndexedIndirect(self: RenderPassEncoder, buffer: Buffer, offset: u64, count: u32) void {
@@ -1196,7 +1208,7 @@ pub const RenderPassEncoder = struct {
     }
 
     pub fn setLabel(self: RenderPassEncoder, label: types.StringView) void {
-        c.wgpuRenderPassEncoderSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuRenderPassEncoderSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
     pub fn drawIndexed(self: RenderPassEncoder, indexCount: u32, instanceCount: u32, firstIndex: u32, baseVertex: i32, firstInstance: u32) void {
@@ -1220,7 +1232,7 @@ pub const RenderPassEncoder = struct {
     }
 
     pub fn pushDebugGroup(self: RenderPassEncoder, groupLabel: types.StringView) void {
-        c.wgpuRenderPassEncoderPushDebugGroup(@ptrCast(self.ptr), @bitCast(groupLabel));
+        c.wgpuRenderPassEncoderPushDebugGroup(@ptrCast(self.ptr), asC(c.WGPUStringView, groupLabel));
     }
 
     pub fn setScissorRect(self: RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) void {
@@ -1274,7 +1286,7 @@ pub const RenderPipeline = struct {
     }
 
     pub fn setLabel(self: RenderPipeline, label: types.StringView) void {
-        c.wgpuRenderPipelineSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuRenderPipelineSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
     pub fn getBindGroupLayout(self: RenderPipeline, groupIndex: u32) ?BindGroupLayout {
@@ -1321,7 +1333,7 @@ pub const Sampler = struct {
     }
 
     pub fn setLabel(self: Sampler, label: types.StringView) void {
-        c.wgpuSamplerSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuSamplerSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
 };
@@ -1363,12 +1375,12 @@ pub const ShaderModule = struct {
     }
 
     pub fn setLabel(self: ShaderModule, label: types.StringView) void {
-        c.wgpuShaderModuleSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuShaderModuleSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
     pub fn getCompilationInfo(self: ShaderModule, callbackInfo: types.CompilationInfoCallbackInfo) types.Future {
-        const result = c.wgpuShaderModuleGetCompilationInfo(@ptrCast(self.ptr), @bitCast(callbackInfo));
-        return @bitCast(result);
+        const result = c.wgpuShaderModuleGetCompilationInfo(@ptrCast(self.ptr), asC(c.WGPUCompilationInfoCallbackInfo, callbackInfo));
+        return asC(types.Future, result);
     }
 
 };
@@ -1434,7 +1446,7 @@ pub const Surface = struct {
     }
 
     pub fn setLabel(self: Surface, label: types.StringView) void {
-        c.wgpuSurfaceSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuSurfaceSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
 };
@@ -1517,11 +1529,11 @@ pub const Texture = struct {
 
     pub fn getUsage(self: Texture) types.TextureUsage {
         const result = c.wgpuTextureGetUsage(@ptrCast(self.ptr));
-        return @bitCast(result);
+        return asC(types.TextureUsage, result);
     }
 
     pub fn setLabel(self: Texture, label: types.StringView) void {
-        c.wgpuTextureSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuTextureSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
     pub fn getNativeMetalTexture(self: Texture) ?*anyopaque {
@@ -1571,7 +1583,7 @@ pub const TextureView = struct {
     }
 
     pub fn setLabel(self: TextureView, label: types.StringView) void {
-        c.wgpuTextureViewSetLabel(@ptrCast(self.ptr), @bitCast(label));
+        c.wgpuTextureViewSetLabel(@ptrCast(self.ptr), asC(c.WGPUStringView, label));
     }
 
 };
@@ -1610,15 +1622,15 @@ pub fn getInstanceFeatures(features: [*c]types.SupportedInstanceFeatures) void {
 }
 
 pub fn supportedFeaturesFreeMembers(supportedFeatures: types.SupportedFeatures) void {
-    c.wgpuSupportedFeaturesFreeMembers(@bitCast(supportedFeatures));
+    c.wgpuSupportedFeaturesFreeMembers(asC(c.WGPUSupportedFeatures, supportedFeatures));
 }
 
 pub fn surfaceCapabilitiesFreeMembers(surfaceCapabilities: types.SurfaceCapabilities) void {
-    c.wgpuSurfaceCapabilitiesFreeMembers(@bitCast(surfaceCapabilities));
+    c.wgpuSurfaceCapabilitiesFreeMembers(asC(c.WGPUSurfaceCapabilities, surfaceCapabilities));
 }
 
 pub fn getProcAddress(procName: types.StringView) c.WGPUProc {
-    return c.wgpuGetProcAddress(@bitCast(procName));
+    return c.wgpuGetProcAddress(asC(c.WGPUStringView, procName));
 }
 
 pub fn setLogCallback(callback: c.WGPULogCallback, userdata: ?*anyopaque) void {
@@ -1626,7 +1638,7 @@ pub fn setLogCallback(callback: c.WGPULogCallback, userdata: ?*anyopaque) void {
 }
 
 pub fn adapterInfoFreeMembers(adapterInfo: types.AdapterInfo) void {
-    c.wgpuAdapterInfoFreeMembers(@bitCast(adapterInfo));
+    c.wgpuAdapterInfoFreeMembers(asC(c.WGPUAdapterInfo, adapterInfo));
 }
 
 pub fn createInstance(descriptor: [*c]const types.InstanceDescriptor) ?Instance {
@@ -1635,11 +1647,11 @@ pub fn createInstance(descriptor: [*c]const types.InstanceDescriptor) ?Instance 
 }
 
 pub fn supportedInstanceFeaturesFreeMembers(supportedInstanceFeatures: types.SupportedInstanceFeatures) void {
-    c.wgpuSupportedInstanceFeaturesFreeMembers(@bitCast(supportedInstanceFeatures));
+    c.wgpuSupportedInstanceFeaturesFreeMembers(asC(c.WGPUSupportedInstanceFeatures, supportedInstanceFeatures));
 }
 
 pub fn supportedWGSLLanguageFeaturesFreeMembers(supportedWGSLLanguageFeatures: types.SupportedWGSLLanguageFeatures) void {
-    c.wgpuSupportedWGSLLanguageFeaturesFreeMembers(@bitCast(supportedWGSLLanguageFeatures));
+    c.wgpuSupportedWGSLLanguageFeaturesFreeMembers(asC(c.WGPUSupportedWGSLLanguageFeatures, supportedWGSLLanguageFeatures));
 }
 
 pub fn getInstanceLimits() types.StatusError!types.InstanceLimits {

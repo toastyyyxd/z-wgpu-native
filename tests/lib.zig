@@ -13,7 +13,7 @@ test "StringView roundtrip" {
     try std.testing.expect(std.mem.eql(u8, original, back));
 }
 
-test "packed struct bitCast roundtrip" {
+test "bitpack struct bitCast roundtrip" {
     const mode: z.types.MapMode = .{ .read = true, .write = false };
     const u: u64 = @bitCast(mode);
     const mode2: z.types.MapMode = @bitCast(u);
