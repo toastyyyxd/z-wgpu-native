@@ -186,7 +186,11 @@ the generator in `build/` rewrites the ergonomic layers.
 
 ## Contributing
 
-Development and issues: [git.toastyx.dev/toasty/z-wgpu-native](https://git.toastyx.dev/toasty/z-wgpu-native).
+Issues and pull requests go to the GitHub mirror:
+[github.com/toastyyyxd/z-wgpu-native](https://github.com/toastyyyxd/z-wgpu-native).
+Changes are cherry-picked into
+[git.toastyx.dev/toasty/z-wgpu-native](https://git.toastyx.dev/toasty/z-wgpu-native),
+which is canonical; the mirror carries the same branches and tags.
 
 ```sh
 nix develop -c zig build -Dtest=true                     # headless suites
