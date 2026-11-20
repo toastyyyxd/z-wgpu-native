@@ -51,10 +51,10 @@ Tagged archives pin a release:
 
 ```sh
 # Zig master
-zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.0.1-zig0.18-dev.tar.gz
+zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.0.2-zig0.18-dev.tar.gz
 
 # Zig 0.17.1 (zig-0.17.1 branch)
-zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.0.1-zig0.17.1.tar.gz
+zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.0.2-zig0.17.1.tar.gz
 ```
 
 Or use a path dependency:
