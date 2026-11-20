@@ -43,11 +43,11 @@ zig build -Dmode=full
 ## Install
 
 ```sh
-zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.0.1-zig0.17.1.tar.gz
+zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.0.2-zig0.17.1.tar.gz
 ```
 
-The corresponding tag is `v1.0.1-zig0.17.1`; `main` releases as
-`v1.0.1-zig0.18-dev`. Or use a path or submodule dependency:
+The corresponding tag is `v1.0.2-zig0.17.1`; `main` releases as
+`v1.0.2-zig0.18-dev`. Or use a path or submodule dependency:
 
 ```zig
 .dependencies = .{
