@@ -42,7 +42,12 @@ zig build -Dmode=full
 
 ## Install
 
-Add this package with a path or submodule dependency:
+```sh
+zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.0.1-zig0.17.1.tar.gz
+```
+
+The corresponding tag is `v1.0.1-zig0.17.1`; `main` releases as
+`v1.0.1-zig0.18-dev`. Or use a path or submodule dependency:
 
 ```zig
 .dependencies = .{
@@ -57,7 +62,7 @@ const dep = b.dependency("z_wgpu_native", .{ .target = target, .optimize = optim
 
 exe.root_module.addImport("z_wgpu_native", dep.module("z_wgpu_native"));
 exe.root_module.link_libc = true;
-exe.root_module.addObjectFile(.{ .cwd_relative = "path/to/libwgpu_native.a" });
+exe.root_module.addObjectFile(b.path("lib/libwgpu_native.a"));
 exe.root_module.linkSystemLibrary("vulkan", .{});
 exe.root_module.linkSystemLibrary("X11", .{});
 exe.root_module.linkSystemLibrary("wayland-client", .{});
