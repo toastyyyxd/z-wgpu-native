@@ -47,14 +47,17 @@ zig build -Dmode=full
 
 ## Install
 
-Add this package with:
+Tagged archives pin a release:
 
 ```sh
-zig fetch --save git+https://git.toastyx.dev/toasty/z-wgpu-native.git
+# Zig master
+zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.0.1-zig0.18-dev.tar.gz
+
+# Zig 0.17.1 (zig-0.17.1 branch)
+zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.0.1-zig0.17.1.tar.gz
 ```
 
-`zig fetch` pins the commit; edit the fragment to pin another revision. Use the
-`zig-0.17.1` branch on stable Zig. Or use a path dependency:
+Or use a path dependency:
 
 ```zig
 .dependencies = .{
