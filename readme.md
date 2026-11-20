@@ -6,6 +6,17 @@ Idiomatic Zig bindings for [wgpu-native](https://github.com/gfx-rs/wgpu-native),
 
 imo llms are good for repetitive work, search, and pattern recognition, not for creating anything novel. bindings should be an "okay" use-case, but if you mind, definitely avoid using this repo unless you review and test all code yourself.
 
+## Zig version support
+
+This branch (`retarget/zig-0.17.1`) targets **Zig 0.17.1** (stable). It is pinned in
+`flake.nix` and required by `build.zig.zon`; the whole suite, including the headed
+triangle/rgbw tests, is verified on 0.17.1.
+
+`main` tracks Zig master (`0.18.0-dev`). Zig 0.18 renamed `packed struct` to
+`bitpack struct` and changed `std.meta`, so the two branches are deliberately not
+source-compatible with each other — use this branch if you are on stable Zig,
+`main` if you are on master.
+
 ## Build
 
 Requires `clang` and `cargo` on `$PATH` along with linking dependencies.

@@ -101,7 +101,7 @@ fn verifyExternStruct(comptime T: type, comptime name: [:0]const u8, failures: *
             std.log.err("types.{s}: alignment {} != c.WGPU{s} alignment {}", .{ name, @alignOf(T), name, @alignOf(ct) });
             failures.* += 1;
         }
-        if (@typeInfo(ct) == .@"struct" and std.meta.containerLayout(ct) != .@"bitpack") {
+        if (@typeInfo(ct) == .@"struct" and std.meta.containerLayout(ct) != .@"packed") {
             inline for (@typeInfo(T).@"struct".field_names) |f_name| {
                 if (cFieldOffset(ct, f_name)) |c_off| {
                     if (@offsetOf(T, f_name) != c_off) {
@@ -168,7 +168,7 @@ test "abi types.zig" {
                     externs += 1;
                     verifyExternStruct(T, decl_name, &failures);
                 },
-                .@"bitpack" => {
+                .@"packed" => {
                     bitpack_count += 1;
                     verifyPackedStruct(T, decl_name, &failures);
                 },

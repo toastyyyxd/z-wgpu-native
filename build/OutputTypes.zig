@@ -150,7 +150,7 @@ fn writeFlags(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
         const backing = "u64";
         const backing_bits: u8 = 64;
 
-        try buf.print("pub const {s} = bitpack struct({s}) {{\n", .{ zname, backing });
+        try buf.print("pub const {s} = packed struct({s}) {{\n", .{ zname, backing });
 
         var current_bit: u8 = 0;
         for (deduped.items) |sv| {

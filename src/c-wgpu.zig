@@ -3743,7 +3743,7 @@ pub const UINTMAX_C = __helpers.UL_SUFFIX;
 pub const __STDC_VERSION_STDDEF_H__ = @as(c_long, 202311);
 pub const NULL = __helpers.cast(?*anyopaque, @as(c_int, 0));
 pub const offsetof = @compileError("unable to translate macro: undefined identifier `__builtin_offsetof`");
-// /nix/store/0j9p7gldffigkxqrahjfzldq3y232dxp-zig-0.18.0-dev.1153+c62948217/lib/compiler/aro/include/stddef.h:18:9
+// /nix/store/w4f5zqlyqyq72jqlj0c2lj2fikzjs0b1-zig-0.17.1/lib/compiler/aro/include/stddef.h:18:9
 pub const _MATH_H = @as(c_int, 1);
 pub const __GLIBC_USE_LIB_EXT2 = @as(c_int, 0);
 pub const __GLIBC_USE_IEC_60559_BFP_EXT = @as(c_int, 0);

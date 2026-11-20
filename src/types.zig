@@ -909,7 +909,7 @@ pub const PrimitiveTopology = enum(u32) {
     triangle_strip = 5,
 };
 
-pub const ColorWriteMask = bitpack struct(u64) {
+pub const ColorWriteMask = packed struct(u64) {
     red: bool = false,
     green: bool = false,
     blue: bool = false,
@@ -920,7 +920,7 @@ pub const ColorWriteMask = bitpack struct(u64) {
 
 pub const ColorWriteMask_all: ColorWriteMask = @bitCast(@as(u64, @intCast(15)));
 
-pub const ShaderStage = bitpack struct(u64) {
+pub const ShaderStage = packed struct(u64) {
     vertex: bool = false,
     fragment: bool = false,
     compute: bool = false,
@@ -928,7 +928,7 @@ pub const ShaderStage = bitpack struct(u64) {
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
 };
 
-pub const BufferUsage = bitpack struct(u64) {
+pub const BufferUsage = packed struct(u64) {
     map_read: bool = false,
     map_write: bool = false,
     copy_src: bool = false,
@@ -943,7 +943,7 @@ pub const BufferUsage = bitpack struct(u64) {
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
 };
 
-pub const TextureUsage = bitpack struct(u64) {
+pub const TextureUsage = packed struct(u64) {
     copy_src: bool = false,
     copy_dst: bool = false,
     texture_binding: bool = false,
@@ -954,14 +954,14 @@ pub const TextureUsage = bitpack struct(u64) {
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
 };
 
-pub const MapMode = bitpack struct(u64) {
+pub const MapMode = packed struct(u64) {
     read: bool = false,
     write: bool = false,
     __: u62 = 0,
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
 };
 
-pub const InstanceBackend = bitpack struct(u64) {
+pub const InstanceBackend = packed struct(u64) {
     vulkan: bool = false,
     gl: bool = false,
     metal: bool = false,
@@ -974,7 +974,7 @@ pub const InstanceBackend = bitpack struct(u64) {
 
 pub const InstanceBackend_primary: InstanceBackend = @bitCast(@as(u64, @intCast(@as(c_long, (((@as(c_int, 1) << @intCast(@as(c_int, 0))) | (@as(c_int, 1) << @intCast(@as(c_int, 2)))) | (@as(c_int, 1) << @intCast(@as(c_int, 3)))) | (@as(c_int, 1) << @intCast(@as(c_int, 5)))))));
 
-pub const InstanceFlag = bitpack struct(u64) {
+pub const InstanceFlag = packed struct(u64) {
     debug: bool = false,
     validation: bool = false,
     discard_hal_labels: bool = false,

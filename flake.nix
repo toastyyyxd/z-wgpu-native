@@ -13,7 +13,7 @@
   in (flake-utils.lib.eachDefaultSystem (system: let
     
     # Packages
-    zig-bin = zig2nix.outputs.packages.${system}.zig-master;
+    zig-bin = zig2nix.outputs.packages.${system}.zig-0_17_1;
     env = zig2nix.outputs.zig-env.${system} { zig = zig-bin; };
     zls = zls-overlay.packages.${system}.zls;
     hostPkgs = env.pkgs;
