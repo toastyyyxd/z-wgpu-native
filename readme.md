@@ -1,39 +1,135 @@
 # z-wgpu-native
 
-Idiomatic Zig bindings for [wgpu-native](https://github.com/gfx-rs/wgpu-native), auto-generated from the C headers.
+Idiomatic Zig bindings for [wgpu-native](https://github.com/gfx-rs/wgpu-native),
+auto-generated from the C headers.
 
-# This codebase DOES use LLM/AI for development.
+- **Bindings:** wgpu-native **v29.0.1**
+- **This branch:** Zig **0.18.0-dev** (master)
+- Regenerated from `wgpu.h` on every wgpu-native bump; see
+  [Refreshing the bindings](#refreshing-the-bindings)
 
-imo llms are good for repetitive work, search, and pattern recognition, not for creating anything novel. bindings should be an "okay" use-case, but if you mind, definitely avoid using this repo unless you review and test all code yourself.
+On stable Zig? Use the [`zig-0.17.1`](https://git.toastyx.dev/toasty/z-wgpu-native/src/branch/zig-0.17.1)
+branch instead — 0.18 renamed `packed struct` to `bitpack struct` and changed
+`std.meta`, so the two are not source-compatible.
 
-## Build
+The generated code mirrors the C headers; the ergonomic layers sit on top:
 
-Requires `clang` and `cargo` on `$PATH` along with linking dependencies.
+| Module | Contents |
+| --- | --- |
+| `z.types` | C structs/enums with Zig names, `StringView`, chained-struct iterator, `bitpack struct` flag sets |
+| `z.handles` | method-style per-handle wrappers (`device.createBuffer(..)`), `Optional{Handle}` wrappers |
+| `z.callbacks` | typed callback/trampoline helpers for the async entry points |
+| `z.c` | raw `translate-c` output, unchanged |
+
+```zig
+const z = @import("z_wgpu_native");
+
+const instance = z.handles.createInstance(null) orelse return error.NoInstance;
+```
+
+## Examples
+
+- [`tests/triangle.zig`](tests/triangle.zig) — adapter/device, surface, render pass, buffer readback (windowed).
+- [`tests/compute.zig`](tests/compute.zig) — headless Vulkan compute.
+
+## Requirements
+
+- Zig **0.18.0-dev** (`minimum_zig_version` in `build.zig.zon`)
+- **wgpu-native** (`libwgpu_native.a` / `.so` / `.dll` / `.dylib`). The bindings
+  only declare `extern` functions; link it yourself. Build or download it:
 
 ```sh
-zig build --help
-  -Dtarget=[string]            The CPU architecture, OS, and ABI to build for
-  -Dcpu=[string]               Target CPU features to add or subtract
-  -Dofmt=[string]              Target object format
-  -Ddynamic-linker=[string]    Path to interpreter on the target system
-  -Doptimize=[enum]            Prioritize performance, safety, or binary size
-  -Dtest=[bool]                Run tests.
-  -Dforce-cross-tests=[bool]   Force run tests when crosscompiling regardless of emulation flags.
-  -Dheaded-tests=[bool]        Run headed tests on top of default headless tests
-  -Dcargo-target=[string]      Override a more reliable Cargo target triple if `triples.zig` does not translate it correctly.
-  -Dc-includes=[string]        Path to any headers needed for translate-c and other steps.
-  -Dwgpu=[lazy_path]           Provide a prebuilt wgpu-native library to skip the cargo and rust dependencies.
-  -Dmode=[enum]
-    `minimal` : Consumers can usually build from the existing src/, though it could be out-of-sync with vendor/ or codegen.
-    `codegen` : Generates src/ and builds; requires git submodules to run translate-c.
-    `full`    : Suitable for hermetic builds and building tests; requires cargo and rust dependencies.
-     Note: You can provide a prebuilt wgpu_native library with `-Dwgpu=<path-to-file>` for tests.
-           For hermetic or deterministic builds, flake.nix provides coverage for crosscompilation as well.
-    Supported Values:
-        minimal
-        codegen
-        full
+# build wgpu-native from the vendored submodule into zig-out/lib
+zig build -Dmode=full
+# or download a release from https://github.com/gfx-rs/wgpu-native/releases
+# or, on Nix: nix build .#default  ->  result/lib/libwgpu_native.a
 ```
+
+## Install
+
+Add this package with:
+
+```sh
+zig fetch --save git+https://git.toastyx.dev/toasty/z-wgpu-native.git
+```
+
+`zig fetch` pins the commit; edit the fragment to pin another revision. Use the
+`zig-0.17.1` branch on stable Zig. Or use a path dependency:
+
+```zig
+.dependencies = .{
+    .z_wgpu_native = .{ .path = "../z-wgpu-native" },
+},
+```
+
+Then wire the module and the native library in `build.zig`:
+
+```zig
+const dep = b.dependency("z_wgpu_native", .{ .target = target, .optimize = optimize });
+
+exe.root_module.addImport("z_wgpu_native", dep.module("z_wgpu_native"));
+exe.root_module.link_libc = true;
+exe.root_module.addObjectFile(b.path("lib/libwgpu_native.a"));
+exe.root_module.linkSystemLibrary("vulkan", .{});
+exe.root_module.linkSystemLibrary("X11", .{});
+exe.root_module.linkSystemLibrary("wayland-client", .{});
+exe.root_module.linkSystemLibrary("m", .{});
+exe.root_module.linkSystemLibrary("dl", .{});
+exe.root_module.linkSystemLibrary("pthread", .{});
+exe.root_module.linkSystemLibrary("unwind", .{});
+exe.root_module.linkSystemLibrary("gcc_s", .{});
+```
+
+Linux system libraries required by the static wgpu-native build. On Windows or
+macOS, link the platform equivalents (`userenv`, `ws2_32`, `winpthread` on
+Windows).
+
+## Build modes
+
+| `-Dmode` | Uses | Needs clang/cargo? |
+| --- | --- | --- |
+| `minimal` (default) | checked-in `src/` | no |
+| `codegen` | regenerates `src/` from `vendor/wgpu-native` headers | clang + submodules (no cargo) |
+| `full` | builds wgpu-native from vendored source, then creates `src/` | yes (cargo/rust) |
+
+Other options:
+
+| Option | Effect |
+| --- | --- |
+| `-Dtest=true` | build and run the test suites |
+| `-Dheaded-tests=true` | also run the windowed tests (`triangle`, `rgbw`) |
+| `-Dwgpu=<path>` | use a prebuilt wgpu-native library instead of building it (required for tests with `-Dmode=minimal`/`codegen`) |
+| `-Dtarget=`, `-Dcpu=`, `-Doptimize=` | standard Zig target options; cross-compilation is supported |
+
+## Supported targets
+
+`x86_64-linux-gnu` (host), `aarch64-linux-gnu`, `x86_64-linux-musl`,
+`aarch64-linux-musl`, `x86_64-windows-gnu`, `aarch64-windows-gnu`.
+
+GPU tests run on `x86_64-linux-gnu` only.
+
+## Testing
+
+```sh
+# fast: use a prebuilt wgpu-native, checked-in src/
+zig build -Dtest=true -Dmode=minimal -Dwgpu=/path/to/libwgpu_native.a
+
+# also run the windowed triangle/rgbw tests (needs a display)
+zig build -Dtest=true -Dheaded-tests=true -Dmode=minimal -Dwgpu=/path/to/libwgpu_native.a
+```
+
+Suites: `abi` (extern-struct layout), `lib` (value-level), `compute` (headless
+Vulkan), `triangle` and `rgbw` (windowed). Tested on `0.18.0-dev.1153`.
+
+## Zig version support
+
+Zig 0.18 renamed `packed struct` to `bitpack struct` and changed `std.meta`,
+so stable and master are not source-compatible. Two branches:
+
+| Branch | Zig | Notes |
+| --- | --- | --- |
+| `main` | 0.18.0-dev | tracks Zig master |
+| `zig-0.17.1` | 0.17.1 | stable toolchain; flake pins `zig-0_17_1` |
 
 ## Quirks
 
@@ -41,58 +137,67 @@ A few things work differently from raw wgpu-native:
 
 ### Handle fields in descriptors use `Optional{Handle}`
 
-The C headers use null pointers for optional handles. In Zig that's a `?*anyopaque`, but extern structs can't hold non-pointer optionals with a guaranteed layout. So nullable handle fields use `handles.Optional{Foo}` instead:
+The C headers use null pointers for optional handles. In Zig that is a
+`?*anyopaque`, but extern structs cannot hold non-pointer optionals with a
+guaranteed layout, so nullable handle fields use `handles.Optional{Foo}`:
 
 ```zig
 // set a handle
-.d = .{ .device = wgpu.handles.OptionalDevice.wrap(device) },
+.d = .{ .device = z.handles.OptionalDevice.wrap(device) },
 // leave it empty
-.d = .{ .device = wgpu.handles.OptionalDevice.none() },
+.d = .{ .device = z.handles.OptionalDevice.none() },
 // read it back
-const dev = surface_tex.texture.unwrap();       // panics if null
-const dev = surface_tex.texture.get();          // returns ?Texture
+const dev = surface_tex.texture.unwrap();  // panics if null
+const dev = surface_tex.texture.get();     // returns ?Texture
 ```
 
 ### `WGPUBool` is `u32`, not `bool`
 
-C `WGPUBool` is `u32`, `1` or `0`.
+C `WGPUBool` is `u32` (`1` or `0`), and extern struct fields must keep that layout:
+
 ```zig
 .alpha_to_coverage_enabled = 1, // true
 .mapped_at_creation = 0,        // false
 ```
 
-## Usage
+### Chained structs
+
+Descriptors that take `next_in_chain` point at a chained struct whose `s_type`
+you set explicitly. `z.types.chainedIterator` walks the chain:
 
 ```zig
-const wgpu = @import("z_wgpu_native");
-
-// Types are under wgpu.types
-const desc: wgpu.types.ShaderModuleDescriptor = .{
-    .label = wgpu.types.StringView.fromSlice("my shader"),
-};
-
-// Handles are under wgpu.handles
-const instance = wgpu.handles.createInstance(null);
-
-// Callbacks are under wgpu.callbacks
-const callback_info = wgpu.callbacks.requestAdapterCallback(
-    Ctx, u8, &ctx, &ctx2,
-    struct { fn cb(c: *Ctx, _: *u8, status: wgpu.types.RequestAdapterStatus, ...) void { ... } }.cb,
-);
-
-// Raw C bindings available under wgpu.c
-const raw_device = wgpu.c.wgpuAdapterRequestDevice(@ptrCast(adapter.ptr), null, callback_info);
-
-// Chained struct iterator
-var iter = wgpu.types.chainedIterator(&first_chain);
+var iter = z.types.chainedIterator(&first_chain);
 while (iter.next()) |chain| { ... }
 ```
 
+## Refreshing the bindings
+
+```sh
+git submodule update --init --recursive
+zig build -Dmode=codegen   # rewrites src/c-wgpu.zig, types.zig, handles.zig, ...
+git diff src/              # review, then commit
+```
+
+`-Dmode=codegen` re-runs `translate-c` on `vendor/wgpu-native/ffi/wgpu.h`, then
+the generator in `build/` rewrites the ergonomic layers.
+
+## Contributing
+
+Development and issues: [git.toastyx.dev/toasty/z-wgpu-native](https://git.toastyx.dev/toasty/z-wgpu-native).
+
+```sh
+nix develop -c zig build -Dtest=true                     # headless suites
+nix develop -c zig build -Dtest=true -Dheaded-tests=true # + windowed suites
+```
+
+## AI disclosure
+
+This codebase uses LLM/AI for development. The generated bindings are covered by
+the test suites; review anything you depend on.
+
 ## License
 
-This project is dual-licensed under either:
+Dual-licensed, at your option:
 
 - MIT License ([LICENSE-MIT](LICENSE-MIT))
 - Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
-
-at your option.
