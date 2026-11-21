@@ -43,7 +43,7 @@ fn writeCallbackTrampoline(buf: *std.array_list.Managed(u8), mapping: *Mapping, 
     }
     try buf.appendSlice("comptime cb: fn (");
 
-    // Comptime cb params: context types + converted non-ud types
+    // Comptime callback parameters: context types plus converted non-userdata types.
     for (0..ctx_count) |i| {
         try buf.print("*C{d}, ", .{i + 1});
     }
@@ -101,7 +101,7 @@ fn writeCallbackTrampoline(buf: *std.array_list.Managed(u8), mapping: *Mapping, 
     try buf.appendSlice("        }\n");
     try buf.appendSlice("    };\n\n");
 
-    // Return CallbackInfo struct: callback = trampoline, userdata = context pointers
+    // Fill in the CallbackInfo: callback is the trampoline and userdata points at the contexts.
     try buf.appendSlice("    return .{\n");
     try buf.appendSlice("        .callback = &Trampoline.call,\n");
     for (0..ctx_count) |i| {
@@ -125,7 +125,7 @@ fn mapCallbackZigType(ctype: []const u8, buf: []u8, mapping: *Mapping) []const u
         return std.fmt.bufPrint(buf, "types.{s}", .{Common.stripWgpu(ctype)}) catch unreachable;
     }
     if (std.mem.startsWith(u8, ctype, "WGPU") and Common.isHandleLikeType(ctype, mapping)) {
-        return std.fmt.bufPrint(buf, "?handles.{s}", .{Common.zigHandleName(ctype)}) catch unreachable;
+        return std.fmt.bufPrint(buf, "?*handles.{s}", .{Common.zigHandleName(ctype)}) catch unreachable;
     }
     if (std.mem.startsWith(u8, ctype, "WGPU") and mapping.struct_decls.contains(ctype)) {
         return std.fmt.bufPrint(buf, "types.{s}", .{Common.zigStructName(ctype)}) catch unreachable;
@@ -161,7 +161,7 @@ fn mapCbExpr(param: *Mapping.CallbackParam, buf: []u8, mapping: *Mapping) []cons
     if (std.mem.eql(u8, param.type, "WGPUStringView")) {
         return std.fmt.bufPrint(buf, "if ({s}.data) |d| d[0..{s}.length] else \"\"", .{ param.name, param.name }) catch unreachable;
     }
-    // [*c]const-wrapped handle: outer pointer and inner handle may both be null
+    // A [*c]const-wrapped handle, where the outer pointer and the inner handle may both be null.
     if (std.mem.startsWith(u8, param.type, "[*c]const ") or std.mem.startsWith(u8, param.type, "[*c]")) {
         const prefix_end = if (std.mem.startsWith(u8, param.type, "[*c]const ")) "[*c]const ".len else "[*c]".len;
         const inner = param.type[prefix_end..];

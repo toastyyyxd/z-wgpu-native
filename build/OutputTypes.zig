@@ -47,6 +47,11 @@ fn writeEnums(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
             }.lessThan,
         );
         
+        var has_zero = false;
+        for (sorted_vals.items) |sv| {
+            if (sv.value == 0) has_zero = true;
+        }
+
         const is_status = std.mem.endsWith(u8, cname, "Status");
         var success_sv_i: ?usize = null; // It's most likely 1 tho
         if (is_status) {
@@ -73,6 +78,10 @@ fn writeEnums(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
         }
 
         try buf.print("pub const {s} = enum(u32) {{\n", .{zname});
+        if (!has_zero) {
+            // The C enum has no zero value, so emit a Zig-side tag for the C INIT default.
+            try buf.appendSlice("    /// Zig-side default because the C enum has no zero.\n    @\"undefined\" = 0,\n");
+        }
         for (sorted_vals.items) |sv| {
             var buf1: [128]u8 = undefined;
             var buf2: [128]u8 = undefined;
@@ -81,6 +90,10 @@ fn writeEnums(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
         }
         if (is_status) {
             try buf.print("    pub fn toError(self: {s}) {s}Error!void {{\n        return switch (self) {{\n", .{ zname, zname });
+            if (!has_zero) {
+                // The synthetic tag can only be observed as a default.
+                try buf.appendSlice("            .@\"undefined\" => unreachable,\n");
+            }
             for (sorted_vals.items, 0..) |sv, i| {
                 var buf1: [128]u8 = undefined;
                 var buf2: [128]u8 = undefined;
@@ -176,7 +189,19 @@ fn writeFlags(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
         try buf.print(
             \\    comptime {{ std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf({s})); }}
             \\
-        , .{backing});
+            \\    pub fn bitOr(self: @This(), other: @This()) @This() {{
+            \\        return @bitCast(@as({s}, @bitCast(self)) | @as({s}, @bitCast(other)));
+            \\    }}
+            \\
+            \\    pub fn bitAnd(self: @This(), other: @This()) @This() {{
+            \\        return @bitCast(@as({s}, @bitCast(self)) & @as({s}, @bitCast(other)));
+            \\    }}
+            \\
+            \\    pub fn bitXor(self: @This(), other: @This()) @This() {{
+            \\        return @bitCast(@as({s}, @bitCast(self)) ^ @as({s}, @bitCast(other)));
+            \\    }}
+            \\
+        , .{ backing, backing, backing, backing, backing, backing, backing });
         try buf.appendSlice("};\n\n");
 
         // Composite/preset flag constants (sorted by name)
@@ -249,49 +274,26 @@ fn writeStructs(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
 
         for (decl.fields.items) |f| {
             var type_buf: [256]u8 = undefined;
+            var init_buf: [256]u8 = undefined;
             var name_buf: [128]u8 = undefined;
             const fname = Common.zigFieldName(f.name, &name_buf);
             const type_slice = mapping.ast.getNodeSource(f.type);
-            const ztype = Common.mapTypeName(type_slice, &type_buf, mapping);
-
-            if (f.init != .none) {
-                const init_slice = mapping.ast.getNodeSource(f.init.unwrap().?);
-                const mapped_init = mapFieldInit(type_slice, init_slice, mapping);
-                var nullable_type_buf: [256]u8 = undefined;
-                const final_ztype = if (std.mem.eql(u8, mapped_init, "null") and Common.isHandleLikeType(type_slice, mapping) and std.mem.startsWith(u8, ztype, "handles.Optional")) blk: {
-                    break :blk ztype; // already optional via Optional{Handle}
-                } else if (std.mem.eql(u8, mapped_init, "null") and Common.isHandleLikeType(type_slice, mapping)) blk: {
-                    break :blk std.fmt.bufPrint(&nullable_type_buf, "?{s}", .{ztype}) catch unreachable;
-                } else ztype;
-                const zinit = if (std.mem.eql(u8, mapped_init, ".{}")) blk: {
-                    if (std.mem.startsWith(u8, type_slice, "union_")) {
-                        var zb: [256]u8 = undefined;
-                        break :blk std.fmt.bufPrint(&zb, "std.mem.zeroes({s})", .{ztype}) catch unreachable;
-                    }
-                    if (mapping.enum_decls.get(type_slice)) |enum_decl| {
-                        var val_iter = enum_decl.values.iterator();
-                        while (val_iter.next()) |val| {
-                            const init_text = mapping.ast.getNodeSource(val.value_ptr.*.init.unwrap().?);
-                            if (std.mem.eql(u8, init_text, "0")) {
-                                var vn_buf: [128]u8 = undefined;
-                                const vname = Common.zigValueName(val.key_ptr.*, &vn_buf);
-                                var ei_buf: [256]u8 = undefined;
-                                if (Common.isZigKeyword(vname)) {
-                                    break :blk std.fmt.bufPrint(&ei_buf, ".@\"{s}\"", .{vname}) catch unreachable;
-                                } else {
-                                    break :blk std.fmt.bufPrint(&ei_buf, ".{s}", .{vname}) catch unreachable;
-                                }
-                            }
-                        }
-                    }
-                    break :blk @as([]const u8, "undefined");
-                } else if (std.mem.eql(u8, mapped_init, "0") and mapping.flag_decls.get(type_slice) != null) @as([]const u8, ".{}")
-                else mapped_init;
-                try buf.print("    {s}: {s} = {s},\n", .{ fname, final_ztype, zinit });
-            } else {
-                try buf.print("    {s}: {s},\n", .{ fname, ztype });
+            const fi = Common.fieldInit(mapping, type_slice, null, &type_buf, &init_buf);
+            if (decl.kind == .@"union") {
+                // extern union fields cannot carry initializers
+                try buf.print("    {s}: {s},\n", .{ fname, fi.ztype });
+                continue;
             }
+            const cinit: ?[]const u8 = if (f.init != .none) mapping.ast.getNodeSource(f.init.unwrap().?) else null;
+            const fi2 = Common.fieldInit(mapping, type_slice, cinit, &type_buf, &init_buf);
+            if (std.mem.eql(u8, fi2.zinit, "undefined")) {
+                std.log.err("types.{s}.{s}: no deterministic default for C type '{s}'", .{ zname, fname, type_slice });
+                return error.UndefinedDefault;
+            }
+            try buf.print("    {s}: {s} = {s},\n", .{ fname, fi2.ztype, fi2.zinit });
         }
+
+        try writeSliceSetters(buf, mapping, decl, zname, "");
 
         // Inject StringView helpers inside the struct body
         if (std.mem.eql(u8, zname, "StringView")) {
@@ -350,11 +352,73 @@ fn writeTypedefs(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
     }
 }
 
-fn mapFieldInit(ctype: []const u8, cinit: []const u8, mapping: *Mapping) []const u8 {
-    if (std.mem.eql(u8, ctype, "WGPUBool") and std.mem.eql(u8, cinit, "0")) return "0";
-    if (std.mem.eql(u8, ctype, "WGPUStringView") and std.mem.startsWith(u8, cinit, "@import")) return ".{ .data = null, .length = std.math.maxInt(usize) }";
-    if (std.mem.eql(u8, cinit, "null") and Common.isHandleLikeType(ctype, mapping)) return ".{ .ptr = null }";
-    if (std.mem.eql(u8, cinit, "null")) return "null";
-    if (std.mem.startsWith(u8, cinit, "@import")) return ".{}";
-    return cinit;
+fn snakeToPascal(s: []const u8, buf: *[160]u8) []const u8 {
+    var out: usize = 0;
+    var upper = true;
+    for (s) |ch| {
+        if (ch == '_') {
+            upper = true;
+            continue;
+        }
+        if (out >= buf.len) break;
+        buf[out] = if (upper) std.ascii.toUpper(ch) else ch;
+        out += 1;
+        upper = false;
+    }
+    return buf[0..out];
 }
+
+/// Emits a setter that fills a count field and its pointer field from a slice.
+pub fn writeSliceSetters(buf: *std.array_list.Managed(u8), mapping: *Mapping, decl: *Mapping.StructDecl, zname: []const u8, qualifier: []const u8) !void {
+    const fields = decl.fields.items;
+    if (fields.len < 2) return;
+    var i: usize = 0;
+    while (i + 1 < fields.len) : (i += 1) {
+        var count_field = fields[i];
+        var ptr_field = fields[i + 1];
+
+        // C structs put the pair in either order: "count, pointer" in the
+        // WebGPU schema, "pointer, count" in some wgpu-native extras.
+        const first_ctype = mapping.ast.getNodeSource(count_field.type);
+        const second_ctype = mapping.ast.getNodeSource(ptr_field.type);
+        if (Common.isCountCType(first_ctype) and std.mem.startsWith(u8, second_ctype, "[*c]")) {
+            // count before pointer
+        } else if (std.mem.startsWith(u8, first_ctype, "[*c]") and Common.isCountCType(second_ctype)) {
+            count_field = fields[i + 1];
+            ptr_field = fields[i];
+        } else continue;
+        if (!Common.isCountParamName(count_field.name)) continue;
+        if (std.mem.eql(u8, ptr_field.name, "nextInChain") or
+            std.mem.eql(u8, ptr_field.name, "chain")) continue;
+
+        const ptr_ctype = mapping.ast.getNodeSource(ptr_field.type);
+
+        var type_buf: [256]u8 = undefined;
+        const mapped = Common.mapTypeName(ptr_ctype, &type_buf, mapping);
+        const elem = if (std.mem.startsWith(u8, mapped, "[*c]const "))
+            mapped["[*c]const ".len..]
+        else if (std.mem.startsWith(u8, mapped, "[*c]"))
+            mapped["[*c]".len..]
+        else
+            continue;
+
+        var ptr_name_buf: [128]u8 = undefined;
+        const ptr_name = Common.zigFieldName(ptr_field.name, &ptr_name_buf);
+        var count_name_buf: [128]u8 = undefined;
+        const count_name = Common.zigFieldName(count_field.name, &count_name_buf);
+        var pascal_buf: [160]u8 = undefined;
+        const pascal = snakeToPascal(ptr_name, &pascal_buf);
+
+        const elem_qualified = if (qualifier.len > 0 and std.mem.indexOfScalar(u8, elem, '.') == null)
+            try std.fmt.allocPrint(mapping.arena, "{s}{s}", .{ qualifier, elem })
+        else
+            elem;
+
+        try buf.print("    pub fn set{s}(self: *{s}, items: []const {s}) void {{\n", .{ pascal, zname, elem_qualified });
+        try buf.print("        self.{s} = @intCast(items.len);\n", .{count_name});
+        try buf.print("        self.{s} = items.ptr;\n", .{ptr_name});
+        try buf.appendSlice("    }\n\n");
+        i += 1;
+    }
+}
+

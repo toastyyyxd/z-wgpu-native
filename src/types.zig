@@ -10,12 +10,15 @@ pub const MapAsyncStatusError = error{
 };
 
 pub const MapAsyncStatus = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     success = 1,
     callback_cancelled = 2,
     @"error" = 3,
     aborted = 4,
     pub fn toError(self: MapAsyncStatus) MapAsyncStatusError!void {
         return switch (self) {
+            .@"undefined" => unreachable,
             .success => return,
             .callback_cancelled => return MapAsyncStatusError.CallbackCancelled,
             .@"error" => return MapAsyncStatusError.Error,
@@ -57,6 +60,8 @@ pub const BackendType = enum(u32) {
 };
 
 pub const BufferMapState = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     unmapped = 1,
     pending = 2,
     mapped = 3,
@@ -69,9 +74,19 @@ pub const OptionalBool = enum(u32) {
 };
 
 pub const ErrorFilter = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     validation = 1,
     out_of_memory = 2,
     internal = 3,
+};
+
+pub const SamplerBorderColor = enum(u32) {
+    @"undefined" = 0,
+    transparent_black = 1,
+    opaque_black = 2,
+    opaque_white = 3,
+    zero = 4,
 };
 
 pub const Dx12SwapchainKind = enum(u32) {
@@ -98,10 +113,13 @@ pub const CompilationInfoRequestStatusError = error{
 };
 
 pub const CompilationInfoRequestStatus = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     success = 1,
     callback_cancelled = 2,
     pub fn toError(self: CompilationInfoRequestStatus) CompilationInfoRequestStatusError!void {
         return switch (self) {
+            .@"undefined" => unreachable,
             .success => return,
             .callback_cancelled => return CompilationInfoRequestStatusError.CallbackCancelled,
         };
@@ -114,17 +132,15 @@ pub const CompilationInfoRequestStatus = enum(u32) {
 };
 
 pub const NativeTextureFormat = enum(u32) {
-    r16_unorm = 196609,
-    r16_snorm = 196610,
-    rg16_unorm = 196611,
-    rg16_snorm = 196612,
-    rgba16_unorm = 196613,
-    rgba16_snorm = 196614,
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     nv12 = 196615,
     p010 = 196616,
 };
 
 pub const CompilationMessageType = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     @"error" = 1,
     warning = 2,
     info = 3,
@@ -137,6 +153,8 @@ pub const MipmapFilterMode = enum(u32) {
 };
 
 pub const WGSLLanguageFeatureName = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     readonly_and_readwrite_storage_textures = 1,
     packed4x8_integer_dot_product = 2,
     unrestricted_pointer_parameters = 3,
@@ -146,6 +164,7 @@ pub const WGSLLanguageFeatureName = enum(u32) {
     texture_and_sampler_let = 7,
     subgroup_uniformity = 8,
     texture_formats_tier1 = 9,
+    linear_indexing = 10,
 };
 
 pub const AddressMode = enum(u32) {
@@ -166,6 +185,8 @@ pub const TextureSampleType = enum(u32) {
 };
 
 pub const ErrorType = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     no_error = 1,
     validation = 2,
     out_of_memory = 3,
@@ -179,11 +200,14 @@ pub const PopErrorScopeStatusError = error{
 };
 
 pub const PopErrorScopeStatus = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     success = 1,
     callback_cancelled = 2,
     @"error" = 3,
     pub fn toError(self: PopErrorScopeStatus) PopErrorScopeStatusError!void {
         return switch (self) {
+            .@"undefined" => unreachable,
             .success => return,
             .callback_cancelled => return PopErrorScopeStatusError.CallbackCancelled,
             .@"error" => return PopErrorScopeStatusError.Error,
@@ -203,11 +227,14 @@ pub const RequestDeviceStatusError = error{
 };
 
 pub const RequestDeviceStatus = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     success = 1,
     callback_cancelled = 2,
     @"error" = 3,
     pub fn toError(self: RequestDeviceStatus) RequestDeviceStatusError!void {
         return switch (self) {
+            .@"undefined" => unreachable,
             .success => return,
             .callback_cancelled => return RequestDeviceStatusError.CallbackCancelled,
             .@"error" => return RequestDeviceStatusError.Error,
@@ -237,6 +264,8 @@ pub const LogLevel = enum(u32) {
 };
 
 pub const NativeFeature = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     immediates = 196609,
     texture_adapter_specific_format_features = 196610,
     multi_draw_indirect_count = 196612,
@@ -251,6 +280,8 @@ pub const NativeFeature = enum(u32) {
     mappable_primary_buffers = 196622,
     buffer_binding_array = 196623,
     storage_texture_array_non_uniform_indexing = 196624,
+    address_mode_clamp_to_zero = 196625,
+    address_mode_clamp_to_border = 196626,
     polygon_mode_line = 196627,
     polygon_mode_point = 196628,
     conservative_rasterization = 196629,
@@ -296,6 +327,8 @@ pub const BlendOperation = enum(u32) {
 };
 
 pub const CallbackMode = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     wait_any_only = 1,
     allow_process_events = 2,
     allow_spontaneous = 3,
@@ -447,11 +480,14 @@ pub const QueueWorkDoneStatusError = error{
 };
 
 pub const QueueWorkDoneStatus = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     success = 1,
     callback_cancelled = 2,
     @"error" = 3,
     pub fn toError(self: QueueWorkDoneStatus) QueueWorkDoneStatusError!void {
         return switch (self) {
+            .@"undefined" => unreachable,
             .success => return,
             .callback_cancelled => return QueueWorkDoneStatusError.CallbackCancelled,
             .@"error" => return QueueWorkDoneStatusError.Error,
@@ -473,6 +509,8 @@ pub const TextureDimension = enum(u32) {
 };
 
 pub const DeviceLostReason = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     unknown = 1,
     destroyed = 2,
     callback_cancelled = 3,
@@ -480,12 +518,16 @@ pub const DeviceLostReason = enum(u32) {
 };
 
 pub const InstanceFeatureName = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     timed_wait_any = 1,
     shader_source_spirv = 2,
     multiple_devices_per_adapter = 3,
 };
 
 pub const ToneMappingMode = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     standard = 1,
     extended = 2,
 };
@@ -495,10 +537,13 @@ pub const StatusError = error{
 };
 
 pub const Status = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     success = 1,
     @"error" = 2,
     pub fn toError(self: Status) StatusError!void {
         return switch (self) {
+            .@"undefined" => unreachable,
             .success => return,
             .@"error" => return StatusError.Error,
         };
@@ -520,6 +565,8 @@ pub const SurfaceGetCurrentTextureStatusError = error{
 };
 
 pub const SurfaceGetCurrentTextureStatus = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     success_optimal = 1,
     success_suboptimal = 2,
     timeout = 3,
@@ -529,6 +576,7 @@ pub const SurfaceGetCurrentTextureStatus = enum(u32) {
     occluded = 196609,
     pub fn toError(self: SurfaceGetCurrentTextureStatus) SurfaceGetCurrentTextureStatusError!void {
         return switch (self) {
+            .@"undefined" => unreachable,
             .success_optimal => return,
             .success_suboptimal => return SurfaceGetCurrentTextureStatusError.SuccessSuboptimal,
             .timeout => return SurfaceGetCurrentTextureStatusError.Timeout,
@@ -556,11 +604,14 @@ pub const WaitStatusError = error{
 };
 
 pub const WaitStatus = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     success = 1,
     timed_out = 2,
     @"error" = 3,
     pub fn toError(self: WaitStatus) WaitStatusError!void {
         return switch (self) {
+            .@"undefined" => unreachable,
             .success => return,
             .timed_out => return WaitStatusError.TimedOut,
             .@"error" => return WaitStatusError.Error,
@@ -600,6 +651,8 @@ pub const GLFenceBehaviour = enum(u32) {
 };
 
 pub const AdapterType = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     discrete_gpu = 1,
     integrated_gpu = 2,
     cpu = 3,
@@ -607,6 +660,8 @@ pub const AdapterType = enum(u32) {
 };
 
 pub const VertexFormat = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     uint8 = 1,
     uint8x2 = 2,
     uint8x4 = 3,
@@ -651,6 +706,8 @@ pub const VertexFormat = enum(u32) {
 };
 
 pub const NativeQueryType = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     pipeline_statistics = 196608,
 };
 
@@ -671,6 +728,8 @@ pub const TextureViewDimension = enum(u32) {
 };
 
 pub const PredefinedColorSpace = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     srgb = 1,
     display_p3 = 2,
 };
@@ -693,6 +752,8 @@ pub const TextureAspect = enum(u32) {
 };
 
 pub const SType = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     shader_source_spirv = 1,
     shader_source_wgsl = 2,
     render_pass_max_draw_count = 3,
@@ -711,15 +772,15 @@ pub const SType = enum(u32) {
     texture_binding_view_dimension = 16,
     device_extras = 196609,
     native_limits = 196610,
-    pipeline_layout_extras = 196611,
-    shader_source_glsl = 196612,
-    instance_extras = 196614,
-    bind_group_entry_extras = 196615,
-    bind_group_layout_entry_extras = 196616,
-    query_set_descriptor_extras = 196617,
-    surface_configuration_extras = 196618,
-    surface_source_swap_chain_panel = 196619,
-    primitive_state_extras = 196620,
+    shader_source_glsl = 196611,
+    instance_extras = 196612,
+    bind_group_entry_extras = 196613,
+    bind_group_layout_entry_extras = 196614,
+    query_set_descriptor_extras = 196615,
+    surface_configuration_extras = 196616,
+    surface_source_swap_chain_panel = 196617,
+    primitive_state_extras = 196618,
+    sampler_descriptor_extras = 196619,
 };
 
 pub const Dx12Compiler = enum(u32) {
@@ -742,12 +803,15 @@ pub const RequestAdapterStatusError = error{
 };
 
 pub const RequestAdapterStatus = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     success = 1,
     callback_cancelled = 2,
     unavailable = 3,
     @"error" = 4,
     pub fn toError(self: RequestAdapterStatus) RequestAdapterStatusError!void {
         return switch (self) {
+            .@"undefined" => unreachable,
             .success => return,
             .callback_cancelled => return RequestAdapterStatusError.CallbackCancelled,
             .unavailable => return RequestAdapterStatusError.Unavailable,
@@ -776,12 +840,15 @@ pub const CreatePipelineAsyncStatusError = error{
 };
 
 pub const CreatePipelineAsyncStatus = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     success = 1,
     callback_cancelled = 2,
     validation_error = 3,
     internal_error = 4,
     pub fn toError(self: CreatePipelineAsyncStatus) CreatePipelineAsyncStatusError!void {
         return switch (self) {
+            .@"undefined" => unreachable,
             .success => return,
             .callback_cancelled => return CreatePipelineAsyncStatusError.CallbackCancelled,
             .validation_error => return CreatePipelineAsyncStatusError.ValidationError,
@@ -809,6 +876,8 @@ pub const DxcMaxShaderModel = enum(u32) {
 };
 
 pub const FeatureName = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     core_features_and_limits = 1,
     depth_clip_control = 2,
     depth32_float_stencil8 = 3,
@@ -842,8 +911,16 @@ pub const PipelineStatisticName = enum(u32) {
 };
 
 pub const QueryType = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
     occlusion = 1,
     timestamp = 2,
+};
+
+pub const NativeAddressMode = enum(u32) {
+    /// Zig-side default because the C enum has no zero.
+    @"undefined" = 0,
+    clamp_to_border = 4,
 };
 
 pub const SamplerBindingType = enum(u32) {
@@ -916,6 +993,18 @@ pub const ColorWriteMask = packed struct(u64) {
     alpha: bool = false,
     __: u60 = 0,
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
+
+    pub fn bitOr(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) | @as(u64, @bitCast(other)));
+    }
+
+    pub fn bitAnd(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) & @as(u64, @bitCast(other)));
+    }
+
+    pub fn bitXor(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) ^ @as(u64, @bitCast(other)));
+    }
 };
 
 pub const ColorWriteMask_all: ColorWriteMask = @bitCast(@as(u64, @intCast(15)));
@@ -926,6 +1015,18 @@ pub const ShaderStage = packed struct(u64) {
     compute: bool = false,
     __: u61 = 0,
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
+
+    pub fn bitOr(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) | @as(u64, @bitCast(other)));
+    }
+
+    pub fn bitAnd(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) & @as(u64, @bitCast(other)));
+    }
+
+    pub fn bitXor(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) ^ @as(u64, @bitCast(other)));
+    }
 };
 
 pub const BufferUsage = packed struct(u64) {
@@ -941,6 +1042,18 @@ pub const BufferUsage = packed struct(u64) {
     query_resolve: bool = false,
     __: u54 = 0,
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
+
+    pub fn bitOr(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) | @as(u64, @bitCast(other)));
+    }
+
+    pub fn bitAnd(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) & @as(u64, @bitCast(other)));
+    }
+
+    pub fn bitXor(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) ^ @as(u64, @bitCast(other)));
+    }
 };
 
 pub const TextureUsage = packed struct(u64) {
@@ -952,6 +1065,18 @@ pub const TextureUsage = packed struct(u64) {
     transient_attachment: bool = false,
     __: u58 = 0,
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
+
+    pub fn bitOr(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) | @as(u64, @bitCast(other)));
+    }
+
+    pub fn bitAnd(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) & @as(u64, @bitCast(other)));
+    }
+
+    pub fn bitXor(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) ^ @as(u64, @bitCast(other)));
+    }
 };
 
 pub const MapMode = packed struct(u64) {
@@ -959,6 +1084,18 @@ pub const MapMode = packed struct(u64) {
     write: bool = false,
     __: u62 = 0,
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
+
+    pub fn bitOr(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) | @as(u64, @bitCast(other)));
+    }
+
+    pub fn bitAnd(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) & @as(u64, @bitCast(other)));
+    }
+
+    pub fn bitXor(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) ^ @as(u64, @bitCast(other)));
+    }
 };
 
 pub const InstanceBackend = packed struct(u64) {
@@ -970,6 +1107,18 @@ pub const InstanceBackend = packed struct(u64) {
     browser_web_gpu: bool = false,
     __: u58 = 0,
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
+
+    pub fn bitOr(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) | @as(u64, @bitCast(other)));
+    }
+
+    pub fn bitAnd(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) & @as(u64, @bitCast(other)));
+    }
+
+    pub fn bitXor(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) ^ @as(u64, @bitCast(other)));
+    }
 };
 
 pub const InstanceBackend_primary: InstanceBackend = @bitCast(@as(u64, @intCast(@as(c_long, (((@as(c_int, 1) << @intCast(@as(c_int, 0))) | (@as(c_int, 1) << @intCast(@as(c_int, 2)))) | (@as(c_int, 1) << @intCast(@as(c_int, 3)))) | (@as(c_int, 1) << @intCast(@as(c_int, 5)))))));
@@ -989,6 +1138,40 @@ pub const InstanceFlag = packed struct(u64) {
     with_env: bool = false,
     __: u36 = 0,
     comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
+
+    pub fn bitOr(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) | @as(u64, @bitCast(other)));
+    }
+
+    pub fn bitAnd(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) & @as(u64, @bitCast(other)));
+    }
+
+    pub fn bitXor(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) ^ @as(u64, @bitCast(other)));
+    }
+};
+
+pub const ShaderRuntimeChecks = packed struct(u64) {
+    bounds_checks: bool = false,
+    force_loop_bounding: bool = false,
+    ray_query_initialization_tracking: bool = false,
+    task_shader_dispatch_tracking: bool = false,
+    mesh_shader_primitive_indices_clamp: bool = false,
+    __: u59 = 0,
+    comptime { std.debug.assert(@bitSizeOf(@This()) == @bitSizeOf(u64)); }
+
+    pub fn bitOr(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) | @as(u64, @bitCast(other)));
+    }
+
+    pub fn bitAnd(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) & @as(u64, @bitCast(other)));
+    }
+
+    pub fn bitXor(self: @This(), other: @This()) @This() {
+        return @bitCast(@as(u64, @bitCast(self)) ^ @as(u64, @bitCast(other)));
+    }
 };
 
 pub const StringView = extern struct {
@@ -1014,7 +1197,7 @@ pub fn fromZStr(slice: [:0]const u8) StringView {
 
 pub const ChainedStruct = extern struct {
     next: [*c]ChainedStruct = null,
-    s_type: SType = undefined,
+    s_type: SType = .@"undefined",
 };
 
 pub const ChainedIterator = struct {
@@ -1037,7 +1220,7 @@ pub const AdapterInfo = extern struct {
     device: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     description: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     backend_type: BackendType = .@"undefined",
-    adapter_type: AdapterType = undefined,
+    adapter_type: AdapterType = .@"undefined",
     vendor_id: u32 = 0,
     device_id: u32 = 0,
     subgroup_min_size: u32 = 0,
@@ -1083,7 +1266,7 @@ pub const CommandEncoderDescriptor = extern struct {
 };
 
 pub const CompatibilityModeLimits = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     max_storage_buffers_in_vertex_stage: u32 = 0,
     max_storage_textures_in_vertex_stage: u32 = 0,
     max_storage_buffers_in_fragment_stage: u32 = 0,
@@ -1093,7 +1276,7 @@ pub const CompatibilityModeLimits = extern struct {
 pub const CompilationMessage = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
     message: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
-    type: CompilationMessageType = undefined,
+    type: CompilationMessageType = .@"undefined",
     line_num: u64 = 0,
     line_pos: u64 = 0,
     offset: u64 = 0,
@@ -1113,12 +1296,12 @@ pub const Extent3D = extern struct {
 };
 
 pub const ExternalTextureBindingEntry = extern struct {
-    chain: ChainedStruct = undefined,
-    external_texture: handles.OptionalExternalTexture = .{ .ptr = null },
+    chain: ChainedStruct = .{},
+    external_texture: ?*handles.ExternalTexture = null,
 };
 
 pub const ExternalTextureBindingLayout = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
 };
 
 pub const Future = extern struct {
@@ -1145,7 +1328,7 @@ pub const Origin3D = extern struct {
 
 pub const PassTimestampWrites = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    query_set: handles.OptionalQuerySet = .{ .ptr = null },
+    query_set: ?*handles.QuerySet = null,
     beginning_of_pass_write_index: u32 = 0,
     end_of_pass_write_index: u32 = 0,
 };
@@ -1154,8 +1337,13 @@ pub const PipelineLayoutDescriptor = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
     label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     bind_group_layout_count: usize = 0,
-    bind_group_layouts: [*c]const handles.OptionalBindGroupLayout = null,
+    bind_group_layouts: [*c]const ?*handles.BindGroupLayout = null,
     immediate_size: u32 = 0,
+    pub fn setBindGroupLayouts(self: *PipelineLayoutDescriptor, items: []const ?*handles.BindGroupLayout) void {
+        self.bind_group_layout_count = @intCast(items.len);
+        self.bind_group_layouts = items.ptr;
+    }
+
 };
 
 pub const PrimitiveState = extern struct {
@@ -1170,7 +1358,7 @@ pub const PrimitiveState = extern struct {
 pub const QuerySetDescriptor = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
     label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
-    type: QueryType = undefined,
+    type: QueryType = .@"undefined",
     count: u32 = 0,
 };
 
@@ -1193,11 +1381,16 @@ pub const RenderBundleEncoderDescriptor = extern struct {
     sample_count: u32 = 0,
     depth_read_only: u32 = 0,
     stencil_read_only: u32 = 0,
+    pub fn setColorFormats(self: *RenderBundleEncoderDescriptor, items: []const TextureFormat) void {
+        self.color_format_count = @intCast(items.len);
+        self.color_formats = items.ptr;
+    }
+
 };
 
 pub const RenderPassDepthStencilAttachment = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    view: handles.OptionalTextureView = .{ .ptr = null },
+    view: ?*handles.TextureView = null,
     depth_load_op: LoadOp = .@"undefined",
     depth_store_op: StoreOp = .@"undefined",
     depth_clear_value: f32 = 0,
@@ -1209,12 +1402,12 @@ pub const RenderPassDepthStencilAttachment = extern struct {
 };
 
 pub const RenderPassMaxDrawCount = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     max_draw_count: u64 = 0,
 };
 
 pub const RequestAdapterWebXROptions = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     xr_compatible: u32 = 0,
 };
 
@@ -1239,13 +1432,13 @@ pub const SamplerDescriptor = extern struct {
 };
 
 pub const ShaderSourceSPIRV = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     code_size: u32 = 0,
     code: [*c]const u32 = null,
 };
 
 pub const ShaderSourceWGSL = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     code: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
 };
 
@@ -1266,16 +1459,31 @@ pub const StorageTextureBindingLayout = extern struct {
 pub const SupportedFeatures = extern struct {
     feature_count: usize = 0,
     features: [*c]const FeatureName = null,
+    pub fn setFeatures(self: *SupportedFeatures, items: []const FeatureName) void {
+        self.feature_count = @intCast(items.len);
+        self.features = items.ptr;
+    }
+
 };
 
 pub const SupportedInstanceFeatures = extern struct {
     feature_count: usize = 0,
     features: [*c]const InstanceFeatureName = null,
+    pub fn setFeatures(self: *SupportedInstanceFeatures, items: []const InstanceFeatureName) void {
+        self.feature_count = @intCast(items.len);
+        self.features = items.ptr;
+    }
+
 };
 
 pub const SupportedWGSLLanguageFeatures = extern struct {
     feature_count: usize = 0,
     features: [*c]const WGSLLanguageFeatureName = null,
+    pub fn setFeatures(self: *SupportedWGSLLanguageFeatures, items: []const WGSLLanguageFeatureName) void {
+        self.feature_count = @intCast(items.len);
+        self.features = items.ptr;
+    }
+
 };
 
 pub const SurfaceCapabilities = extern struct {
@@ -1287,17 +1495,32 @@ pub const SurfaceCapabilities = extern struct {
     present_modes: [*c]const PresentMode = null,
     alpha_mode_count: usize = 0,
     alpha_modes: [*c]const CompositeAlphaMode = null,
+    pub fn setFormats(self: *SurfaceCapabilities, items: []const TextureFormat) void {
+        self.format_count = @intCast(items.len);
+        self.formats = items.ptr;
+    }
+
+    pub fn setPresentModes(self: *SurfaceCapabilities, items: []const PresentMode) void {
+        self.present_mode_count = @intCast(items.len);
+        self.present_modes = items.ptr;
+    }
+
+    pub fn setAlphaModes(self: *SurfaceCapabilities, items: []const CompositeAlphaMode) void {
+        self.alpha_mode_count = @intCast(items.len);
+        self.alpha_modes = items.ptr;
+    }
+
 };
 
 pub const SurfaceColorManagement = extern struct {
-    chain: ChainedStruct = undefined,
-    color_space: PredefinedColorSpace = undefined,
-    tone_mapping_mode: ToneMappingMode = undefined,
+    chain: ChainedStruct = .{},
+    color_space: PredefinedColorSpace = .@"undefined",
+    tone_mapping_mode: ToneMappingMode = .@"undefined",
 };
 
 pub const SurfaceConfiguration = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    device: handles.OptionalDevice = .{ .ptr = null },
+    device: ?*handles.Device = null,
     format: TextureFormat = .@"undefined",
     usage: TextureUsage = .{},
     width: u32 = 0,
@@ -1306,46 +1529,51 @@ pub const SurfaceConfiguration = extern struct {
     view_formats: [*c]const TextureFormat = null,
     alpha_mode: CompositeAlphaMode = .auto,
     present_mode: PresentMode = .@"undefined",
+    pub fn setViewFormats(self: *SurfaceConfiguration, items: []const TextureFormat) void {
+        self.view_format_count = @intCast(items.len);
+        self.view_formats = items.ptr;
+    }
+
 };
 
 pub const SurfaceSourceAndroidNativeWindow = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     window: ?*anyopaque = null,
 };
 
 pub const SurfaceSourceMetalLayer = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     layer: ?*anyopaque = null,
 };
 
 pub const SurfaceSourceWaylandSurface = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     display: ?*anyopaque = null,
     surface: ?*anyopaque = null,
 };
 
 pub const SurfaceSourceWindowsHWND = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     hinstance: ?*anyopaque = null,
     hwnd: ?*anyopaque = null,
 };
 
 pub const SurfaceSourceXCBWindow = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     connection: ?*anyopaque = null,
     window: u32 = 0,
 };
 
 pub const SurfaceSourceXlibWindow = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     display: ?*anyopaque = null,
     window: u64 = 0,
 };
 
 pub const SurfaceTexture = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    texture: handles.OptionalTexture = .{ .ptr = null },
-    status: SurfaceGetCurrentTextureStatus = undefined,
+    texture: ?*handles.Texture = null,
+    status: SurfaceGetCurrentTextureStatus = .@"undefined",
 };
 
 pub const TexelCopyBufferLayout = extern struct {
@@ -1362,7 +1590,7 @@ pub const TextureBindingLayout = extern struct {
 };
 
 pub const TextureBindingViewDimension = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     texture_binding_view_dimension: TextureViewDimension = .@"undefined",
 };
 
@@ -1375,7 +1603,7 @@ pub const TextureComponentSwizzle = extern struct {
 
 pub const VertexAttribute = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    format: VertexFormat = undefined,
+    format: VertexFormat = .@"undefined",
     offset: u64 = 0,
     shader_location: u32 = 0,
 };
@@ -1383,11 +1611,11 @@ pub const VertexAttribute = extern struct {
 pub const BindGroupEntry = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
     binding: u32 = 0,
-    buffer: handles.OptionalBuffer = .{ .ptr = null },
+    buffer: ?*handles.Buffer = null,
     offset: u64 = 0,
     size: u64 = 0,
-    sampler: handles.OptionalSampler = .{ .ptr = null },
-    texture_view: handles.OptionalTextureView = .{ .ptr = null },
+    sampler: ?*handles.Sampler = null,
+    texture_view: ?*handles.TextureView = null,
 };
 
 pub const BindGroupLayoutEntry = extern struct {
@@ -1395,21 +1623,26 @@ pub const BindGroupLayoutEntry = extern struct {
     binding: u32 = 0,
     visibility: ShaderStage = .{},
     binding_array_size: u32 = 0,
-    buffer: BufferBindingLayout = undefined,
-    sampler: SamplerBindingLayout = undefined,
-    texture: TextureBindingLayout = undefined,
-    storage_texture: StorageTextureBindingLayout = undefined,
+    buffer: BufferBindingLayout = .{},
+    sampler: SamplerBindingLayout = .{},
+    texture: TextureBindingLayout = .{},
+    storage_texture: StorageTextureBindingLayout = .{},
 };
 
 pub const BlendState = extern struct {
-    color: BlendComponent = undefined,
-    alpha: BlendComponent = undefined,
+    color: BlendComponent = .{},
+    alpha: BlendComponent = .{},
 };
 
 pub const CompilationInfo = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
     message_count: usize = 0,
     messages: [*c]const CompilationMessage = null,
+    pub fn setMessages(self: *CompilationInfo, items: []const CompilationMessage) void {
+        self.message_count = @intCast(items.len);
+        self.messages = items.ptr;
+    }
+
 };
 
 pub const ComputePassDescriptor = extern struct {
@@ -1420,10 +1653,15 @@ pub const ComputePassDescriptor = extern struct {
 
 pub const ComputeState = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    module: handles.OptionalShaderModule = .{ .ptr = null },
+    module: ?*handles.ShaderModule = null,
     entry_point: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     constant_count: usize = 0,
     constants: [*c]const ConstantEntry = null,
+    pub fn setConstants(self: *ComputeState, items: []const ConstantEntry) void {
+        self.constant_count = @intCast(items.len);
+        self.constants = items.ptr;
+    }
+
 };
 
 pub const DepthStencilState = extern struct {
@@ -1431,8 +1669,8 @@ pub const DepthStencilState = extern struct {
     format: TextureFormat = .@"undefined",
     depth_write_enabled: OptionalBool = .@"false",
     depth_compare: CompareFunction = .@"undefined",
-    stencil_front: StencilFaceState = undefined,
-    stencil_back: StencilFaceState = undefined,
+    stencil_front: StencilFaceState = .{},
+    stencil_back: StencilFaceState = .{},
     stencil_read_mask: u32 = 0,
     stencil_write_mask: u32 = 0,
     depth_bias: i32 = 0,
@@ -1441,7 +1679,7 @@ pub const DepthStencilState = extern struct {
 };
 
 pub const FutureWaitInfo = extern struct {
-    future: Future = undefined,
+    future: Future = .{},
     completed: u32 = 0,
 };
 
@@ -1450,6 +1688,11 @@ pub const InstanceDescriptor = extern struct {
     required_feature_count: usize = 0,
     required_features: [*c]const InstanceFeatureName = null,
     required_limits: [*c]const InstanceLimits = null,
+    pub fn setRequiredFeatures(self: *InstanceDescriptor, items: []const InstanceFeatureName) void {
+        self.required_feature_count = @intCast(items.len);
+        self.required_features = items.ptr;
+    }
+
 };
 
 pub const Limits = extern struct {
@@ -1490,12 +1733,12 @@ pub const Limits = extern struct {
 
 pub const RenderPassColorAttachment = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    view: handles.OptionalTextureView = .{ .ptr = null },
+    view: ?*handles.TextureView = null,
     depth_slice: u32 = 0,
-    resolve_target: handles.OptionalTextureView = .{ .ptr = null },
+    resolve_target: ?*handles.TextureView = null,
     load_op: LoadOp = .@"undefined",
     store_op: StoreOp = .@"undefined",
-    clear_value: Color = undefined,
+    clear_value: Color = .{},
 };
 
 pub const RequestAdapterOptions = extern struct {
@@ -1504,7 +1747,7 @@ pub const RequestAdapterOptions = extern struct {
     power_preference: PowerPreference = .@"undefined",
     force_fallback_adapter: u32 = 0,
     backend_type: BackendType = .@"undefined",
-    compatible_surface: handles.OptionalSurface = .{ .ptr = null },
+    compatible_surface: ?*handles.Surface = null,
 };
 
 pub const ShaderModuleDescriptor = extern struct {
@@ -1518,20 +1761,20 @@ pub const SurfaceDescriptor = extern struct {
 };
 
 pub const TexelCopyBufferInfo = extern struct {
-    layout: TexelCopyBufferLayout = undefined,
-    buffer: handles.OptionalBuffer = .{ .ptr = null },
+    layout: TexelCopyBufferLayout = .{},
+    buffer: ?*handles.Buffer = null,
 };
 
 pub const TexelCopyTextureInfo = extern struct {
-    texture: handles.OptionalTexture = .{ .ptr = null },
+    texture: ?*handles.Texture = null,
     mip_level: u32 = 0,
-    origin: Origin3D = undefined,
+    origin: Origin3D = .{},
     aspect: TextureAspect = .@"undefined",
 };
 
 pub const TextureComponentSwizzleDescriptor = extern struct {
-    chain: ChainedStruct = undefined,
-    swizzle: TextureComponentSwizzle = undefined,
+    chain: ChainedStruct = .{},
+    swizzle: TextureComponentSwizzle = .{},
 };
 
 pub const TextureDescriptor = extern struct {
@@ -1539,12 +1782,17 @@ pub const TextureDescriptor = extern struct {
     label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     usage: TextureUsage = .{},
     dimension: TextureDimension = .@"undefined",
-    size: Extent3D = undefined,
+    size: Extent3D = .{},
     format: TextureFormat = .@"undefined",
     mip_level_count: u32 = 0,
     sample_count: u32 = 0,
     view_format_count: usize = 0,
     view_formats: [*c]const TextureFormat = null,
+    pub fn setViewFormats(self: *TextureDescriptor, items: []const TextureFormat) void {
+        self.view_format_count = @intCast(items.len);
+        self.view_formats = items.ptr;
+    }
+
 };
 
 pub const VertexBufferLayout = extern struct {
@@ -1553,14 +1801,24 @@ pub const VertexBufferLayout = extern struct {
     array_stride: u64 = 0,
     attribute_count: usize = 0,
     attributes: [*c]const VertexAttribute = null,
+    pub fn setAttributes(self: *VertexBufferLayout, items: []const VertexAttribute) void {
+        self.attribute_count = @intCast(items.len);
+        self.attributes = items.ptr;
+    }
+
 };
 
 pub const BindGroupDescriptor = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
     label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
-    layout: handles.OptionalBindGroupLayout = .{ .ptr = null },
+    layout: ?*handles.BindGroupLayout = null,
     entry_count: usize = 0,
     entries: [*c]const BindGroupEntry = null,
+    pub fn setEntries(self: *BindGroupDescriptor, items: []const BindGroupEntry) void {
+        self.entry_count = @intCast(items.len);
+        self.entries = items.ptr;
+    }
+
 };
 
 pub const BindGroupLayoutDescriptor = extern struct {
@@ -1568,6 +1826,11 @@ pub const BindGroupLayoutDescriptor = extern struct {
     label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     entry_count: usize = 0,
     entries: [*c]const BindGroupLayoutEntry = null,
+    pub fn setEntries(self: *BindGroupLayoutDescriptor, items: []const BindGroupLayoutEntry) void {
+        self.entry_count = @intCast(items.len);
+        self.entries = items.ptr;
+    }
+
 };
 
 pub const ColorTargetState = extern struct {
@@ -1580,13 +1843,13 @@ pub const ColorTargetState = extern struct {
 pub const ComputePipelineDescriptor = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
     label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
-    layout: handles.OptionalPipelineLayout = .{ .ptr = null },
-    compute: ComputeState = undefined,
+    layout: ?*handles.PipelineLayout = null,
+    compute: ComputeState = .{},
 };
 
 pub const DeviceLostCallbackInfo = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    mode: CallbackMode = undefined,
+    mode: CallbackMode = .@"undefined",
     callback: c.WGPUDeviceLostCallback = null,
     userdata1: ?*anyopaque = null,
     userdata2: ?*anyopaque = null,
@@ -1605,9 +1868,14 @@ pub const DeviceDescriptor = extern struct {
     required_feature_count: usize = 0,
     required_features: [*c]const FeatureName = null,
     required_limits: [*c]const Limits = null,
-    default_queue: QueueDescriptor = undefined,
-    device_lost_callback_info: c.WGPUDeviceLostCallbackInfo = undefined,
-    uncaptured_error_callback_info: c.WGPUUncapturedErrorCallbackInfo = undefined,
+    default_queue: QueueDescriptor = .{},
+    device_lost_callback_info: DeviceLostCallbackInfo = .{},
+    uncaptured_error_callback_info: UncapturedErrorCallbackInfo = .{},
+    pub fn setRequiredFeatures(self: *DeviceDescriptor, items: []const FeatureName) void {
+        self.required_feature_count = @intCast(items.len);
+        self.required_features = items.ptr;
+    }
+
 };
 
 pub const RenderPassDescriptor = extern struct {
@@ -1616,8 +1884,13 @@ pub const RenderPassDescriptor = extern struct {
     color_attachment_count: usize = 0,
     color_attachments: [*c]const RenderPassColorAttachment = null,
     depth_stencil_attachment: [*c]const RenderPassDepthStencilAttachment = null,
-    occlusion_query_set: handles.OptionalQuerySet = .{ .ptr = null },
+    occlusion_query_set: ?*handles.QuerySet = null,
     timestamp_writes: [*c]const PassTimestampWrites = null,
+    pub fn setColorAttachments(self: *RenderPassDescriptor, items: []const RenderPassColorAttachment) void {
+        self.color_attachment_count = @intCast(items.len);
+        self.color_attachments = items.ptr;
+    }
+
 };
 
 pub const TextureViewDescriptor = extern struct {
@@ -1635,38 +1908,58 @@ pub const TextureViewDescriptor = extern struct {
 
 pub const VertexState = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    module: handles.OptionalShaderModule = .{ .ptr = null },
+    module: ?*handles.ShaderModule = null,
     entry_point: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     constant_count: usize = 0,
     constants: [*c]const ConstantEntry = null,
     buffer_count: usize = 0,
     buffers: [*c]const VertexBufferLayout = null,
+    pub fn setConstants(self: *VertexState, items: []const ConstantEntry) void {
+        self.constant_count = @intCast(items.len);
+        self.constants = items.ptr;
+    }
+
+    pub fn setBuffers(self: *VertexState, items: []const VertexBufferLayout) void {
+        self.buffer_count = @intCast(items.len);
+        self.buffers = items.ptr;
+    }
+
 };
 
 pub const FragmentState = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    module: handles.OptionalShaderModule = .{ .ptr = null },
+    module: ?*handles.ShaderModule = null,
     entry_point: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     constant_count: usize = 0,
     constants: [*c]const ConstantEntry = null,
     target_count: usize = 0,
     targets: [*c]const ColorTargetState = null,
+    pub fn setConstants(self: *FragmentState, items: []const ConstantEntry) void {
+        self.constant_count = @intCast(items.len);
+        self.constants = items.ptr;
+    }
+
+    pub fn setTargets(self: *FragmentState, items: []const ColorTargetState) void {
+        self.target_count = @intCast(items.len);
+        self.targets = items.ptr;
+    }
+
 };
 
 pub const RenderPipelineDescriptor = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
     label: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
-    layout: handles.OptionalPipelineLayout = .{ .ptr = null },
-    vertex: VertexState = undefined,
-    primitive: PrimitiveState = undefined,
+    layout: ?*handles.PipelineLayout = null,
+    vertex: VertexState = .{},
+    primitive: PrimitiveState = .{},
     depth_stencil: [*c]const DepthStencilState = null,
-    multisample: MultisampleState = undefined,
+    multisample: MultisampleState = .{},
     fragment: [*c]const FragmentState = null,
 };
 
 pub const BufferMapCallbackInfo = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    mode: CallbackMode = undefined,
+    mode: CallbackMode = .@"undefined",
     callback: c.WGPUBufferMapCallback = null,
     userdata1: ?*anyopaque = null,
     userdata2: ?*anyopaque = null,
@@ -1674,7 +1967,7 @@ pub const BufferMapCallbackInfo = extern struct {
 
 pub const CompilationInfoCallbackInfo = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    mode: CallbackMode = undefined,
+    mode: CallbackMode = .@"undefined",
     callback: c.WGPUCompilationInfoCallback = null,
     userdata1: ?*anyopaque = null,
     userdata2: ?*anyopaque = null,
@@ -1682,7 +1975,7 @@ pub const CompilationInfoCallbackInfo = extern struct {
 
 pub const CreateComputePipelineAsyncCallbackInfo = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    mode: CallbackMode = undefined,
+    mode: CallbackMode = .@"undefined",
     callback: c.WGPUCreateComputePipelineAsyncCallback = null,
     userdata1: ?*anyopaque = null,
     userdata2: ?*anyopaque = null,
@@ -1690,7 +1983,7 @@ pub const CreateComputePipelineAsyncCallbackInfo = extern struct {
 
 pub const CreateRenderPipelineAsyncCallbackInfo = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    mode: CallbackMode = undefined,
+    mode: CallbackMode = .@"undefined",
     callback: c.WGPUCreateRenderPipelineAsyncCallback = null,
     userdata1: ?*anyopaque = null,
     userdata2: ?*anyopaque = null,
@@ -1698,7 +1991,7 @@ pub const CreateRenderPipelineAsyncCallbackInfo = extern struct {
 
 pub const PopErrorScopeCallbackInfo = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    mode: CallbackMode = undefined,
+    mode: CallbackMode = .@"undefined",
     callback: c.WGPUPopErrorScopeCallback = null,
     userdata1: ?*anyopaque = null,
     userdata2: ?*anyopaque = null,
@@ -1706,7 +1999,7 @@ pub const PopErrorScopeCallbackInfo = extern struct {
 
 pub const QueueWorkDoneCallbackInfo = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    mode: CallbackMode = undefined,
+    mode: CallbackMode = .@"undefined",
     callback: c.WGPUQueueWorkDoneCallback = null,
     userdata1: ?*anyopaque = null,
     userdata2: ?*anyopaque = null,
@@ -1714,7 +2007,7 @@ pub const QueueWorkDoneCallbackInfo = extern struct {
 
 pub const RequestAdapterCallbackInfo = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    mode: CallbackMode = undefined,
+    mode: CallbackMode = .@"undefined",
     callback: c.WGPURequestAdapterCallback = null,
     userdata1: ?*anyopaque = null,
     userdata2: ?*anyopaque = null,
@@ -1722,7 +2015,7 @@ pub const RequestAdapterCallbackInfo = extern struct {
 
 pub const RequestDeviceCallbackInfo = extern struct {
     next_in_chain: [*c]ChainedStruct = null,
-    mode: CallbackMode = undefined,
+    mode: CallbackMode = .@"undefined",
     callback: c.WGPURequestDeviceCallback = null,
     userdata1: ?*anyopaque = null,
     userdata2: ?*anyopaque = null,
@@ -1754,7 +2047,7 @@ pub const NativeDisplayHandle = extern struct {
 };
 
 pub const InstanceExtras = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     backends: InstanceBackend = .{},
     flags: InstanceFlag = .{},
     dx12_shader_compiler: Dx12Compiler = .@"undefined",
@@ -1765,25 +2058,20 @@ pub const InstanceExtras = extern struct {
     dx12_presentation_system: Dx12SwapchainKind = .@"undefined",
     budget_for_device_creation: [*c]const u8 = null,
     budget_for_device_loss: [*c]const u8 = null,
-    display_handle: NativeDisplayHandle = undefined,
+    display_handle: NativeDisplayHandle = .{},
 };
 
 pub const DeviceExtras = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     trace_path: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
 };
 
 pub const NativeLimits = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     max_non_sampler_bindings: u32 = 0,
     max_binding_array_elements_per_shader_stage: u32 = 0,
     max_binding_array_sampler_elements_per_shader_stage: u32 = 0,
     max_multiview_view_count: u32 = 0,
-};
-
-pub const PipelineLayoutExtras = extern struct {
-    chain: ChainedStruct = undefined,
-    immediate_data_size: u32 = 0,
 };
 
 pub const ShaderDefine = extern struct {
@@ -1792,11 +2080,16 @@ pub const ShaderDefine = extern struct {
 };
 
 pub const ShaderSourceGLSL = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     stage: ShaderStage = .{},
     code: StringView = .{ .data = null, .length = std.math.maxInt(usize) },
     define_count: u32 = 0,
     defines: [*c]const ShaderDefine = null,
+    pub fn setDefines(self: *ShaderSourceGLSL, items: []const ShaderDefine) void {
+        self.define_count = @intCast(items.len);
+        self.defines = items.ptr;
+    }
+
 };
 
 pub const ShaderModuleDescriptorSpirV = extern struct {
@@ -1813,28 +2106,28 @@ pub const RegistryReport = extern struct {
 };
 
 pub const HubReport = extern struct {
-    adapters: RegistryReport = undefined,
-    devices: RegistryReport = undefined,
-    queues: RegistryReport = undefined,
-    pipeline_layouts: RegistryReport = undefined,
-    shader_modules: RegistryReport = undefined,
-    bind_group_layouts: RegistryReport = undefined,
-    bind_groups: RegistryReport = undefined,
-    command_buffers: RegistryReport = undefined,
-    render_bundles: RegistryReport = undefined,
-    render_pipelines: RegistryReport = undefined,
-    compute_pipelines: RegistryReport = undefined,
-    pipeline_caches: RegistryReport = undefined,
-    query_sets: RegistryReport = undefined,
-    buffers: RegistryReport = undefined,
-    textures: RegistryReport = undefined,
-    texture_views: RegistryReport = undefined,
-    samplers: RegistryReport = undefined,
+    adapters: RegistryReport = .{},
+    devices: RegistryReport = .{},
+    queues: RegistryReport = .{},
+    pipeline_layouts: RegistryReport = .{},
+    shader_modules: RegistryReport = .{},
+    bind_group_layouts: RegistryReport = .{},
+    bind_groups: RegistryReport = .{},
+    command_buffers: RegistryReport = .{},
+    render_bundles: RegistryReport = .{},
+    render_pipelines: RegistryReport = .{},
+    compute_pipelines: RegistryReport = .{},
+    pipeline_caches: RegistryReport = .{},
+    query_sets: RegistryReport = .{},
+    buffers: RegistryReport = .{},
+    textures: RegistryReport = .{},
+    texture_views: RegistryReport = .{},
+    samplers: RegistryReport = .{},
 };
 
 pub const GlobalReport = extern struct {
-    surfaces: RegistryReport = undefined,
-    hub: HubReport = undefined,
+    surfaces: RegistryReport = .{},
+    hub: HubReport = .{},
 };
 
 pub const InstanceEnumerateAdapterOptions = extern struct {
@@ -1843,38 +2136,58 @@ pub const InstanceEnumerateAdapterOptions = extern struct {
 };
 
 pub const BindGroupEntryExtras = extern struct {
-    chain: ChainedStruct = undefined,
-    buffers: [*c]const handles.OptionalBuffer = null,
+    chain: ChainedStruct = .{},
+    buffers: [*c]const ?*handles.Buffer = null,
     buffer_count: usize = 0,
-    samplers: [*c]const handles.OptionalSampler = null,
+    samplers: [*c]const ?*handles.Sampler = null,
     sampler_count: usize = 0,
-    texture_views: [*c]const handles.OptionalTextureView = null,
+    texture_views: [*c]const ?*handles.TextureView = null,
     texture_view_count: usize = 0,
+    pub fn setBuffers(self: *BindGroupEntryExtras, items: []const ?*handles.Buffer) void {
+        self.buffer_count = @intCast(items.len);
+        self.buffers = items.ptr;
+    }
+
+    pub fn setSamplers(self: *BindGroupEntryExtras, items: []const ?*handles.Sampler) void {
+        self.sampler_count = @intCast(items.len);
+        self.samplers = items.ptr;
+    }
+
+    pub fn setTextureViews(self: *BindGroupEntryExtras, items: []const ?*handles.TextureView) void {
+        self.texture_view_count = @intCast(items.len);
+        self.texture_views = items.ptr;
+    }
+
 };
 
 pub const BindGroupLayoutEntryExtras = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     count: u32 = 0,
 };
 
 pub const QuerySetDescriptorExtras = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     pipeline_statistics: [*c]const PipelineStatisticName = null,
     pipeline_statistic_count: usize = 0,
+    pub fn setPipelineStatistics(self: *QuerySetDescriptorExtras, items: []const PipelineStatisticName) void {
+        self.pipeline_statistic_count = @intCast(items.len);
+        self.pipeline_statistics = items.ptr;
+    }
+
 };
 
 pub const SurfaceConfigurationExtras = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     desired_maximum_frame_latency: u32 = 0,
 };
 
 pub const SurfaceSourceSwapChainPanel = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     panel_native: ?*anyopaque = null,
 };
 
 pub const PrimitiveStateExtras = extern struct {
-    chain: ChainedStruct = undefined,
+    chain: ChainedStruct = .{},
     polygon_mode: PolygonMode = .fill,
     conservative: u32 = 0,
 };
@@ -1885,6 +2198,11 @@ pub const ImageSubresourceRange = extern struct {
     mip_level_count: u32 = 0,
     base_array_layer: u32 = 0,
     array_layer_count: u32 = 0,
+};
+
+pub const SamplerDescriptorExtras = extern struct {
+    chain: ChainedStruct = .{},
+    sampler_border_color: SamplerBorderColor = .@"undefined",
 };
 
 pub const SubmissionIndex = u64;

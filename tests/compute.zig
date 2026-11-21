@@ -3,7 +3,7 @@ const z = @import("z_wgpu_native");
 
 const DeviceCtx = struct {
     status: z.types.RequestDeviceStatus = undefined,
-    device: ?z.handles.Device = null,
+    device: ?*z.handles.Device = null,
 };
 
 const MapCtx = struct {
@@ -14,16 +14,16 @@ const MapCtx = struct {
 test "compute" {
     std.log.info("creating instance...", .{});
 
-    const instance = z.handles.createInstance(null) orelse unreachable;
+    const instance = z.handles.createInstance(null);
     const adapter_count = instance.enumerateAdapters(null, null);
     if (adapter_count == 0) {
         std.log.info("no adapters available, skipping", .{});
         return;
     }
-    const adapters = try std.testing.allocator.alloc(z.handles.Adapter, adapter_count);
+    const adapters = try std.testing.allocator.alloc(?*z.handles.Adapter, adapter_count);
     defer std.testing.allocator.free(adapters);
     _ = instance.enumerateAdapters(null, adapters.ptr);
-    const adapter = adapters[0];
+    const adapter = adapters[0] orelse return error.NoAdapter;
 
     std.log.info("requesting device...", .{});
 
@@ -36,7 +36,7 @@ test "compute" {
         &dev_ctx,
         &dev_ctx2,
         struct {
-            fn cb(ctx: *DeviceCtx, _: *u8, s: z.types.RequestDeviceStatus, d: ?z.handles.Device, _: []const u8) void {
+            fn cb(ctx: *DeviceCtx, _: *u8, s: z.types.RequestDeviceStatus, d: ?*z.handles.Device, _: []const u8) void {
                 ctx.status = s;
                 ctx.device = d;
             }
@@ -44,18 +44,15 @@ test "compute" {
     ));
 
     const device = dev_ctx.device orelse return error.NoDevice;
-    const queue = device.getQueue() orelse unreachable;
+    const queue = device.getQueue();
 
     std.log.info("loading shader...", .{});
 
     const shader_wgsl = @embedFile("compute.wgsl");
-    var shader_source = z.types.ShaderSourceWGSL{
-        .chain = .{ .s_type = .shader_source_wgsl },
+    var shader = z.builders.ShaderModuleDescriptorWithShaderSourceWGSL{
         .code = z.types.StringView.fromSlice(shader_wgsl),
     };
-    const shader_module = device.createShaderModule(&z.types.ShaderModuleDescriptor{
-        .next_in_chain = &shader_source.chain,
-    }) orelse unreachable;
+    const shader_module = device.createShaderModule(shader.descriptor());
 
     std.log.info("creating buffers...", .{});
 
@@ -78,37 +75,35 @@ test "compute" {
 
     const compute_pipeline = device.createComputePipeline(&z.types.ComputePipelineDescriptor{
         .compute = .{
-            .module = z.handles.OptionalShaderModule.wrap(shader_module),
+            .module = shader_module,
             .entry_point = z.types.StringView.fromSlice("main"),
         },
-    }) orelse unreachable;
+    });
 
-    const bind_group_layout = compute_pipeline.getBindGroupLayout(0) orelse unreachable;
-    const bind_group = device.createBindGroup(&z.types.BindGroupDescriptor{
-        .layout = z.handles.OptionalBindGroupLayout.wrap(bind_group_layout),
-        .entry_count = 1,
-        .entries = @ptrCast(&z.types.BindGroupEntry{
-            .binding = 0,
-            .buffer = z.handles.OptionalBuffer.wrap(storage_buffer),
-            .offset = 0,
-            .size = numbers_size,
-        }),
-    }) orelse unreachable;
+    const bind_group_layout = compute_pipeline.getBindGroupLayout(0);
+    var bind_group_desc: z.types.BindGroupDescriptor = .{ .layout = bind_group_layout };
+    bind_group_desc.setEntries(&.{.{
+        .binding = 0,
+        .buffer = storage_buffer,
+        .offset = 0,
+        .size = numbers_size,
+    }});
+    const bind_group = device.createBindGroup(&bind_group_desc);
 
     std.log.info("executing compute...", .{});
 
     queue.writeBuffer(storage_buffer, 0, @ptrCast(&numbers), numbers_size);
 
-    const command_encoder = device.createCommandEncoder(null) orelse unreachable;
-    const compute_pass = command_encoder.beginComputePass(null) orelse unreachable;
+    const command_encoder = device.createCommandEncoder(null);
+    const compute_pass = command_encoder.beginComputePass(null);
     compute_pass.setPipeline(compute_pipeline);
-    compute_pass.setBindGroup(0, bind_group, 0, null);
+    compute_pass.setBindGroup(0, bind_group, &.{});
     compute_pass.dispatchWorkgroups(@as(u32, @intCast(numbers.len)), 1, 1);
     compute_pass.end();
 
     command_encoder.copyBufferToBuffer(storage_buffer, 0, staging_buffer, 0, numbers_size);
-    const command_buffer = command_encoder.finish(null) orelse unreachable;
-    queue.submit(1, &command_buffer);
+    const command_buffer = command_encoder.finish(null);
+    queue.submit(&.{command_buffer});
 
     std.log.info("reading back results...", .{});
 
@@ -128,7 +123,7 @@ test "compute" {
     ));
 
     while (!map_ctx.mapped) {
-        _ = device.poll(1, null); 
+        _ = device.poll(true, null); 
     }
 
     if (map_ctx.status != .success) return error.MapFailed;
@@ -148,4 +143,25 @@ test "compute" {
 
     staging_buffer.unmap();
     std.log.info("PASS", .{});
+}
+
+test "sync wrappers" {
+    const instance = z.handles.createInstance(null);
+    defer instance.release();
+
+    const adapter_response = try instance.requestAdapterSync(std.testing.io, null);
+    try std.testing.expectEqual(z.types.RequestAdapterStatus.success, adapter_response.status);
+    const adapter = adapter_response.adapter orelse return error.NoAdapter;
+    defer adapter.release();
+
+    const device_response = try adapter.requestDeviceSync(std.testing.io, instance, null);
+    try std.testing.expectEqual(z.types.RequestDeviceStatus.success, device_response.status);
+    const device = device_response.device orelse return error.NoDevice;
+    defer device.release();
+
+    const queue = device.getQueue();
+    defer queue.release();
+
+    const done = try queue.onSubmittedWorkDoneSync(std.testing.io, device);
+    try std.testing.expectEqual(z.types.QueueWorkDoneStatus.success, done.status);
 }
