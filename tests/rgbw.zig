@@ -22,7 +22,7 @@ const GLFW_PRESS = 1;
 
 const DeviceCtx = struct {
     status: z.types.RequestDeviceStatus = undefined,
-    device: ?z.handles.Device = null,
+    device: ?*z.handles.Device = null,
 };
 
 const Vertex = extern struct {
@@ -98,7 +98,7 @@ test "rgbw" {
     defer glfwDestroyWindow(window);
 
     std.log.info("creating instance...", .{});
-    const instance = z.handles.createInstance(null) orelse unreachable;
+    const instance = z.handles.createInstance(null);
 
     std.log.info("creating surface...", .{});
     const surface = try surface_util.createSurfaceFromGlfw(instance, window);
@@ -106,36 +106,38 @@ test "rgbw" {
 
     const adapter_count = instance.enumerateAdapters(null, null);
     if (adapter_count == 0) return error.NoAdapter;
-    const adapters = try std.testing.allocator.alloc(z.handles.Adapter, adapter_count);
+    const adapters = try std.testing.allocator.alloc(?*z.handles.Adapter, adapter_count);
     defer std.testing.allocator.free(adapters);
     _ = instance.enumerateAdapters(null, adapters.ptr);
-    const adapter = adapters[0];
+    const adapter = adapters[0] orelse return error.NoAdapter;
 
     var dev_ctx = DeviceCtx{};
     var dev_ctx2: u8 = 0;
     _ = adapter.requestDevice(null, z.callbacks.requestDeviceCallback(DeviceCtx, u8, &dev_ctx, &dev_ctx2, struct {
-        fn cb(ctx: *DeviceCtx, _: *u8, s: z.types.RequestDeviceStatus, d: ?z.handles.Device, _: []const u8) void {
+        fn cb(ctx: *DeviceCtx, _: *u8, s: z.types.RequestDeviceStatus, d: ?*z.handles.Device, _: []const u8) void {
             ctx.status = s;
             ctx.device = d;
         }
     }.cb));
     const device = dev_ctx.device orelse return error.NoDevice;
-    const queue = device.getQueue() orelse unreachable;
+    const queue = device.getQueue();
 
     const caps = try surface.getCapabilities(adapter);
     defer z.handles.surfaceCapabilitiesFreeMembers(caps);
     if (caps.format_count == 0 or caps.present_mode_count == 0) return error.NoSurfaceFormats;
 
-    surface.configure(&z.types.SurfaceConfiguration{
-        .device = z.handles.OptionalDevice.wrap(device),
+    const view_formats = [_]z.types.TextureFormat{caps.formats[0]};
+    var surface_config: z.types.SurfaceConfiguration = .{
+        .device = device,
         .format = caps.formats[0],
         .usage = .{ .render_attachment = true },
-        .view_formats = caps.formats,
         .alpha_mode = .auto,
         .width = 640,
         .height = 480,
         .present_mode = .fifo,
-    });
+    };
+    surface_config.setViewFormats(&view_formats);
+    surface.configure(&surface_config);
 
     const shader_wgsl = @embedFile("rgbw.wgsl");
     var shader_source = z.types.ShaderSourceWGSL{
@@ -144,7 +146,7 @@ test "rgbw" {
     };
     const shader_module = device.createShaderModule(&z.types.ShaderModuleDescriptor{
         .next_in_chain = &shader_source.chain,
-    }) orelse unreachable;
+    });
 
     const uniform_buf_cube = device.createBuffer(&std.mem.zeroInit(z.types.BufferDescriptor, .{
         .usage = .{ .uniform = true, .copy_dst = true },
@@ -167,32 +169,32 @@ test "rgbw" {
                 .storage_texture = .{ .access = .binding_not_used },
             },
         }),
-    }) orelse unreachable;
+    });
 
     const bind_group_cube = device.createBindGroup(&z.types.BindGroupDescriptor{
-        .layout = z.handles.OptionalBindGroupLayout.wrap(bind_group_layout),
+        .layout = bind_group_layout,
         .entry_count = 1,
         .entries = @ptrCast(&[1]z.types.BindGroupEntry{
-            .{ .binding = 0, .buffer = z.handles.OptionalBuffer.wrap(uniform_buf_cube), .offset = 0, .size = @sizeOf(Uniforms) },
+            .{ .binding = 0, .buffer = uniform_buf_cube, .offset = 0, .size = @sizeOf(Uniforms) },
         }),
-    }) orelse unreachable;
+    });
     const bind_group_pyr = device.createBindGroup(&z.types.BindGroupDescriptor{
-        .layout = z.handles.OptionalBindGroupLayout.wrap(bind_group_layout),
+        .layout = bind_group_layout,
         .entry_count = 1,
         .entries = @ptrCast(&[1]z.types.BindGroupEntry{
-            .{ .binding = 0, .buffer = z.handles.OptionalBuffer.wrap(uniform_buf_pyr), .offset = 0, .size = @sizeOf(Uniforms) },
+            .{ .binding = 0, .buffer = uniform_buf_pyr, .offset = 0, .size = @sizeOf(Uniforms) },
         }),
-    }) orelse unreachable;
+    });
 
     const pipeline_layout = device.createPipelineLayout(&z.types.PipelineLayoutDescriptor{
         .bind_group_layout_count = 1,
         .bind_group_layouts = @ptrCast(&bind_group_layout),
-    }) orelse unreachable;
+    });
 
     const render_pipeline = device.createRenderPipeline(&z.types.RenderPipelineDescriptor{
-        .layout = z.handles.OptionalPipelineLayout.wrap(pipeline_layout),
+        .layout = pipeline_layout,
         .vertex = .{
-            .module = z.handles.OptionalShaderModule.wrap(shader_module),
+            .module = shader_module,
             .entry_point = z.types.StringView.fromSlice("vs_main"),
             .buffer_count = 1,
             .buffers = @ptrCast(&[1]z.types.VertexBufferLayout{
@@ -210,7 +212,7 @@ test "rgbw" {
         .primitive = .{ .topology = .triangle_list, .cull_mode = .back },
         .multisample = .{ .count = 1, .mask = 0xFFFFFFFF, .alpha_to_coverage_enabled = 0 },
         .fragment = &.{
-            .module = z.handles.OptionalShaderModule.wrap(shader_module),
+            .module = shader_module,
             .entry_point = z.types.StringView.fromSlice("fs_main"),
             .target_count = 1,
             .targets = @ptrCast(&[1]z.types.ColorTargetState{.{ .format = caps.formats[0], .write_mask = z.types.ColorWriteMask_all }}),
@@ -222,7 +224,7 @@ test "rgbw" {
             .stencil_front = .{},
             .stencil_back = .{},
         },
-    }) orelse unreachable;
+    });
 
     const depth_tex = device.createTexture(&z.types.TextureDescriptor{
         .usage = .{ .render_attachment = true },
@@ -231,8 +233,8 @@ test "rgbw" {
         .format = .depth24_plus,
         .mip_level_count = 1,
         .sample_count = 1,
-    }) orelse unreachable;
-    const depth_view = depth_tex.createView(null) orelse unreachable;
+    });
+    const depth_view = depth_tex.createView(null);
 
     const cube_verts = [_]Vertex{
         .{ .pos = .{ -0.5, -0.5, 0.5 }, .col = .{ 1, 0, 0 } },
@@ -328,20 +330,20 @@ test "rgbw" {
         surface.getCurrentTexture(&surface_tex);
         if (surface_tex.status != .success_optimal) continue;
 
-        const tex_view = surface_tex.texture.unwrap().createView(null) orelse unreachable;
+        const tex_view = surface_tex.texture.?.createView(null);
 
-        const command_encoder = device.createCommandEncoder(null) orelse unreachable;
+        const command_encoder = device.createCommandEncoder(null);
         const clear_color = z.types.Color{ .r = 0.05, .g = 0.05, .b = 0.1, .a = 1.0 };
-        const render_pass = command_encoder.beginRenderPass(&z.types.RenderPassDescriptor{
-            .color_attachment_count = 1,
-            .color_attachments = @ptrCast(&[1]z.types.RenderPassColorAttachment{.{ .view = z.handles.OptionalTextureView.wrap(tex_view), .depth_slice = 0xFFFFFFFF, .load_op = .clear, .store_op = .store, .clear_value = clear_color }}),
+        var rp_desc: z.types.RenderPassDescriptor = .{
             .depth_stencil_attachment = @ptrCast(&z.types.RenderPassDepthStencilAttachment{
-                .view = z.handles.OptionalTextureView.wrap(depth_view),
+                .view = depth_view,
                 .depth_load_op = .clear,
                 .depth_store_op = .store,
                 .depth_clear_value = 1.0,
             }),
-        }) orelse unreachable;
+        };
+        rp_desc.setColorAttachments(&.{.{ .view = tex_view, .depth_slice = 0xFFFFFFFF, .load_op = .clear, .store_op = .store, .clear_value = clear_color }});
+        const render_pass = command_encoder.beginRenderPass(&rp_desc);
         render_pass.setPipeline(render_pipeline);
 
         // Draw cube
@@ -350,7 +352,7 @@ test "rgbw" {
             const uniforms = Uniforms{ .mvp = mat4Mul(mat4Mul(proj, view_matrix), model) };
             queue.writeBuffer(uniform_buf_cube, 0, @ptrCast(&uniforms), @sizeOf(Uniforms));
 
-            render_pass.setBindGroup(0, bind_group_cube, 0, null);
+            render_pass.setBindGroup(0, bind_group_cube, &.{});
             render_pass.setVertexBuffer(0, cube_vb, 0, @sizeOf(@TypeOf(cube_verts)));
             render_pass.setIndexBuffer(cube_ib, .uint32, 0, @sizeOf(@TypeOf(cube_indices)));
             render_pass.drawIndexed(cube_indices.len, 1, 0, 0, 0);
@@ -362,15 +364,15 @@ test "rgbw" {
             const uniforms = Uniforms{ .mvp = mat4Mul(mat4Mul(proj, view_matrix), model) };
             queue.writeBuffer(uniform_buf_pyr, 0, @ptrCast(&uniforms), @sizeOf(Uniforms));
 
-            render_pass.setBindGroup(0, bind_group_pyr, 0, null);
+            render_pass.setBindGroup(0, bind_group_pyr, &.{});
             render_pass.setVertexBuffer(0, pyramid_vb, 0, @sizeOf(@TypeOf(pyramid_verts)));
             render_pass.setIndexBuffer(pyramid_ib, .uint32, 0, @sizeOf(@TypeOf(pyramid_indices)));
             render_pass.drawIndexed(pyramid_indices.len, 1, 0, 0, 0);
         }
 
         render_pass.end();
-        const command_buffer = command_encoder.finish(null) orelse unreachable;
-        queue.submit(1, &command_buffer);
+        const command_buffer = command_encoder.finish(null);
+        queue.submit(&.{command_buffer});
         _ = try surface.present();
     }
 

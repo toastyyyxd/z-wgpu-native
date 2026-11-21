@@ -85,7 +85,7 @@ fn resolveTypeKind(mapping: *Mapping, type_node: Ast.Node.Index) Mapping.FnParam
                 return .primitive;
             },
             .ptr_type, .ptr_type_bit_range, .ptr_type_aligned, .ptr_type_sentinel, .optional_type => {
-                // Follow pointer/optional chain, but if the innermost is a handle, return .pointer
+                // Walk the pointer/optional chain. If the innermost type is a handle, return .pointer.
                 var n = type_node;
                 while (true) {
                     switch (mapping.ast.nodeTag(n)) {
@@ -140,7 +140,7 @@ fn resolveReturnKind(mapping: *Mapping, return_node: Ast.Node.Index) Mapping.FnR
 }
 
 fn removePtrPrefix(name: []const u8) []const u8 {
-    // Trim "?*" prefix from type names like "?*struct_WGPUAdapterImpl"
+    // Trim the "?*" prefix from names such as "?*struct_WGPUAdapterImpl".
     const trimmed_struct = if (std.mem.startsWith(u8, name, "struct_")) name else blk: {
         const n = if (std.mem.startsWith(u8, name, "?*")) name[2..] else name;
         break :blk if (std.mem.startsWith(u8, n, "struct_")) n else name;

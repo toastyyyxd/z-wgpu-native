@@ -3,7 +3,7 @@ const builtin = @import("builtin");
 //const z = @import("../src/root.zig");
 const z = @import("z_wgpu_native");
 
-pub fn createSurfaceFromGlfw(instance: z.handles.Instance, window: ?*anyopaque) !z.handles.Surface {
+pub fn createSurfaceFromGlfw(instance: *z.handles.Instance, window: ?*anyopaque) !*z.handles.Surface {
     return switch (comptime builtin.os.tag) {
         .windows => {
             const win32 = struct {
@@ -20,15 +20,12 @@ pub fn createSurfaceFromGlfw(instance: z.handles.Instance, window: ?*anyopaque) 
             
             const hinstance = win32.GetModuleHandleW(null) orelse return error.NoModuleHandle;
 
-            var surface_source = z.types.SurfaceSourceWindowsHWND{
-                .chain = .{ .s_type = .surface_source_windows_hwnd },
+            var desc = z.builders.SurfaceDescriptorWithSurfaceSourceWindowsHWND{
                 .hinstance = @ptrCast(hinstance),
                 .hwnd = @ptrCast(hwnd),
             };
-            
-            return instance.createSurface(&z.types.SurfaceDescriptor{
-                .next_in_chain = @ptrCast(&surface_source.chain),
-            }) orelse error.SurfaceCreationFailed;
+
+            return instance.createSurface(desc.descriptor());
         },
 
         .linux => {
@@ -46,16 +43,11 @@ pub fn createSurfaceFromGlfw(instance: z.handles.Instance, window: ?*anyopaque) 
                 const wl_sfc = linux_glfw.glfwGetWaylandWindow(window);
                 if (wl_sfc) |sfc| {
                     std.log.info("[surface.zig] Attempting Wayland surface initialization.", .{});
-                    var surface_source = z.types.SurfaceSourceWaylandSurface{
-                        .chain = .{ .s_type = .surface_source_wayland_surface },
+                    var desc = z.builders.SurfaceDescriptorWithSurfaceSourceWaylandSurface{
                         .display = wl_dpy.?,
                         .surface = sfc,
                     };
-                    if (instance.createSurface(&z.types.SurfaceDescriptor{
-                        .next_in_chain = @ptrCast(&surface_source.chain),
-                    })) |surf| return surf else {
-                        std.log.warn("[surface.zig] Wayland surface creation failed in wgpu, falling back to X11...", .{});
-                    }
+                    return instance.createSurface(desc.descriptor());
                 }
             }
 
@@ -63,14 +55,11 @@ pub fn createSurfaceFromGlfw(instance: z.handles.Instance, window: ?*anyopaque) 
                 const x11_win = linux_glfw.glfwGetX11Window(window) orelse return error.NoX11Window;
                 std.log.info("[surface.zig] Initializing via X11/Xlib window.", .{});
 
-                var surface_source = z.types.SurfaceSourceXlibWindow{
-                    .chain = .{ .s_type = .surface_source_xlib_window },
+                var desc = z.builders.SurfaceDescriptorWithSurfaceSourceXlibWindow{
                     .display = x11_dpy,
                     .window = @intCast(@intFromPtr(x11_win)),
                 };
-                return instance.createSurface(&z.types.SurfaceDescriptor{
-                    .next_in_chain = @ptrCast(&surface_source.chain),
-                }) orelse error.SurfaceCreationFailed;
+                return instance.createSurface(desc.descriptor());
             }
 
             return error.NoValidDisplayBackendFound;

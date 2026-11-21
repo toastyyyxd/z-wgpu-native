@@ -189,39 +189,20 @@ test "abi types.zig" {
     try std.testing.expectEqual(@as(u32, 0), failures);
 }
 
-test "abi handles.zig Optional*" {
+test "abi handles.zig pointers" {
     @setEvalBranchQuota(20000);
     const mod_decls = comptime std.meta.declarations(z.handles);
-    var failures: u32 = 0;
     var count: u32 = 0;
 
     inline for (mod_decls) |decl_name| {
-        comptime if (!std.mem.startsWith(u8, decl_name, "Optional")) continue;
         const raw = @field(z.handles, decl_name);
         if (@TypeOf(raw) != type) continue;
         const T: type = raw;
-        const info = @typeInfo(T);
-        if (info != .@"struct" or info.@"struct".layout != .@"extern") continue;
+        if (@typeInfo(T) != .@"opaque") continue;
         count += 1;
-        const fields = info.@"struct";
-        if (fields.field_names.len != 1) {
-            std.log.err("handles.{s}: expected 1 field, found {d}", .{ decl_name, fields.field_names.len });
-            failures += 1;
-        }
-        if (!std.mem.eql(u8, fields.field_names[0], "ptr")) {
-            std.log.err("handles.{s}.{s}: field name expected 'ptr'", .{ decl_name, fields.field_names[0] });
-            failures += 1;
-        }
-        if (fields.field_types[0] != ?*anyopaque) {
-            std.log.err("handles.{s}.ptr: type {s} != ?*anyopaque", .{ decl_name, @typeName(fields.field_types[0]) });
-            failures += 1;
-        }
-        if (@sizeOf(T) != @sizeOf(?*anyopaque)) {
-            std.log.err("handles.{s}: size {} != {}", .{ decl_name, @sizeOf(T), @sizeOf(?*anyopaque) });
-            failures += 1;
-        }
+        try std.testing.expectEqual(@sizeOf(?*anyopaque), @sizeOf(?*T));
     }
 
-    std.log.info("ABI handles.zig Optional*: {d}/{d} passed", .{ count - failures, count });
-    try std.testing.expectEqual(@as(u32, 0), failures);
+    std.log.info("ABI handles.zig: {d} opaque handles, pointer-sized", .{count});
+    try std.testing.expect(count > 0);
 }

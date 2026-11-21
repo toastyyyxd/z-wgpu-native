@@ -153,9 +153,9 @@ pub fn parseIntValue(s: []const u8) ?u64 {
 // ---------------------------------------------------------------------------
 
 pub fn isCallbackType(ctype: []const u8) bool {
+    // CallbackInfo types are structs, so only function-pointer typedefs stay in c.*.
     return std.mem.endsWith(u8, ctype, "Callback") or
         std.mem.endsWith(u8, ctype, "Proc") or
-        std.mem.endsWith(u8, ctype, "CallbackInfo") or
         std.mem.startsWith(u8, ctype, "WGPUProc");
 }
 
@@ -200,7 +200,7 @@ pub fn mapTypeName(ctype: []const u8, buf: []u8, mapping: *Mapping) []const u8 {
             return std.fmt.bufPrint(buf, "c.{s}", .{ctype}) catch unreachable;
         }
         if (isHandleLikeType(ctype, mapping)) {
-            return std.fmt.bufPrint(buf, "handles.Optional{s}", .{zigHandleName(ctype)}) catch unreachable;
+            return std.fmt.bufPrint(buf, "?*handles.{s}", .{zigHandleName(ctype)}) catch unreachable;
         }
         if (mapping.struct_decls.contains(ctype)) {
             return zigStructName(ctype);
@@ -215,9 +215,7 @@ pub fn mapTypeName(ctype: []const u8, buf: []u8, mapping: *Mapping) []const u8 {
     return ctype;
 }
 
-/// Map a C type to its raw C reference (from c_wgpu_native module)
-/// When wrap_handles=true (method signatures), handle types -> wrapper names.
-/// When wrap_handles=false (trampoline C ABI), handle types stay as c.WGPU*.
+/// Maps a C type to its raw C type. When wrap_handles is set, handles become wrapper types. Trampolines pass false.
 pub fn mapCTypeRef(ctype: []const u8, buf: []u8, mapping: *Mapping, wrap_handles: bool) []const u8 {
     if (std.mem.startsWith(u8, ctype, "[*c]const ")) {
         const inner = ctype["[*c]const ".len..];
@@ -244,14 +242,15 @@ pub fn mapCTypeRef(ctype: []const u8, buf: []u8, mapping: *Mapping, wrap_handles
         var inner_buf: [256]u8 = undefined;
         const inner_wrap = wrap_handles and isHandleLikeType(inner, mapping);
         const zig_inner = mapCTypeRef(inner, &inner_buf, mapping, inner_wrap);
+        if (isHandleLikeType(inner, mapping)) return zig_inner; // already `?*Handle`
         return std.fmt.bufPrint(buf, "?*{s}", .{zig_inner}) catch unreachable;
     }
-    if (std.mem.eql(u8, ctype, "WGPUBool")) return "u32";
+    if (std.mem.eql(u8, ctype, "WGPUBool")) return if (wrap_handles) "bool" else "u32";
     if (std.mem.eql(u8, ctype, "WGPUFlags")) return "u64";
     if (std.mem.eql(u8, ctype, "void")) return "void";
     if (std.mem.eql(u8, ctype, "WGPUStatus")) return "!void";
     if (std.mem.startsWith(u8, ctype, "WGPU") and wrap_handles and isHandleLikeType(ctype, mapping)) {
-        return zigHandleName(ctype);
+        return std.fmt.bufPrint(buf, "?*{s}", .{zigHandleName(ctype)}) catch unreachable;
     }
     if (std.mem.startsWith(u8, ctype, "WGPU") and wrap_handles and (mapping.enum_decls.contains(ctype) or mapping.flag_decls.contains(ctype))) {
         return std.fmt.bufPrint(buf, "types.{s}", .{stripWgpu(ctype)}) catch unreachable;
@@ -265,8 +264,7 @@ pub fn mapCTypeRef(ctype: []const u8, buf: []u8, mapping: *Mapping, wrap_handles
     return ctype;
 }
 
-/// Convert a C type reference like "?*const c.WGPUInstanceDescriptor"
-/// to its wrapper types equivalent "?*const types.InstanceDescriptor"
+/// Rewrites a raw c type reference to the matching types.zig reference.
 pub fn mapCRefToTypesRef(c_ref: []const u8, buf: []u8) []const u8 {
     if (std.mem.indexOf(u8, c_ref, "c.WGPU")) |pos| {
         const before = c_ref[0..pos];
@@ -286,18 +284,95 @@ pub fn hasPtrPrefix(ctype: []const u8) bool {
         std.mem.startsWith(u8, ctype, "[*c]");
 }
 
+/// Returns true for C element-count types such as usize, size_t and u32.
+pub fn isCountCType(ctype: []const u8) bool {
+    return std.mem.eql(u8, ctype, "usize") or
+        std.mem.eql(u8, ctype, "size_t") or
+        std.mem.eql(u8, ctype, "u32");
+}
+
+/// Returns true when the parameter name ends in "Count".
+pub fn isCountParamName(name: []const u8) bool {
+    return std.mem.endsWith(u8, name, "Count");
+}
+
+/// Returns true when there is a count-and-pointer pair in the given parameter range.
+pub fn hasSlicePair(mapping: *Mapping, fn_decl: *Mapping.FnDecl, start: usize, end: usize) bool {
+    if (end < start + 2) return false;
+    var i = start;
+    while (i + 1 < end) : (i += 1) {
+        const count = fn_decl.params.items[i];
+        if (!isCountParamName(count.name)) continue;
+        if (count.kind != .primitive) continue;
+        if (!isCountCType(mapping.ast.getNodeSource(count.type))) continue;
+        const ptr_type = mapping.ast.getNodeSource(fn_decl.params.items[i + 1].type);
+        if (!std.mem.startsWith(u8, ptr_type, "[*c]") and
+            !std.mem.startsWith(u8, ptr_type, "?*")) continue;
+        return true;
+    }
+    return false;
+}
+
+/// Returns the WGPU_NULLABLE flag for this parameter, or null when it is unknown.
+pub fn paramNullability(mapping: *Mapping, fn_name: []const u8, param_count: usize, c_index: usize) ?bool {
+    const info = lookupNullability(mapping, fn_name, param_count) orelse return null;
+    if (c_index >= info.params.len) return null;
+    return info.params[c_index];
+}
+
+/// Returns the WGPU_NULLABLE flag for the return, or null when it is unknown.
+pub fn returnNullability(mapping: *Mapping, fn_name: []const u8, param_count: usize) ?bool {
+    const info = lookupNullability(mapping, fn_name, param_count) orelse return null;
+    return info.returns;
+}
+
+fn lookupNullability(mapping: *Mapping, fn_name: []const u8, param_count: usize) ?*Mapping.FnNullability {
+    const info = mapping.fn_nullability.getPtr(fn_name) orelse return null;
+    // Parameter counts must line up with the AST.
+    if (info.params.len != param_count) return null;
+    return info;
+}
+
+/// Narrows a pointer type when it is not nullable.
+pub fn applyPointerNullability(base: []const u8, nullable: ?bool, buf: []u8) []const u8 {
+    const is_nullable = nullable orelse return base;
+    if (std.mem.startsWith(u8, base, "[*c]const ")) {
+        return std.fmt.bufPrint(buf, "{s}{s}", .{
+            if (is_nullable) "?*const " else "*const ",
+            base["[*c]const ".len..],
+        }) catch base;
+    }
+    if (std.mem.startsWith(u8, base, "[*c]")) {
+        return std.fmt.bufPrint(buf, "{s}{s}", .{
+            if (is_nullable) "?*" else "*",
+            base["[*c]".len..],
+        }) catch base;
+    }
+    if (std.mem.startsWith(u8, base, "?*")) {
+        if (is_nullable) return base;
+        return std.fmt.bufPrint(buf, "*{s}", .{base["?*".len..]}) catch base;
+    }
+    if (std.mem.startsWith(u8, base, "*")) {
+        if (!is_nullable) return base;
+        return std.fmt.bufPrint(buf, "?*{s}", .{base[1..]}) catch base;
+    }
+    return base;
+}
+
 pub fn writeParamExpr(buf: *std.array_list.Managed(u8), param: *Mapping.FnParam, mapping: *Mapping) !void {
     const ptype = mapping.ast.getNodeSource(param.type);
     if (param.kind == .data_struct and hasPtrPrefix(ptype)) {
         try buf.print("@ptrCast({s})", .{param.name});
     } else if (param.kind == .handle) {
-        try buf.print("@ptrCast({s}.ptr)", .{param.name});
+        try buf.print("@ptrCast({s})", .{param.name});
     } else if (param.kind == .pointer) {
         try buf.print("@ptrCast({s})", .{param.name});
     } else if (param.kind == .string) {
         try buf.print("asC(c.{s}, {s})", .{ ptype, param.name });
     } else if (param.kind == .data_struct) {
         try buf.print("asC(c.{s}, {s})", .{ ptype, param.name });
+    } else if (param.kind == .bool_c) {
+        try buf.print("@intFromBool({s})", .{param.name});
     } else if (param.kind == .enum_c) {
         try buf.print("@intFromEnum({s})", .{param.name});
     } else if (param.kind == .flags) {
@@ -322,9 +397,7 @@ pub fn stripCPtrPrefix(ctype: []const u8) []const u8 {
     return ctype;
 }
 
-/// Case-insensitive substring search.
-/// `std.ascii.indexOfIgnoreCase` was removed in Zig 0.18 (only `eqlIgnoreCase`,
-/// `startsWithIgnoreCase` etc. remain), so codegen carries its own.
+/// std.ascii dropped indexOfIgnoreCase in 0.18, so codegen keeps its own copy.
 pub fn indexOfIgnoreCase(haystack: []const u8, needle: []const u8) ?usize {
     if (needle.len == 0) return 0;
     if (needle.len > haystack.len) return null;
@@ -333,4 +406,67 @@ pub fn indexOfIgnoreCase(haystack: []const u8, needle: []const u8) ?usize {
         if (std.ascii.eqlIgnoreCase(haystack[i..][0..needle.len], needle)) return i;
     }
     return null;
+}
+
+pub const FieldInit = struct {
+    ztype: []const u8,
+    /// Initializer text. This is never "undefined" because codegen rejects that.
+    zinit: []const u8,
+};
+
+/// Returns the zero-valued C tag or the synthetic @"undefined". Returns null when the type is not a generated enum.
+fn enumDefaultInit(mapping: *Mapping, ctype: []const u8, init_buf: []u8) ?[]const u8 {
+    const enum_decl = mapping.enum_decls.get(ctype) orelse return null;
+
+    var val_iter = enum_decl.values.iterator();
+    while (val_iter.next()) |val| {
+        const init_text = mapping.ast.getNodeSource(val.value_ptr.*.init.unwrap().?);
+        if (!std.mem.eql(u8, init_text, "0")) continue;
+        var vn_buf: [128]u8 = undefined;
+        const vname = zigValueName(val.key_ptr.*, &vn_buf);
+        if (isZigKeyword(vname)) return std.fmt.bufPrint(init_buf, ".@\"{s}\"", .{vname}) catch null;
+        return std.fmt.bufPrint(init_buf, ".{s}", .{vname}) catch null;
+    }
+
+    // No C value is zero, so use the synthetic tag.
+    return std.fmt.bufPrint(init_buf, ".@\"undefined\"", .{}) catch null;
+}
+
+/// Maps a C struct field to its Zig type and initializer.
+pub fn fieldInit(mapping: *Mapping, ctype: []const u8, cinit: ?[]const u8, type_buf: []u8, init_buf: []u8) FieldInit {
+    const ztype = mapTypeName(ctype, type_buf, mapping);
+    const init = cinit orelse return .{ .ztype = ztype, .zinit = "undefined" };
+    const mapped = mapFieldInit(ctype, init, mapping);
+
+    if (std.mem.eql(u8, mapped, "null")) return .{ .ztype = ztype, .zinit = "null" };
+
+    if (std.mem.eql(u8, mapped, ".{}")) {
+        if (std.mem.startsWith(u8, ctype, "union_")) {
+            const zi = std.fmt.bufPrint(init_buf, "std.mem.zeroes({s})", .{ztype}) catch "undefined";
+            return .{ .ztype = ztype, .zinit = zi };
+        }
+        if (enumDefaultInit(mapping, ctype, init_buf)) |zi| {
+            return .{ .ztype = ztype, .zinit = zi };
+        }
+        if (mapping.struct_decls.contains(ctype)) {
+            // Every struct field has a default now, so {} zeroes the struct.
+            return .{ .ztype = ztype, .zinit = ".{}" };
+        }
+        return .{ .ztype = ztype, .zinit = "undefined" };
+    }
+
+    if (std.mem.eql(u8, mapped, "0") and mapping.flag_decls.get(ctype) != null) {
+        return .{ .ztype = ztype, .zinit = ".{}" };
+    }
+
+    return .{ .ztype = ztype, .zinit = mapped };
+}
+
+pub fn mapFieldInit(ctype: []const u8, cinit: []const u8, mapping: *Mapping) []const u8 {
+    if (std.mem.eql(u8, ctype, "WGPUBool") and std.mem.eql(u8, cinit, "0")) return "0";
+    if (std.mem.eql(u8, ctype, "WGPUStringView") and std.mem.startsWith(u8, cinit, "@import")) return ".{ .data = null, .length = std.math.maxInt(usize) }";
+    if (std.mem.eql(u8, cinit, "null") and isHandleLikeType(ctype, mapping)) return "null";
+    if (std.mem.eql(u8, cinit, "null")) return "null";
+    if (std.mem.startsWith(u8, cinit, "@import")) return ".{}";
+    return cinit;
 }

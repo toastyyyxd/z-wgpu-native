@@ -3,7 +3,7 @@ const c = @import("c_wgpu_native");
 const types = @import("types.zig");
 const handles = @import("handles.zig");
 
-pub fn uncapturedErrorCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, ?handles.Device, types.ErrorType, []const u8) void,
+pub fn uncapturedErrorCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, ?*handles.Device, types.ErrorType, []const u8) void,
 ) types.UncapturedErrorCallbackInfo {
     const Trampoline = struct {
         fn call(device: [*c]const c.WGPUDevice, @"type": c.WGPUErrorType, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
@@ -20,7 +20,7 @@ pub fn uncapturedErrorCallback(comptime C1: type, comptime C2: type, ctx1: *C1, 
     };
 }
 
-pub fn requestDeviceCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.RequestDeviceStatus, ?handles.Device, []const u8) void,
+pub fn requestDeviceCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.RequestDeviceStatus, ?*handles.Device, []const u8) void,
 ) types.RequestDeviceCallbackInfo {
     const Trampoline = struct {
         fn call(status: c.WGPURequestDeviceStatus, device: c.WGPUDevice, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
@@ -54,7 +54,7 @@ pub fn queueWorkDoneCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ct
     };
 }
 
-pub fn deviceLostCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, ?handles.Device, types.DeviceLostReason, []const u8) void,
+pub fn deviceLostCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, ?*handles.Device, types.DeviceLostReason, []const u8) void,
 ) types.DeviceLostCallbackInfo {
     const Trampoline = struct {
         fn call(device: [*c]const c.WGPUDevice, reason: c.WGPUDeviceLostReason, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
@@ -88,7 +88,7 @@ pub fn compilationInfoCallback(comptime C1: type, comptime C2: type, ctx1: *C1, 
     };
 }
 
-pub fn createRenderPipelineAsyncCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.CreatePipelineAsyncStatus, ?handles.RenderPipeline, []const u8) void,
+pub fn createRenderPipelineAsyncCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.CreatePipelineAsyncStatus, ?*handles.RenderPipeline, []const u8) void,
 ) types.CreateRenderPipelineAsyncCallbackInfo {
     const Trampoline = struct {
         fn call(status: c.WGPUCreatePipelineAsyncStatus, pipeline: c.WGPURenderPipeline, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
@@ -105,7 +105,7 @@ pub fn createRenderPipelineAsyncCallback(comptime C1: type, comptime C2: type, c
     };
 }
 
-pub fn requestAdapterCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.RequestAdapterStatus, ?handles.Adapter, []const u8) void,
+pub fn requestAdapterCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.RequestAdapterStatus, ?*handles.Adapter, []const u8) void,
 ) types.RequestAdapterCallbackInfo {
     const Trampoline = struct {
         fn call(status: c.WGPURequestAdapterStatus, adapter: c.WGPUAdapter, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
@@ -139,7 +139,7 @@ pub fn bufferMapCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: 
     };
 }
 
-pub fn createComputePipelineAsyncCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.CreatePipelineAsyncStatus, ?handles.ComputePipeline, []const u8) void,
+pub fn createComputePipelineAsyncCallback(comptime C1: type, comptime C2: type, ctx1: *C1, ctx2: *C2, comptime cb: fn (*C1, *C2, types.CreatePipelineAsyncStatus, ?*handles.ComputePipeline, []const u8) void,
 ) types.CreateComputePipelineAsyncCallbackInfo {
     const Trampoline = struct {
         fn call(status: c.WGPUCreatePipelineAsyncStatus, pipeline: c.WGPUComputePipeline, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {

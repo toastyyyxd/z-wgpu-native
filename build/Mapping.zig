@@ -1,5 +1,8 @@
 const std = @import("std");
 const Ast = std.zig.Ast;
+const Headers = @import("Headers.zig");
+
+pub const FnNullability = Headers.FnNullability;
 
 pub const FieldDecl = struct {
     node: Ast.Node.Index,
@@ -102,6 +105,12 @@ pub const CallbackDecl = struct {
     userdata_count: u2 = 0,
 };
 
+pub const BuilderPair = struct {
+    parent_c: []const u8,
+    child_c: []const u8,
+    s_type_const: []const u8,
+};
+
 pub const Decl = union(enum) {
     @"enum": *EnumDecl,
     flags: *FlagsDecl,
@@ -130,6 +139,15 @@ fn_decls: std.StringHashMapUnmanaged(*FnDecl) = .empty,
 callback_decls: std.StringHashMapUnmanaged(*CallbackDecl) = .empty,
 typedef_decls: std.StringHashMapUnmanaged(*TypedefDecl) = .empty,
 
+/// C entry points implemented as unimplemented!().
+unimplemented: std.StringHashMapUnmanaged(void) = .empty,
+
+/// WGPU_NULLABLE flags parsed from the headers.
+fn_nullability: std.StringHashMapUnmanaged(FnNullability) = .empty,
+
+/// Builder pairs taken from webgpu.json.
+builder_pairs: std.ArrayList(BuilderPair) = .empty,
+
 pub fn init(gpa: std.mem.Allocator, arena: std.mem.Allocator, ast: *Ast) !*@This() {
     const self = try arena.create(@This());
     self.* = .{
@@ -141,7 +159,7 @@ pub fn init(gpa: std.mem.Allocator, arena: std.mem.Allocator, ast: *Ast) !*@This
 }
 
 pub fn deinit(self: *@This()) void {
-    // Clean up inner collections within each decl
+    // Free the inner collections.
     {
         var it = self.enum_decls.iterator();
         while (it.next()) |e| e.value_ptr.*.values.deinit(self.gpa);
@@ -187,6 +205,9 @@ pub fn deinit(self: *@This()) void {
     self.fn_decls.deinit(self.gpa);
     self.callback_decls.deinit(self.gpa);
     self.typedef_decls.deinit(self.gpa);
+    self.unimplemented.deinit(self.gpa);
+    self.fn_nullability.deinit(self.gpa);
+    self.builder_pairs.deinit(self.gpa);
 }
 
 pub fn premap(self: *@This()) !void {
@@ -227,7 +248,7 @@ pub fn premap(self: *@This()) !void {
                     continue;
                 }
             }
-            // Forward WGPU* typedef aliases to primitive types (e.g. WGPUSubmissionIndex = u64)
+            // Aliases of primitive types such as WGPUSubmissionIndex = u64.
             if (std.mem.startsWith(u8, name, "WGPU") and
                 self.ast.nodeTag(init_node) == .identifier)
             {

@@ -21,7 +21,7 @@ const GLFW_PRESS = 1;
 
 const DeviceCtx = struct {
     status: z.types.RequestDeviceStatus = undefined,
-    device: ?z.handles.Device = null,
+    device: ?*z.handles.Device = null,
 };
 
 test "triangle" {
@@ -34,7 +34,7 @@ test "triangle" {
     defer glfwDestroyWindow(window);
 
     std.log.info("creating instance...", .{});
-    const instance = z.handles.createInstance(null) orelse unreachable;
+    const instance = z.handles.createInstance(null);
 
     std.log.info("creating surface...", .{});
     const surface = try surface_util.createSurfaceFromGlfw(instance, window);
@@ -45,20 +45,20 @@ test "triangle" {
 
     const AdapterCtx = struct {
         status: z.types.RequestAdapterStatus = undefined,
-        adapter: ?z.handles.Adapter = null,
+        adapter: ?*z.handles.Adapter = null,
     };
     
     var adapter_ctx = AdapterCtx{};
     var adapter_ctx2: u8 = 0;
 
     const adapter_opts = z.types.RequestAdapterOptions{
-        .compatible_surface = z.handles.OptionalSurface.wrap(surface), 
+        .compatible_surface = surface, 
     };
 
     _ = instance.requestAdapter(&adapter_opts, z.callbacks.requestAdapterCallback(
         AdapterCtx, u8, &adapter_ctx, &adapter_ctx2,
         struct {
-            fn cb(ctx: *AdapterCtx, _: *u8, s: z.types.RequestAdapterStatus, a: ?z.handles.Adapter, _: []const u8) void {
+            fn cb(ctx: *AdapterCtx, _: *u8, s: z.types.RequestAdapterStatus, a: ?*z.handles.Adapter, _: []const u8) void {
                 ctx.status = s;
                 ctx.adapter = a;
             }
@@ -77,14 +77,14 @@ test "triangle" {
     _ = adapter.requestDevice(null, z.callbacks.requestDeviceCallback(
         DeviceCtx, u8, &dev_ctx, &dev_ctx2,
         struct {
-            fn cb(ctx: *DeviceCtx, _: *u8, s: z.types.RequestDeviceStatus, d: ?z.handles.Device, _: []const u8) void {
+            fn cb(ctx: *DeviceCtx, _: *u8, s: z.types.RequestDeviceStatus, d: ?*z.handles.Device, _: []const u8) void {
                 ctx.status = s;
                 ctx.device = d;
             }
         }.cb,
     ));
     const device = dev_ctx.device orelse return error.NoDevice;
-    const queue = device.getQueue() orelse unreachable;
+    const queue = device.getQueue();
 
     std.log.info("querying surface capabilities...", .{});
 
@@ -95,16 +95,18 @@ test "triangle" {
     if (caps.format_count == 0) return error.NoSurfaceFormats;
     if (caps.present_mode_count == 0) return error.NoPresentModes;
 
-    surface.configure(&z.types.SurfaceConfiguration{
-        .device = z.handles.OptionalDevice.wrap(device),
+    const view_formats = [_]z.types.TextureFormat{caps.formats[0]};
+    var surface_config: z.types.SurfaceConfiguration = .{
+        .device = device,
         .format = caps.formats[0],
         .usage = .{ .render_attachment = true },
-        .view_formats = caps.formats,
         .alpha_mode = .auto,
         .width = 640,
         .height = 480,
         .present_mode = .fifo,
-    });
+    };
+    surface_config.setViewFormats(&view_formats);
+    surface.configure(&surface_config);
 
     std.log.info("loading shader...", .{});
 
@@ -115,14 +117,14 @@ test "triangle" {
     };
     const shader_module = device.createShaderModule(&z.types.ShaderModuleDescriptor{
         .next_in_chain = &shader_source.chain,
-    }) orelse unreachable;
+    });
 
-    const pipeline_layout = device.createPipelineLayout(&z.types.PipelineLayoutDescriptor{}) orelse unreachable;
+    const pipeline_layout = device.createPipelineLayout(&z.types.PipelineLayoutDescriptor{});
 
     const render_pipeline = device.createRenderPipeline(&z.types.RenderPipelineDescriptor{
-        .layout = z.handles.OptionalPipelineLayout.wrap(pipeline_layout),
+        .layout = pipeline_layout,
         .vertex = .{
-            .module = z.handles.OptionalShaderModule.wrap(shader_module),
+            .module = shader_module,
             .entry_point = z.types.StringView.fromSlice("vs_main"),
         },
         .primitive = .{
@@ -133,12 +135,12 @@ test "triangle" {
         },
         .multisample = .{ .count = 1, .mask = 0xFFFFFFFF, .alpha_to_coverage_enabled = 0 },
         .fragment = &.{
-            .module = z.handles.OptionalShaderModule.wrap(shader_module),
+            .module = shader_module,
             .entry_point = z.types.StringView.fromSlice("fs_main"),
             .target_count = 1,
             .targets = @ptrCast(&[1]z.types.ColorTargetState{.{ .format = caps.formats[0], .write_mask = z.types.ColorWriteMask_all }}),
         },
-    }) orelse unreachable;
+    });
 
     std.log.info("rendering...", .{});
 
@@ -152,20 +154,19 @@ test "triangle" {
         surface.getCurrentTexture(&surface_tex);
         if (surface_tex.status != .success_optimal) continue;
 
-        const tex_view = surface_tex.texture.unwrap().createView(null) orelse unreachable;
+        const tex_view = surface_tex.texture.?.createView(null);
 
         const clear_color = z.types.Color{ .r = 0.0, .g = 0.0, .b = 0.0, .a = 1.0 };
-        const command_encoder = device.createCommandEncoder(null) orelse unreachable;
-        const render_pass = command_encoder.beginRenderPass(&z.types.RenderPassDescriptor{
-            .color_attachment_count = 1,
-            .color_attachments = @ptrCast(&[1]z.types.RenderPassColorAttachment{.{ .view = z.handles.OptionalTextureView.wrap(tex_view), .depth_slice = 0xFFFFFFFF, .load_op = .clear, .store_op = .store, .clear_value = clear_color }}),
-        }) orelse unreachable;
+        const command_encoder = device.createCommandEncoder(null);
+        var rp_desc: z.types.RenderPassDescriptor = .{};
+        rp_desc.setColorAttachments(&.{.{ .view = tex_view, .depth_slice = 0xFFFFFFFF, .load_op = .clear, .store_op = .store, .clear_value = clear_color }});
+        const render_pass = command_encoder.beginRenderPass(&rp_desc);
         render_pass.setPipeline(render_pipeline);
         render_pass.draw(3, 1, 0, 0);
         render_pass.end();
 
-        const command_buffer = command_encoder.finish(null) orelse unreachable;
-        queue.submit(1, &command_buffer);
+        const command_buffer = command_encoder.finish(null);
+        queue.submit(&.{command_buffer});
         _ = try surface.present();
     }
 

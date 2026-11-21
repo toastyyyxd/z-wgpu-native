@@ -54,13 +54,13 @@ pub fn generate(mapping: *Mapping) !void {
                 .init = var_decl.ast.init_node,
             };
 
-            // Classify as composite (multi-bit preset) or single-bit value
+            // Classify as a composite multi-bit preset or a single-bit value.
             if (std.mem.startsWith(u8, init_text, "@bitCast")) {
                 if (std.mem.indexOfScalar(u8, init_text, '|') != null) {
-                    // Multi-bit composite (OR of multiple bits)
+                    // Multi-bit composite, an OR of several bits.
                     try flags_decl.composites.put(mapping.gpa, value_name, field_decl);
                 } else {
-                    // Single-bit: treat as regular value for packed struct field
+                    // Single-bit value, treated as a regular packed-struct field.
                     try flags_decl.values.put(mapping.gpa, value_name, field_decl);
                 }
             } else if (Common.parseIntValue(init_text)) |v| {

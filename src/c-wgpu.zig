@@ -600,11 +600,11 @@ pub const struct_WGPUComputePassEncoderImpl = opaque {
     pub const wgpuComputePassEncoderPopDebugGroup = __root.wgpuComputePassEncoderPopDebugGroup;
     pub const wgpuComputePassEncoderPushDebugGroup = __root.wgpuComputePassEncoderPushDebugGroup;
     pub const wgpuComputePassEncoderSetBindGroup = __root.wgpuComputePassEncoderSetBindGroup;
+    pub const wgpuComputePassEncoderSetImmediates = __root.wgpuComputePassEncoderSetImmediates;
     pub const wgpuComputePassEncoderSetLabel = __root.wgpuComputePassEncoderSetLabel;
     pub const wgpuComputePassEncoderSetPipeline = __root.wgpuComputePassEncoderSetPipeline;
     pub const wgpuComputePassEncoderAddRef = __root.wgpuComputePassEncoderAddRef;
     pub const wgpuComputePassEncoderRelease = __root.wgpuComputePassEncoderRelease;
-    pub const wgpuComputePassEncoderSetImmediates = __root.wgpuComputePassEncoderSetImmediates;
     pub const wgpuComputePassEncoderBeginPipelineStatisticsQuery = __root.wgpuComputePassEncoderBeginPipelineStatisticsQuery;
     pub const wgpuComputePassEncoderEndPipelineStatisticsQuery = __root.wgpuComputePassEncoderEndPipelineStatisticsQuery;
     pub const wgpuComputePassEncoderWriteTimestamp = __root.wgpuComputePassEncoderWriteTimestamp;
@@ -649,6 +649,7 @@ pub const struct_WGPUDeviceImpl = opaque {
     pub const wgpuDeviceGetNativeMetalDevice = __root.wgpuDeviceGetNativeMetalDevice;
     pub const wgpuDeviceStartGraphicsDebuggerCapture = __root.wgpuDeviceStartGraphicsDebuggerCapture;
     pub const wgpuDeviceStopGraphicsDebuggerCapture = __root.wgpuDeviceStopGraphicsDebuggerCapture;
+    pub const wgpuDeviceCreateShaderModuleTrusted = __root.wgpuDeviceCreateShaderModuleTrusted;
 };
 pub const WGPUDevice = ?*struct_WGPUDeviceImpl;
 pub const struct_WGPUExternalTextureImpl = opaque {
@@ -714,13 +715,13 @@ pub const struct_WGPURenderBundleEncoderImpl = opaque {
     pub const wgpuRenderBundleEncoderPopDebugGroup = __root.wgpuRenderBundleEncoderPopDebugGroup;
     pub const wgpuRenderBundleEncoderPushDebugGroup = __root.wgpuRenderBundleEncoderPushDebugGroup;
     pub const wgpuRenderBundleEncoderSetBindGroup = __root.wgpuRenderBundleEncoderSetBindGroup;
+    pub const wgpuRenderBundleEncoderSetImmediates = __root.wgpuRenderBundleEncoderSetImmediates;
     pub const wgpuRenderBundleEncoderSetIndexBuffer = __root.wgpuRenderBundleEncoderSetIndexBuffer;
     pub const wgpuRenderBundleEncoderSetLabel = __root.wgpuRenderBundleEncoderSetLabel;
     pub const wgpuRenderBundleEncoderSetPipeline = __root.wgpuRenderBundleEncoderSetPipeline;
     pub const wgpuRenderBundleEncoderSetVertexBuffer = __root.wgpuRenderBundleEncoderSetVertexBuffer;
     pub const wgpuRenderBundleEncoderAddRef = __root.wgpuRenderBundleEncoderAddRef;
     pub const wgpuRenderBundleEncoderRelease = __root.wgpuRenderBundleEncoderRelease;
-    pub const wgpuRenderBundleEncoderSetImmediates = __root.wgpuRenderBundleEncoderSetImmediates;
 };
 pub const WGPURenderBundleEncoder = ?*struct_WGPURenderBundleEncoderImpl;
 pub const struct_WGPURenderPassEncoderImpl = opaque {
@@ -737,6 +738,7 @@ pub const struct_WGPURenderPassEncoderImpl = opaque {
     pub const wgpuRenderPassEncoderPushDebugGroup = __root.wgpuRenderPassEncoderPushDebugGroup;
     pub const wgpuRenderPassEncoderSetBindGroup = __root.wgpuRenderPassEncoderSetBindGroup;
     pub const wgpuRenderPassEncoderSetBlendConstant = __root.wgpuRenderPassEncoderSetBlendConstant;
+    pub const wgpuRenderPassEncoderSetImmediates = __root.wgpuRenderPassEncoderSetImmediates;
     pub const wgpuRenderPassEncoderSetIndexBuffer = __root.wgpuRenderPassEncoderSetIndexBuffer;
     pub const wgpuRenderPassEncoderSetLabel = __root.wgpuRenderPassEncoderSetLabel;
     pub const wgpuRenderPassEncoderSetPipeline = __root.wgpuRenderPassEncoderSetPipeline;
@@ -746,7 +748,6 @@ pub const struct_WGPURenderPassEncoderImpl = opaque {
     pub const wgpuRenderPassEncoderSetViewport = __root.wgpuRenderPassEncoderSetViewport;
     pub const wgpuRenderPassEncoderAddRef = __root.wgpuRenderPassEncoderAddRef;
     pub const wgpuRenderPassEncoderRelease = __root.wgpuRenderPassEncoderRelease;
-    pub const wgpuRenderPassEncoderSetImmediates = __root.wgpuRenderPassEncoderSetImmediates;
     pub const wgpuRenderPassEncoderMultiDrawIndirect = __root.wgpuRenderPassEncoderMultiDrawIndirect;
     pub const wgpuRenderPassEncoderMultiDrawIndexedIndirect = __root.wgpuRenderPassEncoderMultiDrawIndexedIndirect;
     pub const wgpuRenderPassEncoderMultiDrawIndirectCount = __root.wgpuRenderPassEncoderMultiDrawIndirectCount;
@@ -1371,6 +1372,7 @@ pub const WGPUWGSLLanguageFeatureName_SubgroupId: c_int = 6;
 pub const WGPUWGSLLanguageFeatureName_TextureAndSamplerLet: c_int = 7;
 pub const WGPUWGSLLanguageFeatureName_SubgroupUniformity: c_int = 8;
 pub const WGPUWGSLLanguageFeatureName_TextureFormatsTier1: c_int = 9;
+pub const WGPUWGSLLanguageFeatureName_LinearIndexing: c_int = 10;
 pub const WGPUWGSLLanguageFeatureName_Force32: c_int = 2147483647;
 pub const enum_WGPUWGSLLanguageFeatureName = c_uint;
 pub const WGPUWGSLLanguageFeatureName = enum_WGPUWGSLLanguageFeatureName;
@@ -2196,6 +2198,7 @@ pub const WGPUProcComputePassEncoderInsertDebugMarker = ?*const fn (computePassE
 pub const WGPUProcComputePassEncoderPopDebugGroup = ?*const fn (computePassEncoder: WGPUComputePassEncoder) callconv(.c) void;
 pub const WGPUProcComputePassEncoderPushDebugGroup = ?*const fn (computePassEncoder: WGPUComputePassEncoder, groupLabel: WGPUStringView) callconv(.c) void;
 pub const WGPUProcComputePassEncoderSetBindGroup = ?*const fn (computePassEncoder: WGPUComputePassEncoder, groupIndex: u32, group: WGPUBindGroup, dynamicOffsetCount: usize, dynamicOffsets: [*c]const u32) callconv(.c) void;
+pub const WGPUProcComputePassEncoderSetImmediates = ?*const fn (computePassEncoder: WGPUComputePassEncoder, offset: u32, data: ?*const anyopaque, size: usize) callconv(.c) void;
 pub const WGPUProcComputePassEncoderSetLabel = ?*const fn (computePassEncoder: WGPUComputePassEncoder, label: WGPUStringView) callconv(.c) void;
 pub const WGPUProcComputePassEncoderSetPipeline = ?*const fn (computePassEncoder: WGPUComputePassEncoder, pipeline: WGPUComputePipeline) callconv(.c) void;
 pub const WGPUProcComputePassEncoderAddRef = ?*const fn (computePassEncoder: WGPUComputePassEncoder) callconv(.c) void;
@@ -2269,6 +2272,7 @@ pub const WGPUProcRenderBundleEncoderInsertDebugMarker = ?*const fn (renderBundl
 pub const WGPUProcRenderBundleEncoderPopDebugGroup = ?*const fn (renderBundleEncoder: WGPURenderBundleEncoder) callconv(.c) void;
 pub const WGPUProcRenderBundleEncoderPushDebugGroup = ?*const fn (renderBundleEncoder: WGPURenderBundleEncoder, groupLabel: WGPUStringView) callconv(.c) void;
 pub const WGPUProcRenderBundleEncoderSetBindGroup = ?*const fn (renderBundleEncoder: WGPURenderBundleEncoder, groupIndex: u32, group: WGPUBindGroup, dynamicOffsetCount: usize, dynamicOffsets: [*c]const u32) callconv(.c) void;
+pub const WGPUProcRenderBundleEncoderSetImmediates = ?*const fn (renderBundleEncoder: WGPURenderBundleEncoder, offset: u32, data: ?*const anyopaque, size: usize) callconv(.c) void;
 pub const WGPUProcRenderBundleEncoderSetIndexBuffer = ?*const fn (renderBundleEncoder: WGPURenderBundleEncoder, buffer: WGPUBuffer, format: WGPUIndexFormat, offset: u64, size: u64) callconv(.c) void;
 pub const WGPUProcRenderBundleEncoderSetLabel = ?*const fn (renderBundleEncoder: WGPURenderBundleEncoder, label: WGPUStringView) callconv(.c) void;
 pub const WGPUProcRenderBundleEncoderSetPipeline = ?*const fn (renderBundleEncoder: WGPURenderBundleEncoder, pipeline: WGPURenderPipeline) callconv(.c) void;
@@ -2288,6 +2292,7 @@ pub const WGPUProcRenderPassEncoderPopDebugGroup = ?*const fn (renderPassEncoder
 pub const WGPUProcRenderPassEncoderPushDebugGroup = ?*const fn (renderPassEncoder: WGPURenderPassEncoder, groupLabel: WGPUStringView) callconv(.c) void;
 pub const WGPUProcRenderPassEncoderSetBindGroup = ?*const fn (renderPassEncoder: WGPURenderPassEncoder, groupIndex: u32, group: WGPUBindGroup, dynamicOffsetCount: usize, dynamicOffsets: [*c]const u32) callconv(.c) void;
 pub const WGPUProcRenderPassEncoderSetBlendConstant = ?*const fn (renderPassEncoder: WGPURenderPassEncoder, color: [*c]const WGPUColor) callconv(.c) void;
+pub const WGPUProcRenderPassEncoderSetImmediates = ?*const fn (renderPassEncoder: WGPURenderPassEncoder, offset: u32, data: ?*const anyopaque, size: usize) callconv(.c) void;
 pub const WGPUProcRenderPassEncoderSetIndexBuffer = ?*const fn (renderPassEncoder: WGPURenderPassEncoder, buffer: WGPUBuffer, format: WGPUIndexFormat, offset: u64, size: u64) callconv(.c) void;
 pub const WGPUProcRenderPassEncoderSetLabel = ?*const fn (renderPassEncoder: WGPURenderPassEncoder, label: WGPUStringView) callconv(.c) void;
 pub const WGPUProcRenderPassEncoderSetPipeline = ?*const fn (renderPassEncoder: WGPURenderPassEncoder, pipeline: WGPURenderPipeline) callconv(.c) void;
@@ -2395,6 +2400,7 @@ pub extern fn wgpuComputePassEncoderInsertDebugMarker(computePassEncoder: WGPUCo
 pub extern fn wgpuComputePassEncoderPopDebugGroup(computePassEncoder: WGPUComputePassEncoder) void;
 pub extern fn wgpuComputePassEncoderPushDebugGroup(computePassEncoder: WGPUComputePassEncoder, groupLabel: WGPUStringView) void;
 pub extern fn wgpuComputePassEncoderSetBindGroup(computePassEncoder: WGPUComputePassEncoder, groupIndex: u32, group: WGPUBindGroup, dynamicOffsetCount: usize, dynamicOffsets: [*c]const u32) void;
+pub extern fn wgpuComputePassEncoderSetImmediates(computePassEncoder: WGPUComputePassEncoder, offset: u32, data: ?*const anyopaque, size: usize) void;
 pub extern fn wgpuComputePassEncoderSetLabel(computePassEncoder: WGPUComputePassEncoder, label: WGPUStringView) void;
 pub extern fn wgpuComputePassEncoderSetPipeline(computePassEncoder: WGPUComputePassEncoder, pipeline: WGPUComputePipeline) void;
 pub extern fn wgpuComputePassEncoderAddRef(computePassEncoder: WGPUComputePassEncoder) void;
@@ -2468,6 +2474,7 @@ pub extern fn wgpuRenderBundleEncoderInsertDebugMarker(renderBundleEncoder: WGPU
 pub extern fn wgpuRenderBundleEncoderPopDebugGroup(renderBundleEncoder: WGPURenderBundleEncoder) void;
 pub extern fn wgpuRenderBundleEncoderPushDebugGroup(renderBundleEncoder: WGPURenderBundleEncoder, groupLabel: WGPUStringView) void;
 pub extern fn wgpuRenderBundleEncoderSetBindGroup(renderBundleEncoder: WGPURenderBundleEncoder, groupIndex: u32, group: WGPUBindGroup, dynamicOffsetCount: usize, dynamicOffsets: [*c]const u32) void;
+pub extern fn wgpuRenderBundleEncoderSetImmediates(renderBundleEncoder: WGPURenderBundleEncoder, offset: u32, data: ?*const anyopaque, size: usize) void;
 pub extern fn wgpuRenderBundleEncoderSetIndexBuffer(renderBundleEncoder: WGPURenderBundleEncoder, buffer: WGPUBuffer, format: WGPUIndexFormat, offset: u64, size: u64) void;
 pub extern fn wgpuRenderBundleEncoderSetLabel(renderBundleEncoder: WGPURenderBundleEncoder, label: WGPUStringView) void;
 pub extern fn wgpuRenderBundleEncoderSetPipeline(renderBundleEncoder: WGPURenderBundleEncoder, pipeline: WGPURenderPipeline) void;
@@ -2487,6 +2494,7 @@ pub extern fn wgpuRenderPassEncoderPopDebugGroup(renderPassEncoder: WGPURenderPa
 pub extern fn wgpuRenderPassEncoderPushDebugGroup(renderPassEncoder: WGPURenderPassEncoder, groupLabel: WGPUStringView) void;
 pub extern fn wgpuRenderPassEncoderSetBindGroup(renderPassEncoder: WGPURenderPassEncoder, groupIndex: u32, group: WGPUBindGroup, dynamicOffsetCount: usize, dynamicOffsets: [*c]const u32) void;
 pub extern fn wgpuRenderPassEncoderSetBlendConstant(renderPassEncoder: WGPURenderPassEncoder, color: [*c]const WGPUColor) void;
+pub extern fn wgpuRenderPassEncoderSetImmediates(renderPassEncoder: WGPURenderPassEncoder, offset: u32, data: ?*const anyopaque, size: usize) void;
 pub extern fn wgpuRenderPassEncoderSetIndexBuffer(renderPassEncoder: WGPURenderPassEncoder, buffer: WGPUBuffer, format: WGPUIndexFormat, offset: u64, size: u64) void;
 pub extern fn wgpuRenderPassEncoderSetLabel(renderPassEncoder: WGPURenderPassEncoder, label: WGPUStringView) void;
 pub extern fn wgpuRenderPassEncoderSetPipeline(renderPassEncoder: WGPURenderPassEncoder, pipeline: WGPURenderPipeline) void;
@@ -2538,15 +2546,15 @@ pub extern fn wgpuTextureViewAddRef(textureView: WGPUTextureView) void;
 pub extern fn wgpuTextureViewRelease(textureView: WGPUTextureView) void;
 pub const WGPUSType_DeviceExtras: c_int = 196609;
 pub const WGPUSType_NativeLimits: c_int = 196610;
-pub const WGPUSType_PipelineLayoutExtras: c_int = 196611;
-pub const WGPUSType_ShaderSourceGLSL: c_int = 196612;
-pub const WGPUSType_InstanceExtras: c_int = 196614;
-pub const WGPUSType_BindGroupEntryExtras: c_int = 196615;
-pub const WGPUSType_BindGroupLayoutEntryExtras: c_int = 196616;
-pub const WGPUSType_QuerySetDescriptorExtras: c_int = 196617;
-pub const WGPUSType_SurfaceConfigurationExtras: c_int = 196618;
-pub const WGPUSType_SurfaceSourceSwapChainPanel: c_int = 196619;
-pub const WGPUSType_PrimitiveStateExtras: c_int = 196620;
+pub const WGPUSType_ShaderSourceGLSL: c_int = 196611;
+pub const WGPUSType_InstanceExtras: c_int = 196612;
+pub const WGPUSType_BindGroupEntryExtras: c_int = 196613;
+pub const WGPUSType_BindGroupLayoutEntryExtras: c_int = 196614;
+pub const WGPUSType_QuerySetDescriptorExtras: c_int = 196615;
+pub const WGPUSType_SurfaceConfigurationExtras: c_int = 196616;
+pub const WGPUSType_SurfaceSourceSwapChainPanel: c_int = 196617;
+pub const WGPUSType_PrimitiveStateExtras: c_int = 196618;
+pub const WGPUSType_SamplerDescriptorExtras: c_int = 196619;
 pub const WGPUNativeSType_Force32: c_int = 2147483647;
 pub const enum_WGPUNativeSType = c_uint;
 pub const WGPUNativeSType = enum_WGPUNativeSType;
@@ -2568,6 +2576,8 @@ pub const WGPUNativeFeature_TextureCompressionAstcHdr: c_int = 196620;
 pub const WGPUNativeFeature_MappablePrimaryBuffers: c_int = 196622;
 pub const WGPUNativeFeature_BufferBindingArray: c_int = 196623;
 pub const WGPUNativeFeature_StorageTextureArrayNonUniformIndexing: c_int = 196624;
+pub const WGPUNativeFeature_AddressModeClampToZero: c_int = 196625;
+pub const WGPUNativeFeature_AddressModeClampToBorder: c_int = 196626;
 pub const WGPUNativeFeature_PolygonModeLine: c_int = 196627;
 pub const WGPUNativeFeature_PolygonModePoint: c_int = 196628;
 pub const WGPUNativeFeature_ConservativeRasterization: c_int = 196629;
@@ -2743,11 +2753,6 @@ pub const struct_WGPUNativeLimits = extern struct {
     maxMultiviewViewCount: u32 = 0,
 };
 pub const WGPUNativeLimits = struct_WGPUNativeLimits;
-pub const struct_WGPUPipelineLayoutExtras = extern struct {
-    chain: WGPUChainedStruct = @import("std").mem.zeroes(WGPUChainedStruct),
-    immediateDataSize: u32 = 0,
-};
-pub const WGPUPipelineLayoutExtras = struct_WGPUPipelineLayoutExtras;
 pub const WGPUSubmissionIndex = u64;
 pub const struct_WGPUShaderDefine = extern struct {
     name: WGPUStringView = @import("std").mem.zeroes(WGPUStringView),
@@ -2848,12 +2853,6 @@ pub const struct_WGPUPrimitiveStateExtras = extern struct {
 };
 pub const WGPUPrimitiveStateExtras = struct_WGPUPrimitiveStateExtras;
 pub const WGPULogCallback = ?*const fn (level: WGPULogLevel, message: WGPUStringView, userdata: ?*anyopaque) callconv(.c) void;
-pub const WGPUNativeTextureFormat_R16Unorm: c_int = 196609;
-pub const WGPUNativeTextureFormat_R16Snorm: c_int = 196610;
-pub const WGPUNativeTextureFormat_Rg16Unorm: c_int = 196611;
-pub const WGPUNativeTextureFormat_Rg16Snorm: c_int = 196612;
-pub const WGPUNativeTextureFormat_Rgba16Unorm: c_int = 196613;
-pub const WGPUNativeTextureFormat_Rgba16Snorm: c_int = 196614;
 pub const WGPUNativeTextureFormat_NV12: c_int = 196615;
 pub const WGPUNativeTextureFormat_P010: c_int = 196616;
 pub const enum_WGPUNativeTextureFormat = c_uint;
@@ -2866,6 +2865,30 @@ pub const struct_WGPUImageSubresourceRange = extern struct {
     arrayLayerCount: u32 = 0,
 };
 pub const WGPUImageSubresourceRange = struct_WGPUImageSubresourceRange;
+pub const WGPUShaderRuntimeChecks = WGPUFlags;
+pub const WGPUShaderRuntimeChecks_None: WGPUShaderRuntimeChecks = 0;
+pub const WGPUShaderRuntimeChecks_BoundsChecks: WGPUShaderRuntimeChecks = 1;
+pub const WGPUShaderRuntimeChecks_ForceLoopBounding: WGPUShaderRuntimeChecks = 2;
+pub const WGPUShaderRuntimeChecks_RayQueryInitializationTracking: WGPUShaderRuntimeChecks = 4;
+pub const WGPUShaderRuntimeChecks_TaskShaderDispatchTracking: WGPUShaderRuntimeChecks = 8;
+pub const WGPUShaderRuntimeChecks_MeshShaderPrimitiveIndicesClamp: WGPUShaderRuntimeChecks = 16;
+pub const WGPUNativeAddressMode_ClampToBorder: c_int = 4;
+pub const WGPUNativeAddressMode_Force32: c_int = 2147483647;
+pub const enum_WGPUNativeAddressMode = c_uint;
+pub const WGPUNativeAddressMode = enum_WGPUNativeAddressMode;
+pub const WGPUSamplerBorderColor_Undefined: c_int = 0;
+pub const WGPUSamplerBorderColor_TransparentBlack: c_int = 1;
+pub const WGPUSamplerBorderColor_OpaqueBlack: c_int = 2;
+pub const WGPUSamplerBorderColor_OpaqueWhite: c_int = 3;
+pub const WGPUSamplerBorderColor_Zero: c_int = 4;
+pub const WGPUSamplerBorderColor_Force32: c_int = 2147483647;
+pub const enum_WGPUSamplerBorderColor = c_uint;
+pub const WGPUSamplerBorderColor = enum_WGPUSamplerBorderColor;
+pub const struct_WGPUSamplerDescriptorExtras = extern struct {
+    chain: WGPUChainedStruct = @import("std").mem.zeroes(WGPUChainedStruct),
+    samplerBorderColor: WGPUSamplerBorderColor = @import("std").mem.zeroes(WGPUSamplerBorderColor),
+};
+pub const WGPUSamplerDescriptorExtras = struct_WGPUSamplerDescriptorExtras;
 pub extern fn wgpuGenerateReport(instance: WGPUInstance, report: [*c]WGPUGlobalReport) void;
 pub extern fn wgpuInstanceEnumerateAdapters(instance: WGPUInstance, options: [*c]const WGPUInstanceEnumerateAdapterOptions, adapters: [*c]WGPUAdapter) usize;
 pub extern fn wgpuQueueSubmitForIndex(queue: WGPUQueue, commandCount: usize, commands: [*c]const WGPUCommandBuffer) WGPUSubmissionIndex;
@@ -2878,9 +2901,6 @@ pub extern fn wgpuGetVersion() u32;
 pub extern fn wgpuDeviceGetNativeMetalDevice(device: WGPUDevice) ?*anyopaque;
 pub extern fn wgpuQueueGetNativeMetalCommandQueue(queue: WGPUQueue) ?*anyopaque;
 pub extern fn wgpuTextureGetNativeMetalTexture(texture: WGPUTexture) ?*anyopaque;
-pub extern fn wgpuRenderPassEncoderSetImmediates(encoder: WGPURenderPassEncoder, offset: u32, sizeBytes: u32, data: ?*const anyopaque) void;
-pub extern fn wgpuComputePassEncoderSetImmediates(encoder: WGPUComputePassEncoder, offset: u32, sizeBytes: u32, data: ?*const anyopaque) void;
-pub extern fn wgpuRenderBundleEncoderSetImmediates(encoder: WGPURenderBundleEncoder, offset: u32, sizeBytes: u32, data: ?*const anyopaque) void;
 pub extern fn wgpuRenderPassEncoderMultiDrawIndirect(encoder: WGPURenderPassEncoder, buffer: WGPUBuffer, offset: u64, count: u32) void;
 pub extern fn wgpuRenderPassEncoderMultiDrawIndexedIndirect(encoder: WGPURenderPassEncoder, buffer: WGPUBuffer, offset: u64, count: u32) void;
 pub extern fn wgpuRenderPassEncoderMultiDrawIndirectCount(encoder: WGPURenderPassEncoder, buffer: WGPUBuffer, offset: u64, count_buffer: WGPUBuffer, count_buffer_offset: u64, max_count: u32) void;
@@ -2894,6 +2914,7 @@ pub extern fn wgpuRenderPassEncoderWriteTimestamp(renderPassEncoder: WGPURenderP
 pub extern fn wgpuDeviceStartGraphicsDebuggerCapture(device: WGPUDevice) WGPUBool;
 pub extern fn wgpuDeviceStopGraphicsDebuggerCapture(device: WGPUDevice) void;
 pub extern fn wgpuCommandEncoderClearTexture(commandEncoder: WGPUCommandEncoder, texture: WGPUTexture, range: [*c]const WGPUImageSubresourceRange) void;
+pub extern fn wgpuDeviceCreateShaderModuleTrusted(device: WGPUDevice, descriptor: [*c]const WGPUShaderModuleDescriptor, runtimeChecks: WGPUShaderRuntimeChecks) WGPUShaderModule;
 
 pub const __VERSION__ = "Aro aro-zig";
 pub const __Aro__ = "";
@@ -4298,187 +4319,187 @@ pub const WGPU_WHOLE_SIZE = UINT64_MAX;
 pub const WGPU_STRING_VIEW_INIT = @compileError("unable to translate C expr: unexpected token '{'");
 // vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:201:9
 pub const WGPU_BUFFER_MAP_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1548:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1549:9
 pub const WGPU_COMPILATION_INFO_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1572:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1573:9
 pub const WGPU_CREATE_COMPUTE_PIPELINE_ASYNC_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1596:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1597:9
 pub const WGPU_CREATE_RENDER_PIPELINE_ASYNC_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1620:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1621:9
 pub const WGPU_DEVICE_LOST_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1644:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1645:9
 pub const WGPU_POP_ERROR_SCOPE_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1668:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1669:9
 pub const WGPU_QUEUE_WORK_DONE_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1692:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1693:9
 pub const WGPU_REQUEST_ADAPTER_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1716:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1717:9
 pub const WGPU_REQUEST_DEVICE_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1740:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1741:9
 pub const WGPU_UNCAPTURED_ERROR_CALLBACK_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1758:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1759:9
 pub const WGPU_ADAPTER_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1825:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1826:9
 pub const WGPU_BLEND_COMPONENT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1869:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1870:9
 pub const WGPU_BUFFER_BINDING_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1900:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1901:9
 pub const WGPU_BUFFER_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1939:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1940:9
 pub const WGPU_COLOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1976:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1977:9
 pub const WGPU_COMMAND_BUFFER_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:1999:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2000:9
 pub const WGPU_COMMAND_ENCODER_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2020:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2021:9
 pub const WGPU_COMPATIBILITY_MODE_LIMITS_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2055:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2056:9
 pub const WGPU_COMPILATION_MESSAGE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2117:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2118:9
 pub const WGPU_CONSTANT_ENTRY_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2151:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2152:9
 pub const WGPU_EXTENT_3D_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2178:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2179:9
 pub const WGPU_EXTERNAL_TEXTURE_BINDING_ENTRY_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2200:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2201:9
 pub const WGPU_EXTERNAL_TEXTURE_BINDING_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2220:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2221:9
 pub const WGPU_FUTURE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2244:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2245:9
 pub const WGPU_INSTANCE_LIMITS_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2264:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2265:9
 pub const WGPU_MULTISAMPLE_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2291:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2292:9
 pub const WGPU_ORIGIN_3D_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2319:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2320:9
 pub const WGPU_PASS_TIMESTAMP_WRITES_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2349:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2350:9
 pub const WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2384:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2385:9
 pub const WGPU_PRIMITIVE_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2431:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2432:9
 pub const WGPU_QUERY_SET_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2464:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2465:9
 pub const WGPU_QUEUE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2487:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2488:9
 pub const WGPU_RENDER_BUNDLE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2508:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2509:9
 pub const WGPU_RENDER_BUNDLE_ENCODER_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2553:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2554:9
 pub const WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2617:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2618:9
 pub const WGPU_RENDER_PASS_MAX_DRAW_COUNT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2644:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2645:9
 pub const WGPU_REQUEST_ADAPTER_WEBXR_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2670:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2671:9
 pub const WGPU_SAMPLER_BINDING_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2695:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2696:9
 pub const WGPU_SAMPLER_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2782:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2783:9
 pub const WGPU_SHADER_SOURCE_SPIRV_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2815:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2816:9
 pub const WGPU_SHADER_SOURCE_WGSL_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2840:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2841:9
 pub const WGPU_STENCIL_FACE_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2885:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2886:9
 pub const WGPU_STORAGE_TEXTURE_BINDING_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2920:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2921:9
 pub const WGPU_SUPPORTED_FEATURES_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2944:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2945:9
 pub const WGPU_SUPPORTED_INSTANCE_FEATURES_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2966:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2967:9
 pub const WGPU_SUPPORTED_WGSL_LANGUAGE_FEATURES_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2988:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:2989:9
 pub const WGPU_SURFACE_CAPABILITIES_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3044:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3045:9
 pub const WGPU_SURFACE_COLOR_MANAGEMENT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3075:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3076:9
 pub const WGPU_SURFACE_CONFIGURATION_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3156:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3157:9
 pub const WGPU_SURFACE_SOURCE_ANDROID_NATIVE_WINDOW_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3187:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3188:9
 pub const WGPU_SURFACE_SOURCE_METAL_LAYER_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3213:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3214:9
 pub const WGPU_SURFACE_SOURCE_WAYLAND_SURFACE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3245:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3246:9
 pub const WGPU_SURFACE_SOURCE_WINDOWS_HWND_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3279:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3280:9
 pub const WGPU_SURFACE_SOURCE_XCB_WINDOW_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3312:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3313:9
 pub const WGPU_SURFACE_SOURCE_XLIB_WINDOW_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3345:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3346:9
 pub const WGPU_SURFACE_TEXTURE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3380:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3381:9
 pub const WGPU_TEXEL_COPY_BUFFER_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3407:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3408:9
 pub const WGPU_TEXTURE_BINDING_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3441:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3442:9
 pub const WGPU_TEXTURE_BINDING_VIEW_DIMENSION_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3466:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3467:9
 pub const WGPU_TEXTURE_COMPONENT_SWIZZLE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3524:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3525:9
 pub const WGPU_VERTEX_ATTRIBUTE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3553:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3554:9
 pub const WGPU_BIND_GROUP_ENTRY_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3612:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3613:9
 pub const WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3662:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3663:9
 pub const WGPU_BLEND_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3690:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3691:9
 pub const WGPU_COMPILATION_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3716:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3717:9
 pub const WGPU_COMPUTE_PASS_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3742:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3743:9
 pub const WGPU_COMPUTE_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3776:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3777:9
 pub const WGPU_DEPTH_STENCIL_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3842:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3843:9
 pub const WGPU_FUTURE_WAIT_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3879:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3880:9
 pub const WGPU_INSTANCE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3906:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:3907:9
 pub const WGPU_LIMITS_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4051:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4052:9
 pub const WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4124:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4125:9
 pub const WGPU_REQUEST_ADAPTER_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4180:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4181:9
 pub const WGPU_SHADER_MODULE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4205:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4206:9
 pub const WGPU_SURFACE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4232:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4233:9
 pub const WGPU_TEXEL_COPY_BUFFER_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4254:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4255:9
 pub const WGPU_TEXEL_COPY_TEXTURE_INFO_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4287:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4288:9
 pub const WGPU_TEXTURE_COMPONENT_SWIZZLE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4308:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4309:9
 pub const WGPU_TEXTURE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4367:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4368:9
 pub const WGPU_VERTEX_BUFFER_LAYOUT_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4419:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4420:9
 pub const WGPU_BIND_GROUP_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4455:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4456:9
 pub const WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4487:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4488:9
 pub const WGPU_COLOR_TARGET_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4520:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4521:9
 pub const WGPU_COMPUTE_PIPELINE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4551:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4552:9
 pub const WGPU_DEVICE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4603:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4604:9
 pub const WGPU_RENDER_PASS_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4650:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4651:9
 pub const WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4711:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4712:9
 pub const WGPU_VERTEX_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4760:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4761:9
 pub const WGPU_FRAGMENT_STATE_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4806:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4807:9
 pub const WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4856:9
+// vendor/wgpu-native/ffi/webgpu-headers/webgpu.h:4857:9
 pub const WGPU_NATIVE_LIMITS_INIT = @compileError("unable to translate C expr: unexpected token '{'");
-// vendor/wgpu-native/ffi/wgpu.h:1223:9
+// vendor/wgpu-native/ffi/wgpu.h:1222:9
 pub const WGPUAdapterImpl = struct_WGPUAdapterImpl;
 pub const WGPUBindGroupImpl = struct_WGPUBindGroupImpl;
 pub const WGPUBindGroupLayoutImpl = struct_WGPUBindGroupLayoutImpl;

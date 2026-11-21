@@ -37,11 +37,8 @@ pub fn build(b: *std.Build) !void {
     state.host = b.graph.host;
     state.target = b.standardTargetOptions(.{});
     state.optimize = b.standardOptimizeOption(.{});
-    state.do_tests = b.option(bool, "test", "Run tests.") orelse false;
-    // Zig 0.18: emulation flags are no longer exposed on `*std.Build`; they live in the
-    // serialized build Configuration and the Run step appends the relevant `-fqemu`/`-fwine`/...
-    // arguments itself. Cross tests are therefore opt-in here, or implied by the emitted
-    // configuration when the build runner has an emulator available.
+    state.do_tests = b.option(bool, "test", "Build the test suites (run them with `zig build test`).") orelse false;
+    // The 0.18 build API has no emulation flags, so the run step adds -fqemu/-fwine itself.
     state.test_cross = b.option(bool, "force-cross-tests", "Force run tests when crosscompiling regardless of emulation flags.") orelse false;
     state.test_headed = b.option(bool, "headed-tests", "Run headed tests on top of default headless tests") orelse false;
 
@@ -100,9 +97,10 @@ pub fn build(b: *std.Build) !void {
     }
 
     if (state.mode == .full or state.mode == .codegen) {
-        state.translate_step = try translateC(state);
-        state.codegen_step = try codegen(state);
-        state.codegen_step.?.dependOn(state.translate_step.?); 
+        const translated = try translateC(state);
+        state.translate_step = translated.step;
+        state.codegen_step = try codegen(state, translated.source);
+        state.codegen_step.?.dependOn(state.translate_step.?);
     }
 
     if (state.mode == .full or state.mode == .codegen or state.mode == .minimal) {
@@ -147,7 +145,13 @@ fn cargoBuild(state: *State) !*Step {
     return step;
 }
 
-fn translateC(state: *State) !*Step {
+/// The translate-c output. Pass it to codegen so one build pass regenerates everything.
+const TranslatedHeaders = struct {
+    step: *Step,
+    source: LazyPath,
+};
+
+fn translateC(state: *State) !TranslatedHeaders {
     const run_translate_c = state.build.addTranslateC(.{
         .root_source_file = state.build.path("vendor/wgpu-native/ffi/wgpu.h"),
         .optimize = state.optimize,
@@ -172,10 +176,10 @@ fn translateC(state: *State) !*Step {
 
     const step = state.build.step("translate-c", "Translate wgpu.h into initial .zig root bindings.");
     step.dependOn(&update_source.step);
-    return step;
+    return .{ .step = step, .source = c_bindings_source };
 }
 
-fn codegen(state: *State) !*Step {
+fn codegen(state: *State, translated_source: LazyPath) !*Step {
     const mod = state.build.addModule("z_wgpu_native_gen", .{
         .root_source_file = state.build.path("build/main.zig"),
         .optimize = state.optimize,
@@ -186,13 +190,14 @@ fn codegen(state: *State) !*Step {
         .name = "z_wgpu_native_gen",
     });
     const tests = state.build.addTest(.{
+        .name = "codegen",
         .root_module = mod,
     });
 
     const run_tests = state.build.addRunArtifact(tests);
 
     const run = state.build.addRunArtifact(exe);
-    run.addFileArg(state.build.path("src/c-wgpu.zig"));
+    run.addFileArg(translated_source);
     run.step.dependOn(&run_tests.step); 
     const out = state.build.tmpPath();
     run.addDirectoryArg(out);
@@ -201,10 +206,11 @@ fn codegen(state: *State) !*Step {
     update_source.addCopyFileToSource(out.path(state.build, "callbacks.zig"), "src/callbacks.zig");
     update_source.addCopyFileToSource(out.path(state.build, "handles.zig"), "src/handles.zig");
     update_source.addCopyFileToSource(out.path(state.build, "root.zig"), "src/root.zig");
+    update_source.addCopyFileToSource(out.path(state.build, "builders.zig"), "src/builders.zig");
     update_source.addCopyFileToSource(out.path(state.build, "types.zig"), "src/types.zig");
     update_source.step.dependOn(&run.step);
 
-    const step = state.build.step("codegen", "Runs codegen based on src/c-wgpu.zig translated headers and copies them into src/.");
+    const step = state.build.step("codegen", "Runs codegen based on the translate-c output and copies it into src/.");
     step.dependOn(&update_source.step);
     return step;
 }
@@ -298,19 +304,24 @@ fn library(state: *State) !*Step {
             }
         }
         
-        const lib_test = state.build.addTest(.{ 
+        const lib_test = state.build.addTest(.{
+            .name = "lib",
             .root_module = lib_test_mod,
         });
-        const abi_test = state.build.addTest(.{ 
+        const abi_test = state.build.addTest(.{
+            .name = "abi",
             .root_module = abi_test_mod,
         });
-        const compute_test = state.build.addTest(.{ 
+        const compute_test = state.build.addTest(.{
+            .name = "compute",
             .root_module = compute_test_mod,
         });
-        const triangle_test = state.build.addTest(.{ 
+        const triangle_test = state.build.addTest(.{
+            .name = "triangle",
             .root_module = triangle_test_mod,
         });
-        const rgbw_test = state.build.addTest(.{ 
+        const rgbw_test = state.build.addTest(.{
+            .name = "rgbw",
             .root_module = rgbw_test_mod,
         });
 

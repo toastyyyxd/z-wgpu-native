@@ -287,7 +287,7 @@
         program = "${packages.default}/bin/default";
       };
       build   = env.app [] "zig build \"$@\"";
-      test    = env.app [] "zig build -Dtest=true -- \"$@\"";
+      test    = env.app [] "zig build test -Dtest=true -- \"$@\"";
       zig2nix = env.app [] "zig2nix \"$@\"";
     };
 
