@@ -101,7 +101,7 @@ zig build -Dmode=full
 | `aarch64-linux-android` | `wgpu-android-aarch64-release.zip` | `lib/libwgpu_native.a` | `android` `m` | ✅ | ❌ |
 | `arm-linux-android` | `wgpu-android-armv7-release.zip` | `lib/libwgpu_native.a` | `android` `m` | ✅ | ❌ |
 | `x86_64-linux-android` | `wgpu-android-x86_64-release.zip` | `lib/libwgpu_native.a` | `android` `m` | ✅ | ❌ |
-| macOS | `wgpu-macos-<arch>-release.zip` | `lib/libwgpu_native.a` | | ❌ | ❌ |
+| macOS | `wgpu-macos-<arch>-release.zip` | `lib/libwgpu_native.a` | | ❌ | 🔘 |
 
 `✅` full suites, `🔘` `abi` and `lib` only, `❌` not run.
 
