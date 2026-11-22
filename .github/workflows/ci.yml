@@ -118,5 +118,22 @@ jobs:
           if [ -e /proc/sys/kernel/unprivileged_userns_clone ]; then
             sudo sysctl -w kernel.unprivileged_userns_clone=1
           fi
-      - name: nix build
-        run: nix build .#${{ matrix.target }} --no-link --print-out-paths
+      - name: Build ${{ matrix.target }}
+        run: |
+          set -eu
+          out="$(nix build .#${{ matrix.target }} --no-link --print-out-paths)"
+          mkdir -p out
+          for src in libwgpu_native.a wgpu_native.lib libz_wgpu_native.a z_wgpu_native.lib; do
+            if [ -f "$out/lib/$src" ]; then
+              base="${src%.*}"
+              ext="${src##*.}"
+              cp "$out/lib/$src" "out/${base}-${{ matrix.target }}.${ext}"
+            fi
+          done
+          ls -l out/
+      - uses: actions/upload-artifact@v7
+        with:
+          name: libs-${{ matrix.target }}
+          path: out/
+          if-no-files-found: error
+          retention-days: 14
