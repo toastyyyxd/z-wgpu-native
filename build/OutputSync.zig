@@ -247,7 +247,7 @@ pub fn writePrelude(buf: *std.array_list.Managed(u8), mapping: *Mapping, decls: 
     for (decls) |decl| {
         try buf.print(
             \\pub const {s} = struct {{
-            \\    status: {s} = undefined,
+            \\    status: {s} = .@"undefined",
             \\
         , .{ decl.result_type, decl.status_zig });
         if (decl.out_field) |field| {
@@ -255,19 +255,49 @@ pub fn writePrelude(buf: *std.array_list.Managed(u8), mapping: *Mapping, decls: 
         }
         if (decl.has_message) {
             try buf.appendSlice(
-                \\    message_buf: [512]u8 = undefined,
-                \\    message_len: usize = 0,
+                \\    message: ?[]u8 = null,
                 \\
-                \\    pub fn message(self: *const @This()) []const u8 {
-                \\        return self.message_buf[0..self.message_len];
+                \\    pub fn text(self: *const @This()) []const u8 {
+                \\        return self.message orelse "";
+                \\    }
+                \\
+                \\    pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
+                \\        if (self.message) |m| allocator.free(m);
+                \\        self.message = null;
                 \\    }
                 \\
             );
+            try buf.appendSlice("\n");
+        }
+        if (std.mem.endsWith(u8, decl.result_type, "Result")) {
+            const base_name = decl.result_type[0 .. decl.result_type.len - "Result".len];
+            if (decl.out_handle) |h| {
+                try buf.print(
+                    \\    pub fn try{s}(self: *const @This()) {s}Error!*{s} {{
+                    \\        if (self.status == .@"undefined") return error.Error;
+                    \\        try self.status.toError();
+                    \\        return self.{s} orelse error.Error;
+                    \\    }}
+                    \\
+                , .{ h, decl.status_zig, h, decl.out_field.? });
+            } else {
+                try buf.print(
+                    \\    pub fn try{s}(self: *const @This()) {s}Error!void {{
+                    \\        if (self.status == .@"undefined") return error.Error;
+                    \\        try self.status.toError();
+                    \\    }}
+                    \\
+                , .{ base_name, decl.status_zig });
+            }
         }
         try buf.appendSlice("};\n\n");
 
         // Per-call completion state.
-        try buf.print("const {s} = struct {{ response: {s} = .{{}}, done: bool = false }};\n\n", .{ decl.ctx_type, decl.result_type });
+        if (decl.has_message) {
+            try buf.print("const {s} = struct {{ allocator: std.mem.Allocator, response: {s} = .{{}}, done: bool = false, oom: bool = false, abandoned: bool = false }};\n\n", .{ decl.ctx_type, decl.result_type });
+        } else {
+            try buf.print("const {s} = struct {{ response: {s} = .{{}}, done: bool = false }};\n\n", .{ decl.ctx_type, decl.result_type });
+        }
 
         // The trampoline signature follows the callback typedef.
         try buf.print("fn {s}(", .{decl.trampoline});
@@ -289,14 +319,26 @@ pub fn writePrelude(buf: *std.array_list.Managed(u8), mapping: *Mapping, decls: 
                     if (!decl.has_message) continue;
                     try buf.print(
                         \\    if ({s}.data) |d| {{
-                        \\        const n = @min({s}.length, ctx.response.message_buf.len);
-                        \\        @memcpy(ctx.response.message_buf[0..n], d[0..n]);
-                        \\        ctx.response.message_len = n;
+                        \\        ctx.response.message = ctx.allocator.dupe(u8, d[0..{s}.length]) catch {{
+                        \\            ctx.oom = true;
+                        \\            ctx.done = true;
+                        \\            return;
+                        \\        }};
                         \\    }}
                         \\
                     , .{ p.name, p.name });
                 },
             }
+        }
+        if (!decl.uses_instance and decl.has_message) {
+            try buf.appendSlice(
+                \\    if (ctx.abandoned) {
+                \\        if (ctx.response.message) |m| ctx.allocator.free(m);
+                \\        ctx.allocator.destroy(ctx);
+                \\        return;
+                \\    }
+                \\
+            );
         }
         try buf.appendSlice("    ctx.done = true;\n}\n\n");
     }
@@ -314,15 +356,45 @@ pub fn writeMethodsFor(buf: *std.array_list.Managed(u8), decls: []const SyncDecl
         }
         const instance_name = if (has_instance_param) "wait_instance" else "instance";
 
+        const polls = !decl.uses_instance;
+        const timed = polls and decl.has_message;
+        const device_expr = if (decl.needs_device) "device" else "self";
+
         try buf.print("    pub fn {s}(self: *{s}, io: std.Io", .{ decl.sync_name, hzname });
+        if (decl.has_message) try buf.appendSlice(", allocator: std.mem.Allocator");
         if (decl.needs_device) try buf.appendSlice(", device: *Device");
         if (decl.needs_instance) try buf.print(", {s}: *Instance", .{instance_name});
         for (decl.params) |p| {
             try buf.print(", {s}: {s}", .{ p.name, p.zig_type });
         }
-        try buf.print(") types.WaitStatusError!{s} {{\n", .{decl.result_type});
+        if (timed) try buf.appendSlice(", timeout: std.Io.Timeout");
 
-        try buf.print("        var ctx: {s} = .{{}};\n", .{decl.ctx_type});
+        if (decl.has_message) {
+            if (timed) {
+                try buf.print(") (std.mem.Allocator.Error || std.Io.Timeout.Error)!{s} {{\n", .{decl.result_type});
+            } else {
+                try buf.print(") std.mem.Allocator.Error!{s} {{\n", .{decl.result_type});
+            }
+        } else {
+            try buf.print(") {s} {{\n", .{decl.result_type});
+        }
+
+        if (timed) {
+            try buf.print("        var stack_ctx: {s} = .{{ .allocator = allocator }};\n", .{decl.ctx_type});
+            try buf.print("        const ctx: *{s} = if (timeout == .none) &stack_ctx else blk: {{\n", .{decl.ctx_type});
+            try buf.print("            const heap_ctx = allocator.create({s}) catch return error.OutOfMemory;\n", .{decl.ctx_type});
+            try buf.appendSlice("            heap_ctx.* = .{ .allocator = allocator };\n");
+            try buf.appendSlice("            break :blk heap_ctx;\n        };\n");
+        } else if (decl.has_message) {
+            try buf.print("        var ctx: {s} = .{{ .allocator = allocator }};\n", .{decl.ctx_type});
+        } else {
+            try buf.print("        var ctx: {s} = .{{}};\n", .{decl.ctx_type});
+        }
+        if (!polls) {
+            try buf.appendSlice("        _ = io;\n");
+            if (decl.needs_instance) try buf.print("        _ = {s};\n", .{instance_name});
+        }
+
         try buf.print("        const future = self.{s}{s}(", .{ decl.method, if (decl.use_raw_call) "Raw" else "" });
         var first_arg = true;
         for (decl.params) |p| {
@@ -331,29 +403,99 @@ pub fn writeMethodsFor(buf: *std.array_list.Managed(u8), decls: []const SyncDecl
             first_arg = false;
         }
         if (!first_arg) try buf.appendSlice(", ");
+        const ctx_arg = if (timed) "ctx" else "&ctx";
         try buf.print(
-            "{s}{{ .mode = .allow_process_events, .callback = &{s}, .userdata1 = @ptrCast(&ctx) }});\n",
-            .{ decl.callback_info_zig, decl.trampoline },
+            "{s}{{ .mode = .allow_process_events, .callback = &{s}, .userdata1 = @ptrCast({s}) }});\n",
+            .{ decl.callback_info_zig, decl.trampoline, ctx_arg },
         );
         try buf.appendSlice("        _ = future;\n");
-        const instance_expr = if (decl.needs_instance) instance_name else "self";
-        if (decl.uses_instance) {
-            try buf.appendSlice("        var spins: u32 = 0;\n");
-            try buf.appendSlice("        while (!ctx.done) {\n");
-            try buf.print("            {s}.processEvents();\n", .{instance_expr});
-            try buf.appendSlice("            if (ctx.done) break;\n");
-            try buf.appendSlice("            if (spins < 16) {\n                spins += 1;\n                continue;\n            }\n");
-            try buf.appendSlice("            std.Io.sleep(io, std.Io.Duration.fromMilliseconds(1), .awake) catch {};\n");
-            try buf.appendSlice("        }\n");
-        } else {
-            const device_expr = if (decl.needs_device) "device" else "self";
+
+        if (timed) {
+            try buf.print(
+                \\        if (timeout == .none) {{
+                \\            while (!ctx.done) _ = {s}.poll(true, null);
+                \\        }} else {{
+                \\            const deadline = switch (timeout) {{
+                \\                .none => unreachable,
+                \\                .duration => |d| std.Io.Clock.Timestamp.fromNow(io, d),
+                \\                .deadline => |d| d,
+                \\            }};
+                \\            var spins: u32 = 0;
+                \\            while (!ctx.done) {{
+                \\                _ = {s}.poll(false, null);
+                \\                if (ctx.done) break;
+                \\                const remaining_ns = deadline.durationFromNow(io).raw.nanoseconds;
+                \\                if (remaining_ns <= 0) {{
+                \\                    ctx.abandoned = true;
+                \\                    return error.Timeout;
+                \\                }}
+                \\                if (spins < 16) {{
+                \\                    spins += 1;
+                \\                    continue;
+                \\                }}
+                \\                const sleep_ns = @min(remaining_ns, 1_000_000);
+                \\                std.Io.sleep(io, std.Io.Duration.fromNanoseconds(sleep_ns), deadline.clock) catch {{}};
+                \\            }}
+                \\        }}
+                \\
+                \\        const oom = ctx.oom;
+                \\        const response = ctx.response;
+                \\        if (timeout != .none) allocator.destroy(ctx);
+                \\        if (oom) return error.OutOfMemory;
+                \\        return response;
+                \\
+            , .{ device_expr, device_expr });
+        } else if (polls) {
             try buf.appendSlice("        while (!ctx.done) {\n");
             try buf.print("            _ = {s}.poll(true, null);\n", .{device_expr});
-            try buf.appendSlice("            if (ctx.done) break;\n");
-            try buf.appendSlice("            std.Io.sleep(io, std.Io.Duration.fromMilliseconds(1), .awake) catch {};\n");
             try buf.appendSlice("        }\n");
+            if (decl.has_message) try buf.appendSlice("        if (ctx.oom) return error.OutOfMemory;\n");
+            try buf.appendSlice("        return ctx.response;\n");
+        } else {
+            if (decl.has_message) try buf.appendSlice("        if (ctx.oom) return error.OutOfMemory;\n");
+            try buf.appendSlice("        return ctx.response;\n");
         }
-        try buf.appendSlice("        return ctx.response;\n");
         try buf.appendSlice("    }\n\n");
+    }
+
+    if (std.mem.eql(u8, hzname, "Instance")) {
+        for (decls) |decl| {
+            if (!decl.needs_instance) continue;
+            if (std.mem.eql(u8, decl.receiver, "Instance")) continue;
+
+            var collision = false;
+            for (decls) |other| {
+                if (std.mem.eql(u8, other.receiver, "Instance") and std.mem.eql(u8, other.sync_name, decl.sync_name)) {
+                    collision = true;
+                    break;
+                }
+            }
+            if (collision) continue;
+
+            var has_adapter_param = false;
+            for (decl.params) |p| {
+                if (std.mem.eql(u8, p.name, "adapter")) has_adapter_param = true;
+            }
+            const adapter_name = if (has_adapter_param) "device_adapter" else "adapter";
+
+            try buf.print("    pub fn {s}(self: *Instance, io: std.Io", .{decl.sync_name});
+            if (decl.has_message) try buf.appendSlice(", allocator: std.mem.Allocator");
+            try buf.print(", {s}: *{s}", .{ adapter_name, decl.receiver });
+            for (decl.params) |p| {
+                try buf.print(", {s}: {s}", .{ p.name, p.zig_type });
+            }
+            if (decl.has_message) {
+                try buf.print(") std.mem.Allocator.Error!{s} {{\n", .{decl.result_type});
+            } else {
+                try buf.print(") {s} {{\n", .{decl.result_type});
+            }
+            try buf.print("        return {s}.{s}(io", .{ adapter_name, decl.sync_name });
+            if (decl.has_message) try buf.appendSlice(", allocator");
+            try buf.appendSlice(", self");
+            for (decl.params) |p| {
+                try buf.print(", {s}", .{p.name});
+            }
+            try buf.appendSlice(");\n    }\n\n");
+        }
     }
 }

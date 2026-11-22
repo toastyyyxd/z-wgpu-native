@@ -1,5 +1,5 @@
 # The wgpu-native release the checked-in bindings come from.
-# Keep vendor/, ffi/webgpu-headers and the readme in sync (tools/check-wgpu-pin.sh).
+# Keep vendor/, ffi/webgpu-headers and the readme in sync.
 wgpu_native_tag=v29.0.1.1
 wgpu_native_commit=6aed50955d934ac36049ba8d002034841633ae02
 webgpu_headers_commit=673658bc2bd70ec39fc55ebe6bb0173cf6d0a603

@@ -156,3 +156,54 @@ test "all generated structs are default-constructible" {
         try std.testing.expectEqual(@as(usize, @sizeOf(T)), @sizeOf(@TypeOf(value)));
     }
 }
+
+test "out structs zero-init to a null chained pointer" {
+    const limits: z.types.Limits = .{};
+    try std.testing.expect(limits.next_in_chain == null);
+
+    const adapter_info: z.types.AdapterInfo = .{};
+    try std.testing.expect(adapter_info.next_in_chain == null);
+
+    const capabilities: z.types.SurfaceCapabilities = .{};
+    try std.testing.expect(capabilities.next_in_chain == null);
+
+    const instance_limits: z.types.InstanceLimits = .{};
+    try std.testing.expect(instance_limits.next_in_chain == null);
+}
+
+test "out structs with C FreeMembers expose deinit" {
+    comptime {
+        std.debug.assert(@hasDecl(z.AdapterInfo, "deinit"));
+        std.debug.assert(@hasDecl(z.SurfaceCapabilities, "deinit"));
+        std.debug.assert(@hasDecl(z.SupportedFeatures, "deinit"));
+        std.debug.assert(@hasDecl(z.SupportedInstanceFeatures, "deinit"));
+        std.debug.assert(@hasDecl(z.SupportedWGSLLanguageFeatures, "deinit"));
+    }
+}
+
+test "sync results zero-init and own their message" {
+    var adapter_result: z.RequestAdapterResult = .{};
+    try std.testing.expectEqual(z.types.RequestAdapterStatus.@"undefined", adapter_result.status);
+    try std.testing.expectEqualStrings("", adapter_result.text());
+    try std.testing.expectError(error.Error, adapter_result.tryAdapter());
+    adapter_result.deinit(std.testing.allocator);
+
+    var device_result: z.RequestDeviceResult = .{};
+    try std.testing.expectError(error.Error, device_result.tryDevice());
+    device_result.deinit(std.testing.allocator);
+
+    var map_result: z.MapResult = .{};
+    try std.testing.expectError(error.Error, map_result.tryMap());
+    map_result.deinit(std.testing.allocator);
+
+    var done_result: z.OnSubmittedWorkDoneResult = .{};
+    try std.testing.expectError(error.Error, done_result.tryOnSubmittedWorkDone());
+    done_result.deinit(std.testing.allocator);
+
+    var owned: z.RequestAdapterResult = .{
+        .status = .success,
+        .message = try std.testing.allocator.dupe(u8, "allocated message"),
+    };
+    defer owned.deinit(std.testing.allocator);
+    try std.testing.expectEqualStrings("allocated message", owned.text());
+}

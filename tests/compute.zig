@@ -149,22 +149,132 @@ test "sync wrappers" {
     const instance = z.handles.createInstance(null);
     defer instance.release();
 
-    const adapter_response = try instance.requestAdapterSync(std.testing.io, null);
-    if (adapter_response.status != .success) {
-        std.log.info("no adapter available ({t}), skipping sync wrapper test", .{adapter_response.status});
+    var adapter_response = try instance.requestAdapterSync(std.testing.io, std.testing.allocator, null);
+    defer adapter_response.deinit(std.testing.allocator);
+    const adapter = adapter_response.tryAdapter() catch |err| {
+        std.log.info("no adapter available ({s}), skipping sync wrapper test", .{@errorName(err)});
         return;
-    }
-    const adapter = adapter_response.adapter orelse return;
+    };
     defer adapter.release();
 
-    const device_response = try adapter.requestDeviceSync(std.testing.io, instance, null);
-    try std.testing.expectEqual(z.types.RequestDeviceStatus.success, device_response.status);
-    const device = device_response.device orelse return error.NoDevice;
+    var device_response = try instance.requestDeviceSync(std.testing.io, std.testing.allocator, adapter, null);
+    defer device_response.deinit(std.testing.allocator);
+    const device = try device_response.tryDevice();
     defer device.release();
 
     const queue = device.getQueue();
     defer queue.release();
 
-    const done = try queue.onSubmittedWorkDoneSync(std.testing.io, device);
+    const timeout = std.Io.Timeout{ .duration = .{ .raw = std.Io.Duration.fromMilliseconds(5000), .clock = .awake } };
+    var done = try queue.onSubmittedWorkDoneSync(std.testing.io, std.testing.allocator, device, timeout);
+    defer done.deinit(std.testing.allocator);
     try std.testing.expectEqual(z.types.QueueWorkDoneStatus.success, done.status);
+}
+
+test "sync request failure carries status and message" {
+    const instance = z.handles.createInstance(null);
+    defer instance.release();
+
+    var options = z.types.RequestAdapterOptions{ .backend_type = .@"null" };
+    var response = try instance.requestAdapterSync(std.testing.io, std.testing.allocator, &options);
+    defer response.deinit(std.testing.allocator);
+
+    try std.testing.expectEqual(z.types.RequestAdapterStatus.unavailable, response.status);
+    try std.testing.expect(response.adapter == null);
+    try std.testing.expect(response.text().len > 0);
+    try std.testing.expectError(error.Unavailable, response.tryAdapter());
+}
+
+test "limits and adapter info are populated with null chained pointers" {
+    const instance = z.handles.createInstance(null);
+    defer instance.release();
+
+    var adapter_response = try instance.requestAdapterSync(std.testing.io, std.testing.allocator, null);
+    defer adapter_response.deinit(std.testing.allocator);
+    const adapter = adapter_response.tryAdapter() catch |err| {
+        std.log.info("no adapter available ({s}), skipping limits test", .{@errorName(err)});
+        return;
+    };
+    defer adapter.release();
+
+    const adapter_limits = try adapter.getLimits();
+    try std.testing.expect(adapter_limits.max_buffer_size > 0);
+    try std.testing.expect(adapter_limits.next_in_chain == null);
+
+    const info = try adapter.getInfo();
+    defer info.deinit();
+    try std.testing.expect(info.next_in_chain == null);
+    try std.testing.expect(info.device.toSlice() != null);
+
+    var device_response = try adapter.requestDeviceSync(std.testing.io, std.testing.allocator, instance, null);
+    defer device_response.deinit(std.testing.allocator);
+    const device = try device_response.tryDevice();
+    defer device.release();
+
+    var features: z.types.SupportedFeatures = .{};
+    device.getFeatures(&features);
+    defer features.deinit();
+
+    const device_limits = try device.getLimits();
+    try std.testing.expect(device_limits.max_buffer_size > 0);
+    try std.testing.expect(device_limits.next_in_chain == null);
+
+    const instance_limits = try z.getInstanceLimits();
+    try std.testing.expect(instance_limits.next_in_chain == null);
+}
+
+test "mapSync readback" {
+    const instance = z.handles.createInstance(null);
+    defer instance.release();
+
+    var adapter_response = try instance.requestAdapterSync(std.testing.io, std.testing.allocator, null);
+    defer adapter_response.deinit(std.testing.allocator);
+    const adapter = adapter_response.tryAdapter() catch |err| {
+        std.log.info("no adapter available ({s}), skipping mapSync test", .{@errorName(err)});
+        return;
+    };
+    defer adapter.release();
+
+    var device_response = try adapter.requestDeviceSync(std.testing.io, std.testing.allocator, instance, null);
+    defer device_response.deinit(std.testing.allocator);
+    const device = try device_response.tryDevice();
+    defer device.release();
+
+    const queue = device.getQueue();
+    defer queue.release();
+
+    const input = [_]u32{ 11, 22, 33, 44 };
+    const size = @as(usize, @sizeOf(@TypeOf(input)));
+
+    const source = device.createBuffer(&z.types.BufferDescriptor{
+        .usage = .{ .copy_src = true, .copy_dst = true },
+        .size = size,
+    }) orelse return error.NoBuffer;
+    defer source.release();
+
+    const staging = device.createBuffer(&z.types.BufferDescriptor{
+        .usage = .{ .map_read = true, .copy_dst = true },
+        .size = size,
+    }) orelse return error.NoBuffer;
+    defer staging.release();
+
+    queue.writeBuffer(source, 0, @ptrCast(&input), size);
+
+    const encoder = device.createCommandEncoder(null);
+    encoder.copyBufferToBuffer(source, 0, staging, 0, size);
+    const command_buffer = encoder.finish(null);
+    queue.submit(&.{command_buffer});
+
+    var mapped = try staging.mapSync(std.testing.io, std.testing.allocator, device, .{ .read = true }, 0, size, .none);
+    defer mapped.deinit(std.testing.allocator);
+    if (mapped.status != .success) {
+        std.log.info("mapSync failed: {s}", .{mapped.text()});
+        return error.MapFailed;
+    }
+    try std.testing.expectEqual(z.types.MapAsyncStatus.success, mapped.status);
+
+    const mapped_ptr = staging.getMappedRange(0, size) orelse return error.MapFailed;
+    const result: []const u32 = @as([*]const u32, @alignCast(@ptrCast(mapped_ptr)))[0..input.len];
+    try std.testing.expectEqualSlices(u32, &input, result);
+    staging.unmap();
 }
