@@ -27,7 +27,10 @@ chmod 600 "$signing_key"
 
 ssh_key="$workdir/id_ed25519"
 # CARBON_CACHE_SSH_KEY is base64 of the private key, single line.
-printf '%s' "$CARBON_CACHE_SSH_KEY" | base64 -d >"$ssh_key"
+# BSD base64 on macOS uses -D; GNU uses -d.
+if ! printf '%s' "$CARBON_CACHE_SSH_KEY" | base64 -d >"$ssh_key" 2>/dev/null; then
+    printf '%s' "$CARBON_CACHE_SSH_KEY" | base64 -D >"$ssh_key"
+fi
 chmod 600 "$ssh_key"
 ssh-keygen -y -f "$ssh_key" >/dev/null
 
@@ -46,7 +49,10 @@ ssh_opts=(
 )
 export NIX_SSHOPTS="${ssh_opts[*]}"
 
-mapfile -t closure < <(nix-store -qR "$@")
+closure=()
+while IFS= read -r path; do
+    closure+=("$path")
+done < <(nix-store -qR "$@")
 nix store sign --key-file "$signing_key" "${closure[@]}"
 
 shard_dir="$workdir/shards"
@@ -73,7 +79,10 @@ done < <(nix path-info -S "${closure[@]}" | awk '{print $2 "\t" $1}' | sort -rn)
 
 pids=()
 for shard in "$shard_dir"/*; do
-    mapfile -t paths <"$shard"
+    paths=()
+    while IFS= read -r path; do
+        paths+=("$path")
+    done <"$shard"
     if [ "${#paths[@]}" -eq 0 ]; then
         continue
     fi
