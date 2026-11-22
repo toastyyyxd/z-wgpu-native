@@ -34,6 +34,11 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+            extra-substituters = https://zig2nix.cachix.org
+            extra-trusted-public-keys = zig2nix.cachix.org-1:LSXEcFKIAN2NtNsznYLMbhEtyHHorV0caI2UgTIxk2k=
+      - uses: DeterminateSystems/magic-nix-cache-action@v15
+        with:
+          use-flakehub: false
       - name: Allow unprivileged user namespaces
         # zig2nix wraps Zig with bubblewrap; Ubuntu 24.04 restricts unprivileged
         # user namespaces via AppArmor, which breaks its Nix build.
@@ -75,6 +80,11 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+            extra-substituters = https://zig2nix.cachix.org
+            extra-trusted-public-keys = zig2nix.cachix.org-1:LSXEcFKIAN2NtNsznYLMbhEtyHHorV0caI2UgTIxk2k=
+      - uses: DeterminateSystems/magic-nix-cache-action@v15
+        with:
+          use-flakehub: false
       - name: Build aarch64-macos
         run: |
           set -eu
