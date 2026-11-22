@@ -63,9 +63,38 @@ jobs:
           path: out/
           if-no-files-found: error
 
+  macos-build:
+    name: build aarch64-macos
+    runs-on: macos-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: cachix/install-nix-action@v32
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Build aarch64-macos
+        run: |
+          set -eu
+          nix develop -c zig build -Dmode=full -Dskip-codegen -Doptimize=ReleaseFast
+          mkdir -p out
+          for src in libwgpu_native.a libz_wgpu_native.a; do
+            base="${src%.a}"
+            cp "zig-out/lib/$src" "out/${base}-aarch64-macos.a"
+          done
+          ls -l out/
+      - uses: actions/upload-artifact@v7
+        with:
+          name: libs-aarch64-macos
+          path: out/
+          if-no-files-found: error
+          retention-days: 14
+
   release:
     name: publish release
-    needs: build
+    needs: [build, macos-build]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

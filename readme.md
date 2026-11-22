@@ -77,13 +77,35 @@ exe.root_module.addImport("z_wgpu_native", dep.module("z_wgpu_native"));
 exe.root_module.link_libc = true;
 ```
 
+By default the bindings do not link wgpu-native. The next section has the link commands.
+
+If you already have the library, pass it to the dependency and the module links
+it for you:
+
+```zig
+const dep = b.dependency("z_wgpu_native", .{
+    .target = target,
+    .optimize = optimize,
+    .wgpu = b.path("lib/libwgpu_native.a"),
+    .@"system-libs" = "unwind",
+});
+
+exe.root_module.addImport("z_wgpu_native", dep.module("z_wgpu_native"));
+```
+
+`-Dwgpu` is the path to a wgpu-native library. It also makes the test suites use
+that library instead of building wgpu-native with Cargo. `-Dsystem-libs` is a
+comma-separated list of system libraries, empty by default. Add the libraries
+for your target from the tables in the next section.
+
 Package archives do not include `vendor/`, so `-Dmode=codegen` and `-Dmode=full`
 need a repo checkout with submodules (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ## Linking the runtime
 
-**wgpu-native** (`libwgpu_native.a` / `.so` / `.dll` / `.dylib`). The bindings
-only declare `extern` functions. Link it yourself. Build or download it:
+wgpu-native is the C library (`libwgpu_native.a`, `.so`, `.dll`, `.dylib`).
+The bindings only declare the functions. The application links the library.
+Build or download it:
 
 ```sh
 # build wgpu-native from the vendored submodule into zig-out/lib
@@ -92,32 +114,60 @@ zig build -Dmode=full
 # or, on Nix: nix build .#default   (result/lib/libwgpu_native.a)
 ```
 
-| Target | Prebuilt asset | Static library | `linkSystemLibrary` | Built | Tested |
-| --- | --- | --- | --- | --- | --- |
-| `x86_64-linux-gnu` | `wgpu-linux-x86_64-release.zip` | `lib/libwgpu_native.a` | `vulkan` `X11` `wayland-client` `m` `dl` `pthread` `unwind` `gcc_s` | ✅ | ✅ |
-| `aarch64-linux-gnu` | `wgpu-linux-aarch64-release.zip` | `lib/libwgpu_native.a` | same | ✅ | ❌ |
-| `x86_64-linux-musl` | | `zig-out/lib/libwgpu_native.a` | same list, without `gcc_s` | ✅ | ❌ |
-| `aarch64-linux-musl` | | `zig-out/lib/libwgpu_native.a` | same list, without `gcc_s` | ✅ | ❌ |
-| `x86_64-windows-gnu` | `wgpu-windows-x86_64-gnu-release.zip` | `lib/wgpu_native.lib` | `userenv` `ws2_32` `winpthread` `unwind` | ✅ | 🔘 |
-| `aarch64-windows-gnu` | | `zig-out/lib/libwgpu_native.a` | same | ✅ | ❌ |
-| `x86_64-windows-msvc` | `wgpu-windows-x86_64-msvc-release.zip` | `lib/wgpu_native.lib` | `userenv` `ws2_32` | ❌ | ❌ |
-| `aarch64-linux-android` | `wgpu-android-aarch64-release.zip` | `lib/libwgpu_native.a` | `android` `m` | ✅ | ❌ |
-| `arm-linux-android` | `wgpu-android-armv7-release.zip` | `lib/libwgpu_native.a` | `android` `m` | ✅ | ❌ |
-| `x86_64-linux-android` | `wgpu-android-x86_64-release.zip` | `lib/libwgpu_native.a` | `android` `m` | ✅ | ❌ |
-| macOS | `wgpu-macos-<arch>-release.zip` | `lib/libwgpu_native.a` | | 🔘 | 🔘 |
+Per-target prebuilt libraries including z-wgpu-native and wgpu-native are in the release assets.
+
+| Target | Link these | Built | Tested |
+| --- | --- | --- | --- |
+| `x86_64-linux-gnu` | `unwind` | ✅ | ✅ |
+| `aarch64-linux-gnu` | `unwind` | ✅ | ❌ |
+| `x86_64-linux-musl` | `unwind` | ✅ | ❌ |
+| `aarch64-linux-musl` | `unwind` | ✅ | ❌ |
+| `x86_64-windows-gnu` | `userenv` `ws2_32` `winpthread` `unwind` | ✅ | 🔘 |
+| `aarch64-windows-gnu` | `userenv` `ws2_32` `winpthread` `unwind` | ✅ | ❌ |
+| `aarch64-linux-android` | `android` `m` | ✅ | ❌ |
+| `arm-linux-android` | `android` `m` | ✅ | ❌ |
+| `x86_64-linux-android` | `android` `m` | ✅ | ❌ |
+| macOS | `(Metal frameworks)` | 🔘 | 🔘 |
 
 `✅` full build and suites, `🔘` partial (bindings only, or `abi` and `lib` only), `❌` not built or not run.
+
+These are the libraries the wgpu-native archive needs. On glibc older than 2.34
+add `m`, `dl` and `pthread`. `gcc_s` can be used in place of `unwind`.
+
+<details>
+<summary>Platform libraries</summary>
+
+The application adds its own platform libraries:
+
+| When the application uses | It links |
+| --- | --- |
+| a window from GLFW | `glfw3` |
+| a window from SDL | `SDL2` or `SDL3` |
+| an X11 surface | `X11` |
+| an XCB surface | `xcb` |
+| a Wayland surface | `wayland-client` |
+| the Vulkan backend | nothing at link time, needs loader at runtime |
+| WinUI `SwapChainPanel` | COM and the Windows App SDK |
+| an Android native window | the NDK |
+| a Metal layer | the Metal frameworks |
+
+</details>
+
+<details>
+<summary>Linking by hand</summary>
 
 ```zig
 exe.root_module.addObjectFile(b.path("lib/libwgpu_native.a")); // wgpu_native.lib on MSVC
 
-const system_libs: []const []const u8 = switch (target.result.os.tag) {
-    .linux => &.{ "vulkan", "X11", "wayland-client", "m", "dl", "pthread", "unwind", "gcc_s" },
+const runtime_libs: []const []const u8 = switch (target.result.os.tag) {
+    .linux => &.{ "unwind" },
     .windows => &.{ "userenv", "ws2_32", "winpthread", "unwind" },
     else => @panic("untested target; see the table above"),
 };
-for (system_libs) |name| exe.root_module.linkSystemLibrary(name, .{});
+for (runtime_libs) |name| exe.root_module.linkSystemLibrary(name, .{});
 ```
+
+</details>
 
 <details>
 <summary>Library naming, dynamic linking and platform notes</summary>
@@ -125,13 +175,20 @@ for (system_libs) |name| exe.root_module.linkSystemLibrary(name, .{});
 - Windows archives also ship `lib/wgpu_native.dll.lib` and `lib/wgpu_native.dll`
   for dynamic linking.
 - A vendored `-Dmode=full` build installs to `zig-out/lib` using Zig's naming
-  (`libwgpu_native.a`, or `wgpu_native.lib` on MSVC), and targets with no
-  prebuilt asset need it.
+  (`libwgpu_native.a`, or `wgpu_native.lib` on MSVC).
 - Only the windowed tests need GLFW/`glfw3`, since window creation is your app's
   job.
 - Android links need `-landroid` and `-lm`, while the NDK clang driver supplies
   libc and libdl. The Android targets build through the flake's `android` dev
   shell (see [CONTRIBUTING.md](CONTRIBUTING.md#android)).
+
+</details>
+
+<details>
+<summary>Windowed tests</summary>
+
+The windowed test suites link `glfw3`, `X11`, `wayland-client` and `vulkan`.
+They run only with `-Dheaded-tests`.
 
 </details>
 
@@ -171,12 +228,11 @@ pub fn main() !void {
 }
 ```
 
-[`tests/compute.zig`](tests/compute.zig) is the full runnable flow, including the
-readback.
+Full example in [`tests/compute.zig`](tests/compute.zig).
 
 ## Ergonomics
 
-### Status codes are errors
+### Error unions
 
 Entry points that return a status become Zig error unions, generated from the
 status enum:
@@ -285,24 +341,9 @@ entry points wgpu-native stubs out (see
 
 ## Entry points that currently abort
 
-wgpu-native stubs some C entry points with `unimplemented!()`. The raw externs
-would abort the process, so the ergonomic layer turns them into compile errors:
-the generated method is an `inline fn` whose body is `@compileError`, and a call
-fails the build naming the entry point. Merely referencing the type is fine.
-`wgpu.c.<name>` stays available as the escape hatch if you really need the raw
-extern, which does abort at runtime.
-
-`wgpu.unimplemented_entry_points` lists the affected C names. Sync wrappers are
-not generated for these. The buffer-mapping conveniences are among them:
-`readMappedRange`/`writeMappedRange` and `getMapState` are stubbed, so map with
-`mapSync` (or `mapAsync`) and copy through the pointer from `getMappedRange`,
-as [`tests/compute.zig`](tests/compute.zig) does.
-
-```zig
-for (wgpu.unimplemented_entry_points) |name| {
-    std.log.info("unimplemented: {s}", .{name});
-}
-```
+wgpu-native stubs some entry points, and the generated methods for them are
+compile errors. The names are in `wgpu.unimplemented_entry_points`, and the raw
+extern stays available as `wgpu.c.<name>`.
 
 ## Mapping C to Zig
 

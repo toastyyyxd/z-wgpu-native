@@ -43,7 +43,8 @@ Other options:
 | --- | --- |
 | `-Dtest=true` | build/install the test suites (run them with the `test` step) |
 | `-Dheaded-tests=true` | also run the windowed tests (`triangle`, `rgbw`) |
-| `-Dwgpu=<path>` | use a prebuilt wgpu-native library instead of building it (required for tests with `-Dmode=minimal`/`codegen`) |
+| `-Dwgpu=<path>` | use a prebuilt wgpu-native library instead of building it, and link it into the exported `z_wgpu_native` module when the package is used as a dependency (required for tests with `-Dmode=minimal`/`codegen`) |
+| `-Dsystem-libs=<csv>` | system libraries linked into the exported module when `-Dwgpu` is set; comma-separated, empty by default |
 | `-Dforce-cross-tests` | run the tests when cross-compiling even without emulation flags |
 | `-Dcargo-target=<triple>` | override the Rust target triple if `triples.zig` guesses wrong |
 | `-Dc-includes=<path>` | extra include path for translate-c |
