@@ -27,10 +27,10 @@ jobs:
           - arm-linux-android
           - x86_64-linux-android
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
-      - uses: cachix/install-nix-action@v31
+      - uses: cachix/install-nix-action@v32
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
@@ -57,7 +57,7 @@ jobs:
             fi
           done
           ls -l out/
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: libs-${{ matrix.target }}
           path: out/
@@ -69,10 +69,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: stage/lib
           pattern: libs-*
