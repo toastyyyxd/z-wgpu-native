@@ -59,6 +59,7 @@ pub fn rust(allocator: Allocator, target: Target) ![]u8 {
     if (target.os.tag == .linux and target.abi == .android) {
         const arch_name = switch (target.cpu.arch) {
             .arm => "armv7",
+            .x86 => "i686",
             else => @tagName(target.cpu.arch),
         };
         const env = switch (target.cpu.arch) {

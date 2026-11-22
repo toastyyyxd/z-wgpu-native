@@ -16,6 +16,8 @@ const State = struct {
     zig_triple: []const u8,
     rust_triple: []const u8,
     do_tests: bool,
+    core_tests: bool,
+    skip_codegen: bool,
     is_cross: bool,
     test_cross: bool,
     test_headed: bool,
@@ -38,6 +40,8 @@ pub fn build(b: *std.Build) !void {
     state.target = b.standardTargetOptions(.{});
     state.optimize = b.standardOptimizeOption(.{});
     state.do_tests = b.option(bool, "test", "Build the test suites (run them with `zig build test`).") orelse false;
+    state.core_tests = b.option(bool, "core-tests", "Only build and run the abi/lib suites; no GPU, window or runtime library needed.") orelse false;
+    state.skip_codegen = b.option(bool, "skip-codegen", "Use the checked-in src/ instead of regenerating it (cross builds).") orelse false;
     // The 0.18 build API has no emulation flags, so the run step adds -fqemu/-fwine itself.
     state.test_cross = b.option(bool, "force-cross-tests", "Force run tests when crosscompiling regardless of emulation flags.") orelse false;
     state.test_headed = b.option(bool, "headed-tests", "Run headed tests on top of default headless tests") orelse false;
@@ -50,6 +54,12 @@ pub fn build(b: *std.Build) !void {
 
     const cargo_target_opt = b.option([]const u8, "cargo-target", "Override a more reliable Cargo target triple if `triples.zig` does not translate it correctly.");
     state.rust_triple = cargo_target_opt orelse try triples.rust(b.allocator, state.target.result);
+
+    // 0.18 moved Android from an OS tag to a Linux ABI.
+    const is_android = if (@hasField(std.Target.Os.Tag, "android"))
+        state.target.result.os.tag == .android
+    else
+        state.target.result.abi == .android;
 
     const c_includes_opt = b.option([]const u8, "c-includes", "Path to any headers needed for translate-c and other steps.");
     state.c_includes = if (c_includes_opt) |s| std.mem.splitAny(u8, s, ",") else null;
@@ -74,6 +84,25 @@ pub fn build(b: *std.Build) !void {
         else .minimal;
     std.log.info("Running a {any} build, change this with -Dmode=<minimal|codegen|full>.", .{ state.mode });
 
+    if (is_android and state.mode == .codegen) {
+        std.log.err("translate-c cannot target Android; use -Dmode=full to build the runtime.", .{});
+        return error.InvalidBuildConfiguration;
+    }
+    if (is_android and state.do_tests) {
+        std.log.err("Tests are not supported on Android; build the runtime with -Dmode=full instead.", .{});
+        return error.InvalidBuildConfiguration;
+    }
+    if (is_android and state.mode == .full) {
+        std.log.info("Android target: skipping codegen, using checked-in src/.", .{});
+    }
+    if (state.skip_codegen and state.mode == .codegen) {
+        std.log.err("-Dskip-codegen and -Dmode=codegen are mutually exclusive.", .{});
+        return error.InvalidBuildConfiguration;
+    }
+    if (state.skip_codegen and state.mode == .full) {
+        std.log.info("Skipping codegen, using checked-in src/.", .{});
+    }
+
     if (state.mode == .full and state.do_tests) {
         std.log.info(\\
                      \\If you would like to more efficently run tests or are having issues with the required rust toolchain,
@@ -83,7 +112,7 @@ pub fn build(b: *std.Build) !void {
     if (state.mode == .minimal and state.do_tests) {
         std.log.info("You are running tests for the generated src/ code only, which may be stale and do not reflect the state of the codegen module.", .{});
     }
-    if ((state.mode == .codegen or state.mode == .minimal) and state.do_tests and state.wgpu_native_path == null) {
+    if ((state.mode == .codegen or state.mode == .minimal) and state.do_tests and state.wgpu_native_path == null and !state.core_tests) {
         std.log.err("You must provide a prebuilt wgpu_native binary for tests without the cargo build step.", .{});
         return error.InvalidBuildConfiguration;
     }
@@ -96,7 +125,7 @@ pub fn build(b: *std.Build) !void {
         state.cargo_step = try cargoBuild(state);
     }
 
-    if (state.mode == .full or state.mode == .codegen) {
+    if ((state.mode == .full or state.mode == .codegen) and !is_android and !state.skip_codegen) {
         const translated = try translateC(state);
         state.translate_step = translated.step;
         state.codegen_step = try codegen(state, translated.source);
@@ -275,35 +304,37 @@ fn library(state: *State) !*Step {
         triangle_test_mod.addImport("z_wgpu_native", mod);
         rgbw_test_mod.addImport("z_wgpu_native", mod);
 
-        const need_linked = [_]*std.Build.Module{ compute_test_mod, triangle_test_mod, rgbw_test_mod };
-        for (need_linked) |module| {
-            module.addObjectFile(state.wgpu_native_path.?);
-            switch (state.target.result.os.tag) {
-                .linux => {
-                    module.linkSystemLibrary("unwind", .{});
-                    module.linkSystemLibrary("gcc_s", .{});
-                    module.linkSystemLibrary("pthread", .{});
-                    module.linkSystemLibrary("dl", .{});
-                    module.linkSystemLibrary("m", .{});
-                    module.linkSystemLibrary("glfw3", .{});
-                    module.linkSystemLibrary("wayland-client", .{});
-                    module.linkSystemLibrary("vulkan", .{});
-                    module.linkSystemLibrary("X11", .{});
-                },
-                .windows => {
-                    module.linkSystemLibrary("winpthread", .{});
-                    module.linkSystemLibrary("ws2_32", .{});
-                    module.linkSystemLibrary("userenv", .{});
-                    module.linkSystemLibrary("unwind", .{});
-                    module.linkSystemLibrary("glfw3", .{});
-                },
-                else => {
-                    std.log.err("Unsupported target OS \"{any}\" of \"{s}\" for tests.", .{ state.target.result.os.tag, state.zig_triple });
-                    return error.UnsupportedTarget;
-                },
+        if (!state.core_tests) {
+            const need_linked = [_]*std.Build.Module{ compute_test_mod, triangle_test_mod, rgbw_test_mod };
+            for (need_linked) |module| {
+                module.addObjectFile(state.wgpu_native_path.?);
+                switch (state.target.result.os.tag) {
+                    .linux => {
+                        module.linkSystemLibrary("unwind", .{});
+                        module.linkSystemLibrary("gcc_s", .{});
+                        module.linkSystemLibrary("pthread", .{});
+                        module.linkSystemLibrary("dl", .{});
+                        module.linkSystemLibrary("m", .{});
+                        module.linkSystemLibrary("glfw3", .{});
+                        module.linkSystemLibrary("wayland-client", .{});
+                        module.linkSystemLibrary("vulkan", .{});
+                        module.linkSystemLibrary("X11", .{});
+                    },
+                    .windows => {
+                        module.linkSystemLibrary("winpthread", .{});
+                        module.linkSystemLibrary("ws2_32", .{});
+                        module.linkSystemLibrary("userenv", .{});
+                        module.linkSystemLibrary("unwind", .{});
+                        module.linkSystemLibrary("glfw3", .{});
+                    },
+                    else => {
+                        std.log.err("Unsupported target OS \"{any}\" of \"{s}\" for tests.", .{ state.target.result.os.tag, state.zig_triple });
+                        return error.UnsupportedTarget;
+                    },
+                }
             }
         }
-        
+
         const lib_test = state.build.addTest(.{
             .name = "lib",
             .root_module = lib_test_mod,
@@ -312,10 +343,27 @@ fn library(state: *State) !*Step {
             .name = "abi",
             .root_module = abi_test_mod,
         });
+        state.build.installArtifact(lib_test);
+        state.build.installArtifact(abi_test);
+
+        const test_step = state.build.step("test", "Build and run suitable library tests.");
+
+        if (state.is_cross and !state.test_cross) return step;
+        std.log.info("Will run headless tests.", .{});
+        test_step.dependOn(&state.build.addRunArtifact(lib_test).step);
+        test_step.dependOn(&state.build.addRunArtifact(abi_test).step);
+        if (state.core_tests) return test_step;
+
         const compute_test = state.build.addTest(.{
             .name = "compute",
             .root_module = compute_test_mod,
         });
+        if (state.cargo_step) |cargo| compute_test.step.dependOn(cargo);
+        state.build.installArtifact(compute_test);
+        test_step.dependOn(&state.build.addRunArtifact(compute_test).step);
+
+        if (!state.test_headed) return test_step;
+        std.log.info("Will run headed tests.", .{});
         const triangle_test = state.build.addTest(.{
             .name = "triangle",
             .root_module = triangle_test_mod,
@@ -324,36 +372,14 @@ fn library(state: *State) !*Step {
             .name = "rgbw",
             .root_module = rgbw_test_mod,
         });
-
         if (state.cargo_step) |cargo| {
-            compute_test.step.dependOn(cargo);
             triangle_test.step.dependOn(cargo);
             rgbw_test.step.dependOn(cargo);
         }
-
-        state.build.installArtifact(lib_test);
-        state.build.installArtifact(abi_test);
-        state.build.installArtifact(compute_test);
         state.build.installArtifact(triangle_test);
         state.build.installArtifact(rgbw_test);
-
-        const test_step = state.build.step("test", "Build and run suitable library tests.");
-        
-        if (state.is_cross and !state.test_cross) return step;
-        std.log.info("Will run headless tests.", .{});
-        const lib_test_run = state.build.addRunArtifact(lib_test);
-        const abi_test_run = state.build.addRunArtifact(abi_test);
-        const compute_test_run = state.build.addRunArtifact(compute_test);
-        test_step.dependOn(&lib_test_run.step);
-        test_step.dependOn(&abi_test_run.step);
-        test_step.dependOn(&compute_test_run.step);
-
-        if (!state.test_headed) return step;
-        std.log.info("Will run headed tests.", .{});
-        const triangle_test_run = state.build.addRunArtifact(triangle_test);
-        const rgbw_test_run = state.build.addRunArtifact(rgbw_test);
-        test_step.dependOn(&triangle_test_run.step);
-        test_step.dependOn(&rgbw_test_run.step);
+        test_step.dependOn(&state.build.addRunArtifact(triangle_test).step);
+        test_step.dependOn(&state.build.addRunArtifact(rgbw_test).step);
         return test_step;
     }
     

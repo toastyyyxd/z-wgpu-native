@@ -1,77 +1,190 @@
 # z-wgpu-native
 
+[![CI](https://img.shields.io/github/actions/workflow/status/toastyyyxd/z-wgpu-native/ci.yml?branch=zig-0.17.1&label=ci&style=flat-square)](https://github.com/toastyyyxd/z-wgpu-native/actions/workflows/ci.yml)
+[![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue?style=flat-square)](#license)
+[![Zig](https://img.shields.io/badge/Zig-0.18.0--dev%20%7C%200.17.1-f7a41d?logo=zig&style=flat-square)](https://git.toastyx.dev/toasty/z-wgpu-native)
+[![wgpu-native](https://img.shields.io/badge/wgpu--native-v29.0.1.1-7c4dff?style=flat-square)](https://github.com/gfx-rs/wgpu-native/releases/tag/v29.0.1.1)
+
 Idiomatic Zig bindings for [wgpu-native](https://github.com/gfx-rs/wgpu-native),
 auto-generated from the C headers.
 
 - **Bindings:** wgpu-native **[v29.0.1.1](https://github.com/gfx-rs/wgpu-native/releases/tag/v29.0.1.1)**
-  (`6aed509`, webgpu-headers `673658bc`, pinned in `wgpu-native-version`)
+  (pinned in `wgpu-native-version`)
 - **This branch:** Zig **0.17.1** (stable)
 - Regenerated from `wgpu.h` on every wgpu-native bump. See
-  [Refreshing the bindings](#refreshing-the-bindings)
+  [Refreshing the bindings](CONTRIBUTING.md#refreshing-the-bindings).
 
-The generated code mirrors the C headers. The ergonomic layers sit on top:
+On Zig master? Use the [`main`](https://git.toastyx.dev/toasty/z-wgpu-native/src/branch/main)
+branch instead.
 
-| Module | Contents |
-| --- | --- |
-| `wgpu.types` | C structs/enums with Zig names, `StringView`, chained-struct iterator, `packed struct` flag sets |
-| `wgpu.handles` | opaque handle pointers with methods (`device.createBuffer(..)`), `release`/`addRef` |
-| `wgpu.callbacks` | typed callback/trampoline helpers for the async entry points |
-| `wgpu.builders` | lifetime-safe builders for chained structs, including wgpu-native extras |
-| `wgpu.c` | raw `translate-c` output, unchanged |
+The public surface is generated rather than hand-maintained. A generator turns
+`wgpu.h` into the raw `translate-c` bindings and the ergonomic layer together:
+handle methods, chained-struct builders that own their storage, slice setters,
+callback trampolines, `std.Io` sync wrappers, and Zig error unions for the entry
+points that return C status codes. A wgpu-native bump is one regeneration command, and the `abi` suite
+checks the result field by field against the C headers.
 
-Every public declaration is also re-exported at the root, so `wgpu.Device`,
-`wgpu.DeviceDescriptor`, `wgpu.BufferUsage` and `wgpu.createInstance` work
-without a module prefix.
+Hand-written bindings go stale when either upstream moves. One generator
+produces both branches, so a wgpu-native or Zig bump is a rebuild instead of a
+port.
+
+The API is re-exported at the root, so `wgpu.Device`, `wgpu.BufferUsage` and
+`wgpu.createInstance` work without reaching into submodules:
 
 ```zig
 const wgpu = @import("z_wgpu_native");
-
-const instance = wgpu.Instance.create(null);
-```
-## Examples
-
-- [`tests/triangle.zig`](tests/triangle.zig) — adapter/device, surface, render pass, buffer readback (windowed).
-- [`tests/compute.zig`](tests/compute.zig) — headless Vulkan compute.
-
-## Sync wrappers
-
-Future-returning calls have blocking forms that take an `std.Io`:
-
-```zig
-const adapter = (try instance.requestAdapterSync(io, null)).adapter orelse return error.NoAdapter;
-defer adapter.release();
-
-const device = (try adapter.requestDeviceSync(io, instance, null)).device orelse return error.NoDevice;
-defer device.release();
-
-_ = try buffer.mapSync(io, device, .{ .read = true }, 0, size);
-_ = try queue.onSubmittedWorkDoneSync(io, device);
+const instance = wgpu.createInstance(null);
 ```
 
-`requestAdapter` and `requestDevice` complete inside the call. `mapSync` and
-`onSubmittedWorkDoneSync` block on `wgpuDevicePoll(true)`. Sync wrappers are not
-generated for entry points wgpu-native stubs as `unimplemented!()` (see
-[Entry points that currently abort](#entry-points-that-currently-abort)). Their
-raw wrappers still exist and abort if called.
+**Contents:** [Install](#install) | [Linking the runtime](#linking-the-runtime) |
+[Quickstart](#quickstart) | [Ergonomics](#ergonomics) |
+[Entry points that currently abort](#entry-points-that-currently-abort) |
+[Mapping C to Zig](#mapping-c-to-zig) | [Quirks](#quirks) |
+[Examples](#examples) | [Contributing](#contributing)
 
-## Entry points that currently abort
+## Install
 
-wgpu-native stubs some C entry points with `unimplemented!()`. Calling one
-panics inside the Rust library and aborts the process. The bindings still expose
-them because they mirror the C headers.
+Zig **0.17.1** on this branch (`minimum_zig_version` in `build.zig.zon`).
+`main` tracks Zig master.
 
-`wgpu.unimplemented_entry_points` lists the affected C names. Sync
-wrappers are not generated for these for the same reason.
+Tagged archives pin a release:
+
+```sh
+# Zig 0.17.1 (this branch)
+zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.2.0.tar.gz
+
+# Zig master
+zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.2.0-zig0.18-dev.tar.gz
+```
+
+This branch releases as `v1.2.0`. `main` releases as `v1.2.0-zig0.18-dev`.
+
+Or use a path or submodule dependency:
 
 ```zig
-for (wgpu.unimplemented_entry_points) |name| {
-    std.log.info("unimplemented: {s}", .{name});
+.dependencies = .{
+    .z_wgpu_native = .{ .path = "../z-wgpu-native" },
+},
+```
+
+Then wire the module in `build.zig`:
+
+```zig
+const dep = b.dependency("z_wgpu_native", .{ .target = target, .optimize = optimize });
+
+exe.root_module.addImport("z_wgpu_native", dep.module("z_wgpu_native"));
+exe.root_module.link_libc = true;
+```
+
+Package archives do not include `vendor/`, so `-Dmode=codegen` and `-Dmode=full`
+need a repo checkout with submodules (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+
+## Linking the runtime
+
+**wgpu-native** (`libwgpu_native.a` / `.so` / `.dll` / `.dylib`). The bindings
+only declare `extern` functions. Link it yourself. Build or download it:
+
+```sh
+# build wgpu-native from the vendored submodule into zig-out/lib
+zig build -Dmode=full
+# or download a release from https://github.com/gfx-rs/wgpu-native/releases
+# or, on Nix: nix build .#default   (result/lib/libwgpu_native.a)
+```
+
+| Target | Prebuilt asset | Static library | `linkSystemLibrary` | Built | Tested |
+| --- | --- | --- | --- | --- | --- |
+| `x86_64-linux-gnu` | `wgpu-linux-x86_64-release.zip` | `lib/libwgpu_native.a` | `vulkan` `X11` `wayland-client` `m` `dl` `pthread` `unwind` `gcc_s` | ✅ | ✅ |
+| `aarch64-linux-gnu` | `wgpu-linux-aarch64-release.zip` | `lib/libwgpu_native.a` | same | ✅ | ❌ |
+| `x86_64-linux-musl` | | `zig-out/lib/libwgpu_native.a` | same list, without `gcc_s` | ✅ | ❌ |
+| `aarch64-linux-musl` | | `zig-out/lib/libwgpu_native.a` | same list, without `gcc_s` | ✅ | ❌ |
+| `x86_64-windows-gnu` | `wgpu-windows-x86_64-gnu-release.zip` | `lib/wgpu_native.lib` | `userenv` `ws2_32` `winpthread` `unwind` | ✅ | 🔘 |
+| `aarch64-windows-gnu` | | `zig-out/lib/libwgpu_native.a` | same | ✅ | ❌ |
+| `x86_64-windows-msvc` | `wgpu-windows-x86_64-msvc-release.zip` | `lib/wgpu_native.lib` | `userenv` `ws2_32` | ❌ | ❌ |
+| `aarch64-linux-android` | `wgpu-android-aarch64-release.zip` | `lib/libwgpu_native.a` | `android` `m` | ✅ | ❌ |
+| `arm-linux-android` | `wgpu-android-armv7-release.zip` | `lib/libwgpu_native.a` | `android` `m` | ✅ | ❌ |
+| `x86_64-linux-android` | `wgpu-android-x86_64-release.zip` | `lib/libwgpu_native.a` | `android` `m` | ✅ | ❌ |
+| macOS | `wgpu-macos-<arch>-release.zip` | `lib/libwgpu_native.a` | | ❌ | ❌ |
+
+`✅` full suites, `🔘` `abi` and `lib` only, `❌` not run.
+
+```zig
+exe.root_module.addObjectFile(b.path("lib/libwgpu_native.a")); // wgpu_native.lib on MSVC
+
+const system_libs: []const []const u8 = switch (target.result.os.tag) {
+    .linux => &.{ "vulkan", "X11", "wayland-client", "m", "dl", "pthread", "unwind", "gcc_s" },
+    .windows => &.{ "userenv", "ws2_32", "winpthread", "unwind" },
+    else => @panic("untested target; see the table above"),
+};
+for (system_libs) |name| exe.root_module.linkSystemLibrary(name, .{});
+```
+
+<details>
+<summary>Library naming, dynamic linking and platform notes</summary>
+
+- Windows archives also ship `lib/wgpu_native.dll.lib` and `lib/wgpu_native.dll`
+  for dynamic linking.
+- A vendored `-Dmode=full` build installs to `zig-out/lib` using Zig's naming
+  (`libwgpu_native.a`, or `wgpu_native.lib` on MSVC), and targets with no
+  prebuilt asset need it.
+- Only the windowed tests need GLFW/`glfw3`, since window creation is your app's
+  job.
+- Android links need `-landroid` and `-lm`, while the NDK clang driver supplies
+  libc and libdl. The Android targets build through the flake's `android` dev
+  shell (see [CONTRIBUTING.md](CONTRIBUTING.md#android)).
+
+</details>
+
+## Quickstart
+
+Setup, from `Instance` to `Queue`:
+
+```zig
+const std = @import("std");
+const wgpu = @import("z_wgpu_native");
+
+pub fn main() !void {
+    var threaded: std.Io.Threaded = .init(std.heap.page_allocator, .{});
+    defer threaded.deinit();
+    const io = threaded.io();
+
+    const instance = wgpu.createInstance(null);
+    defer instance.release();
+
+    const adapter = (try instance.requestAdapterSync(io, null)).adapter orelse return error.NoAdapter;
+    defer adapter.release();
+
+    const device = (try adapter.requestDeviceSync(io, instance, null)).device orelse return error.NoDevice;
+    defer device.release();
+
+    const queue = device.getQueue();
+    defer queue.release();
+
+    // From here it is ordinary WebGPU: create shaders, pipelines and buffers with
+    // `device`, submit with `queue`, and read results back with
+    // `buffer.mapSync(io, device, .{ .read = true }, 0, size)`.
 }
 ```
 
-The raw `wgpu.c` module exposes the same C functions.
+[`tests/compute.zig`](tests/compute.zig) is the full runnable flow, including the
+readback.
 
-## Builders
+## Ergonomics
+
+### Status codes are errors
+
+Entry points that return a status become Zig error unions, generated from the
+status enum:
+
+```zig
+const limits = try device.getLimits();                         // StatusError!Limits
+try buffer.writeMappedRange(0, @ptrCast(data.ptr), data.len);  // StatusError!void
+```
+
+Each status enum also has `toError`/`fromError`. Async callbacks and request
+results keep their status field, so the raw status is never lost, and handles
+that can be null stay optionals (`?*Buffer`), matching `WGPU_NULLABLE`.
+
+### Builders
 
 Chained extensions get a builder, including wgpu-native extras such as
 `InstanceExtras`, `DeviceExtras` and `SurfaceConfigurationExtras`. The builder
@@ -91,14 +204,14 @@ var surface = wgpu.SurfaceDescriptorWithSurfaceSourceWaylandSurface{
 const s = instance.createSurface(surface.descriptor());
 ```
 
-Keep the builder alive until the create call returns. `descriptor()` returns a
-pointer into the builder's own storage. Fields with a count and pointer pair get
-the same `set*` slice helpers as the underlying descriptor.
+Keep the builder alive until the create call returns, because `descriptor()`
+returns a pointer into the builder's own storage.
 
-## Slice setters
+### Slice setters
 
 Descriptors with a count and pointer field pair get a setter that fills both from
-a slice:
+a slice. The slice has to stay valid for the call. wgpu copies the descriptor
+contents.
 
 ```zig
 var rp: wgpu.RenderPassDescriptor = .{};
@@ -108,8 +221,6 @@ var bg: wgpu.BindGroupDescriptor = .{ .layout = layout };
 bg.setEntries(&.{.{ .binding = 0, .buffer = buffer, .size = size }});
 ```
 
-The slice has to stay valid for the call. wgpu copies the descriptor contents.
-
 Function parameters with a count and pointer pair take slices the same way:
 
 ```zig
@@ -118,194 +229,98 @@ render_pass.setBindGroup(0, bind_group, &.{});
 ```
 
 The C-shaped form remains available as `submitRaw`/`setBindGroupRaw`/… when you
-need to pass an explicit count or pointer.
+need an explicit count or pointer.
 
-## Requirements
+### Sync wrappers
 
-- Zig **0.17.1** on this branch. `main` tracks Zig master.
-- **wgpu-native** (`libwgpu_native.a` / `.so` / `.dll` / `.dylib`). The bindings
-  only declare `extern` functions. Link it yourself. Build or download it:
-
-```sh
-# build wgpu-native from the vendored submodule into zig-out/lib
-zig build -Dmode=full
-# or download a release from https://github.com/gfx-rs/wgpu-native/releases
-# or, on Nix: nix build .#default  ->  result/lib/libwgpu_native.a
-```
-
-Package archives do not include `vendor/`, so `-Dmode=codegen` and
-`-Dmode=full` need a repo checkout with submodules.
-
-## Install
-
-Tagged archives pin a release:
-
-```sh
-zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.1.0.tar.gz
-```
-
-This branch releases as `v1.1.0`. `main` releases as `v1.1.0-zig0.18-dev`.
-Or use a path or submodule dependency:
+Future-returning calls have blocking forms that take an `std.Io`:
 
 ```zig
-.dependencies = .{
-    .z_wgpu_native = .{ .path = "../z-wgpu-native" },
-},
+const adapter = (try instance.requestAdapterSync(io, null)).adapter orelse return error.NoAdapter;
+defer adapter.release();
+
+const device = (try adapter.requestDeviceSync(io, instance, null)).device orelse return error.NoDevice;
+defer device.release();
+
+_ = try buffer.mapSync(io, device, .{ .read = true }, 0, size);
+_ = try queue.onSubmittedWorkDoneSync(io, device);
 ```
 
-Then wire the module and the native library in `build.zig`:
+`requestAdapter` and `requestDevice` complete inside the call. `mapSync` and
+`onSubmittedWorkDoneSync` block on `wgpuDevicePoll(true)`. Sync wrappers are not
+generated for entry points wgpu-native stubs out (see
+[Entry points that currently abort](#entry-points-that-currently-abort)).
+
+## Entry points that currently abort
+
+wgpu-native stubs some C entry points with `unimplemented!()`. Calling one
+panics inside the Rust library and aborts the process. The bindings still expose
+them because they mirror the C headers.
+
+`wgpu.unimplemented_entry_points` lists the affected C names. Sync wrappers are
+not generated for these.
 
 ```zig
-const dep = b.dependency("z_wgpu_native", .{ .target = target, .optimize = optimize });
-
-exe.root_module.addImport("z_wgpu_native", dep.module("z_wgpu_native"));
-exe.root_module.link_libc = true;
-exe.root_module.addObjectFile(b.path("lib/libwgpu_native.a"));
-exe.root_module.linkSystemLibrary("vulkan", .{});
-exe.root_module.linkSystemLibrary("X11", .{});
-exe.root_module.linkSystemLibrary("wayland-client", .{});
-exe.root_module.linkSystemLibrary("m", .{});
-exe.root_module.linkSystemLibrary("dl", .{});
-exe.root_module.linkSystemLibrary("pthread", .{});
-exe.root_module.linkSystemLibrary("unwind", .{});
-exe.root_module.linkSystemLibrary("gcc_s", .{});
+for (wgpu.unimplemented_entry_points) |name| {
+    std.log.info("unimplemented: {s}", .{name});
+}
 ```
 
-Linux system libraries required by the static wgpu-native build. On Windows,
-link the platform equivalents (`userenv`, `ws2_32`, `winpthread`).
+## Mapping C to Zig
 
-## Build modes
-
-| `-Dmode` | Uses | Needs clang/cargo? |
-| --- | --- | --- |
-| `minimal` (default) | checked-in `src/` | no |
-| `codegen` | regenerates `src/` from `vendor/wgpu-native` headers | submodules only (no cargo) |
-| `full` | builds wgpu-native from vendored source, then creates `src/` | yes (cargo/rust) |
-
-Other options:
-
-| Option | Effect |
+| wgpu-native C | Zig |
 | --- | --- |
-| `-Dtest=true` | build/install the test suites (run them with the `test` step) |
-| `-Dheaded-tests=true` | also run the windowed tests (`triangle`, `rgbw`) |
-| `-Dwgpu=<path>` | use a prebuilt wgpu-native library instead of building it (required for tests with `-Dmode=minimal`/`codegen`) |
-| `-Dtarget=`, `-Dcpu=`, `-Doptimize=` | standard Zig target options |
+| `WGPUDevice`, `WGPUBuffer`, `WGPUCommandEncoder` | `wgpu.Device`, `wgpu.Buffer`, `wgpu.CommandEncoder` |
+| `wgpuCreateInstance(..)` | `wgpu.createInstance(..)` or `wgpu.Instance.create(..)` |
+| `wgpuDeviceCreateBuffer(device, &desc)` | `device.createBuffer(&desc)` |
+| `wgpuBufferGetSize(buffer)` | `buffer.getSize()` |
+| `WGPUBufferUsage_MapRead` | `wgpu.BufferUsage{ .map_read = true }` (combine with `.bitOr(..)`) |
+| `WGPUColorWriteMask_All` | `wgpu.ColorWriteMask_all` |
+| `WGPUFeatureName_DepthClipControl` | `wgpu.FeatureName.depth_clip_control` |
+| `WGPUSType_ShaderSourceWGSL` | `wgpu.SType.shader_source_wgsl` |
+| `WGPUStringView` | `wgpu.StringView` (`.fromSlice`, `.toSlice`, `.fromZStr`) |
+| `WGPUBool` | `bool` in signatures, `u32` in extern struct fields |
+| `WGPU_NULLABLE T*` | `?*T` |
+| `WGPUDeviceDescriptor` | `wgpu.DeviceDescriptor` (same snake_case field names) |
 
-## Supported targets
+The `WGPU`/`wgpu` prefixes are dropped throughout. Three rules cover the rest:
 
-`x86_64-linux-gnu`, `aarch64-linux-gnu`, `x86_64-linux-musl`,
-`aarch64-linux-musl`, `x86_64-windows-gnu`, `aarch64-windows-gnu`.
-
-GPU tests have only been run on `x86_64-linux-gnu` (my machine).
-
-## Testing
-
-```sh
-# fast: use a prebuilt wgpu-native, checked-in src/
-zig build test -Dtest=true -Dmode=minimal -Dwgpu=/path/to/libwgpu_native.a
-
-# also run the windowed triangle/rgbw tests (needs a display)
-zig build test -Dtest=true -Dheaded-tests=true -Dmode=minimal -Dwgpu=/path/to/libwgpu_native.a
-```
-
-The `test` step is required: `-Dtest=true` alone only builds and installs the test
-binaries (as `zig-out/bin/{abi,lib,compute,triangle,rgbw}`) without running them.
-
-Suites: `abi` (extern-struct layout), `lib` (value-level), `compute` (headless
-Vulkan), `triangle` and `rgbw` (windowed). Tested on Zig 0.17.1.
-
-## Zig version support
-
-Zig 0.18 renamed `packed struct` to `bitpack struct` and changed `std.meta`,
-so stable and master are not source-compatible. Two branches:
-
-| Branch | Zig | Notes |
-| --- | --- | --- |
-| `zig-0.17.1` | 0.17.1 | stable toolchain, flake pins `zig-0_17_1` |
-| `main` | 0.18.0-dev | tracks Zig master |
+- Entry points whose receiver is a handle become methods on it, e.g.
+  `wgpuQueueSubmit(queue, ..)` becomes `queue.submit(..)`.
+- Functions with no receiver stay at the root, e.g. `wgpu.getInstanceFeatures`.
+- Callback infos map 1:1, e.g. `wgpu.RequestAdapterCallbackInfo`, with typed
+  trampolines in `wgpu.callbacks`.
 
 ## Quirks
 
 Differences from raw wgpu-native:
 
-### Handles are opaque pointers
+- **Nullable handles are options.** `WGPU_NULLABLE` follows the C headers, so
+  descriptor fields are `?*T` and reads need `.?`/`if` (e.g.
+  `surface_tex.texture.?.createView(null)`).
+- **Flags are `bitpack struct` flag sets.** Compose with `bitOr`/`bitAnd`/`bitXor`.
+  `@bitCast` through the backing `u64` still works when you need raw bits, e.g.
+  `wgpu.BufferUsage{ .map_read = true }.bitOr(.{ .copy_dst = true })`.
+- **Descriptors are zero-initialized.** C's `INIT` macros zero every field and
+  the generated descriptors match, so `{}` construction is deterministic. Where
+  a C enum has no zero-valued enumerator, the generator adds a Zig-only
+  `@"undefined" = 0` tag for that default, and it never maps to a C value.
+- **Chained structs set `s_type` explicitly.** Descriptors that take
+  `next_in_chain` point at a chained struct, and `wgpu.chainedIterator(&first_chain)`
+  walks the chain.
 
-Handles are `*T` pointers with methods and refcounting. Nullable fields are
-`?*T`, so descriptors take handles directly:
+## Examples
 
-```zig
-const instance = wgpu.Instance.create(null);
-defer instance.release();
+- [`tests/triangle.zig`](tests/triangle.zig) covers adapter/device, surface,
+  render pass and buffer readback (windowed).
+- [`tests/compute.zig`](tests/compute.zig) covers headless Vulkan compute, with
+  and without the sync wrappers.
+- [`tests/lib.zig`](tests/lib.zig) covers the value-level API.
+- [`tests/abi.zig`](tests/abi.zig) checks extern-struct layout against the C
+  headers.
 
-// nullable handle fields are plain options
-var config: wgpu.SurfaceConfiguration = .{ .device = device, /* ... */ };
-const view = surface_tex.texture.?.createView(null);
-```
-
-Parameters and returns follow `WGPU_NULLABLE` from the C headers, so only
-genuinely nullable pointers are options.
-
-### Flags are packed structs
-
-Compose typed flag sets with the generated `bitOr`, `bitAnd` and `bitXor`
-methods:
-
-```zig
-const usage = wgpu.BufferUsage{ .map_read = true }
-    .bitOr(.{ .copy_dst = true });
-```
-
-`@bitCast` through the backing `u64` still works when you need raw bits.
-
-### `WGPUBool` is `bool` in signatures, `u32` in struct fields
-
-Function parameters and returns use `bool` (`device.poll(true, null)`,
-`adapter.hasFeature(...)`). C struct layout still requires `u32` for extern
-struct fields:
-
-```zig
-.alpha_to_coverage_enabled = 1, // true
-.mapped_at_creation = 0,        // false
-```
-
-### Descriptors are zero-initialized
-
-C's `INIT` macros zero every field, and the generated descriptors do the same.
-`{}` construction is deterministic because every field has a default. Where a C
-enum has no zero-valued enumerator, the generator adds a Zig-only
-`@"undefined" = 0` tag for that default. It never corresponds to a C value.
-
-### Chained structs
-
-Descriptors that take `next_in_chain` point at a chained struct whose `s_type`
-you set explicitly. `wgpu.chainedIterator` walks the chain:
-
-```zig
-var iter = wgpu.chainedIterator(&first_chain);
-while (iter.next()) |chain| { ... }
-```
-
-## Refreshing the bindings
-
-Generated code is tied to one wgpu-native release. `wgpu-native-version` records
-the tag, the wgpu-native commit and the nested `webgpu-headers` commit. Bump all
-three together, then regenerate once:
-
-```sh
-git submodule update --init --recursive
-nix develop -c zig build -Dmode=codegen   # rewrites src/ in a single pass
-git diff src/                             # review, then commit
-tools/check-wgpu-pin.sh                   # tag/commit/readme agree
-```
-
-`-Dmode=codegen` reruns `translate-c` on `vendor/wgpu-native/ffi/wgpu.h` and
-rewrites the ergonomic layers. The generator reads translate-c output directly,
-so one pass is enough after a header bump. A second pass must leave `src/`
-unchanged. Codegen fails on leaks and runs the generator tests.
-
-Run codegen inside `nix develop`. translate-c records absolute include paths in
-`src/c-wgpu.zig`, so regenerating outside the pinned dev shell rewrites those
-comments even when nothing else changed.
+Build modes, test commands and the codegen workflow are in
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Contributing
 
@@ -313,12 +328,9 @@ The canonical repo is
 [git.toastyx.dev/toasty/z-wgpu-native](https://git.toastyx.dev/toasty/z-wgpu-native).
 It syncs to
 [github.com/toastyyyxd/z-wgpu-native](https://github.com/toastyyyxd/z-wgpu-native)
-automatically. Use the GitHub mirror for issues and pull requests.
-
-```sh
-nix develop -c zig build test -Dtest=true                     # headless suites
-nix develop -c zig build test -Dtest=true -Dheaded-tests=true # + windowed suites
-```
+automatically. Use the GitHub mirror for issues and pull requests. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the pinned dev shell, the test suites, the
+target matrix and how to regenerate the bindings.
 
 ## AI disclosure
 

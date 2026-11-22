@@ -4,3 +4,5 @@
 zig-out/
 result/
 result
+.wine/
+.wine-ci/

@@ -14,7 +14,7 @@ let
       url,
       hash,
     }:
-    runCommand "${name}.tar.gz"
+    runCommand name
       {
         src = url;
         nativeBuildInputs = [ zig ];
@@ -22,8 +22,9 @@ let
         outputHashMode = "flat";
       }
       ''
-        touch "$TMPDIR/build.zig" # workaround <https://codeberg.org/ziglang/zig/issues/31866>
-        hash="$(cd "$TMPDIR" && zig fetch --global-cache-dir "$TMPDIR" "${url}")"
+        hash="$(ZIG_GLOBAL_CACHE_DIR="$TMPDIR" zig fetch "${url}")"
+        touch "$TMPDIR/build.zig" # workaround <https://github.com/Cloudef/zig2nix/issues/62>
+        (cd "$TMPDIR" && ZIG_GLOBAL_CACHE_DIR="$TMPDIR" zig fetch --save=zig2nix-temporary "${url}")
         mv "$TMPDIR/p/$hash.tar.gz" "$out"
       '';
 in
