@@ -150,7 +150,6 @@ three together, then regenerate once:
 git submodule update --init --recursive
 nix develop -c zig build -Dmode=codegen   # rewrites src/ in a single pass
 git diff src/                             # review, then commit
-tools/check-wgpu-pin.sh                   # tag/commit/readme agree
 ```
 
 `-Dmode=codegen` reruns `translate-c` on `vendor/wgpu-native/ffi/wgpu.h` and

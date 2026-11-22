@@ -558,7 +558,7 @@ fn writeHandleMethodImpl(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn
         var ob: [256]u8 = undefined;
         const otype = mapping.ast.getNodeSource(out_param.type);
         const zot = Common.mapCTypeRef(Common.stripCPtrPrefix(otype), &ob, mapping, true);
-        try buf.print("        var result: {s} = undefined;\n", .{zot});
+        try buf.print("        var result: {s} = .{{}};\n", .{zot});
         try buf.print("        const status = c.{s}(@ptrCast(self)", .{fn_decl.name});
         for (fn_decl.params.items[1..], 0..) |*param, i| {
             try buf.appendSlice(", ");
@@ -763,7 +763,7 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
         const zot_raw = Common.mapCTypeRef(Common.stripCPtrPrefix(otype), &ob, mapping, true);
         var zot_buf: [256]u8 = undefined;
         const zot = Common.mapCRefToTypesRef(zot_raw, &zot_buf);
-        try buf.print("    var result: {s} = undefined;\n", .{zot});
+        try buf.print("    var result: {s} = .{{}};\n", .{zot});
         try buf.print("    const status = c.{s}(", .{fn_decl.name});
         for (fn_decl.params.items, 0..) |*param, i| {
             if (i > 0) try buf.appendSlice(", ");

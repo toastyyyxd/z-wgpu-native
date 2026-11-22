@@ -145,17 +145,22 @@ const std = @import("std");
 const wgpu = @import("z_wgpu_native");
 
 pub fn main() !void {
-    var threaded: std.Io.Threaded = .init(std.heap.page_allocator, .{});
+    const allocator = std.heap.page_allocator;
+    var threaded: std.Io.Threaded = .init(allocator, .{});
     defer threaded.deinit();
     const io = threaded.io();
 
     const instance = wgpu.createInstance(null);
     defer instance.release();
 
-    const adapter = (try instance.requestAdapterSync(io, null)).adapter orelse return error.NoAdapter;
+    var adapter_result = try instance.requestAdapterSync(io, allocator, null);
+    defer adapter_result.deinit(allocator);
+    const adapter = try adapter_result.tryAdapter();
     defer adapter.release();
 
-    const device = (try adapter.requestDeviceSync(io, instance, null)).device orelse return error.NoDevice;
+    var device_result = try instance.requestDeviceSync(io, allocator, adapter, null);
+    defer device_result.deinit(allocator);
+    const device = try device_result.tryDevice();
     defer device.release();
 
     const queue = device.getQueue();
@@ -163,7 +168,7 @@ pub fn main() !void {
 
     // From here it is ordinary WebGPU: create shaders, pipelines and buffers with
     // `device`, submit with `queue`, and read results back with
-    // `buffer.mapSync(io, device, .{ .read = true }, 0, size)`.
+    // `buffer.mapSync(io, allocator, device, .{ .read = true }, 0, size, .none)`.
 }
 ```
 
@@ -180,6 +185,7 @@ status enum:
 ```zig
 const limits = try device.getLimits();  // StatusError!Limits
 const info = try adapter.getInfo();     // StatusError!AdapterInfo
+defer info.deinit();                    // frees the C-allocated payload
 ```
 
 Only entry points wgpu-native actually implements are used here. Calling a
@@ -239,22 +245,43 @@ need an explicit count or pointer.
 
 ### Sync wrappers
 
-Future-returning calls have blocking forms that take an `std.Io`:
+Future-returning calls have blocking forms that take an `std.Io` and an
+allocator:
 
 ```zig
-const adapter = (try instance.requestAdapterSync(io, null)).adapter orelse return error.NoAdapter;
+var adapter_result = try instance.requestAdapterSync(io, allocator, null);
+defer adapter_result.deinit(allocator);
+const adapter = try adapter_result.tryAdapter();
 defer adapter.release();
 
-const device = (try adapter.requestDeviceSync(io, instance, null)).device orelse return error.NoDevice;
+var device_result = try instance.requestDeviceSync(io, allocator, adapter, null);
+defer device_result.deinit(allocator);
+const device = try device_result.tryDevice();
 defer device.release();
 
-_ = try buffer.mapSync(io, device, .{ .read = true }, 0, size);
-_ = try queue.onSubmittedWorkDoneSync(io, device);
+var mapped = try buffer.mapSync(io, allocator, device, .{ .read = true }, 0, size, .none);
+defer mapped.deinit(allocator);
+try mapped.tryMap();
+
+var done = try queue.onSubmittedWorkDoneSync(io, allocator, device, .none);
+defer done.deinit(allocator);
+try done.tryOnSubmittedWorkDone();
 ```
 
-`requestAdapter` and `requestDevice` complete inside the call. `mapSync` and
-`onSubmittedWorkDoneSync` block on `wgpuDevicePoll(true)`. Sync wrappers are not
-generated for entry points wgpu-native stubs out (see
+Each wrapper returns a result value. `try` covers only the allocation of the
+callback message. The operation status is checked with `tryAdapter`,
+`tryDevice`, `tryMap`, or `tryOnSubmittedWorkDone`, which return the error set
+of the matching status enum, so a failed request does not look like an empty
+result. `text()` returns the message delivered by the callback, empty when
+there is none, and `deinit(allocator)` frees it.
+
+`requestAdapter` and `requestDevice` complete inside the call, so they take no
+timeout. `mapSync` and `onSubmittedWorkDoneSync` take a `std.Io.Timeout`.
+`.none` blocks until the operation completes. A duration or deadline returns
+`error.Timeout` when it expires, leaving the operation pending; its callback
+frees the allocated state when it runs later. `instance.requestDeviceSync` is a
+shortcut that forwards to the adapter form. Sync wrappers are not generated for
+entry points wgpu-native stubs out (see
 [Entry points that currently abort](#entry-points-that-currently-abort)).
 
 ## Entry points that currently abort
@@ -317,6 +344,9 @@ Differences from raw wgpu-native:
   the generated descriptors match, so `{}` construction is deterministic. Where
   a C enum has no zero-valued enumerator, the generator adds a Zig-only
   `@"undefined" = 0` tag for that default, and it never maps to a C value.
+- **Out payloads expose `deinit()`.** Results with a C `…FreeMembers`
+  (`getInfo`, `getCapabilities`, `getFeatures`) own C-side memory; free them with
+  `.deinit()`. The raw `wgpu.c.wgpu…FreeMembers` functions remain available.
 - **Chained structs set `s_type` explicitly.** Descriptors that take
   `next_in_chain` point at a chained struct, and `wgpu.chainedIterator(&first_chain)`
   walks the chain.

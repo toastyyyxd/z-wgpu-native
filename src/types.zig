@@ -3,6 +3,13 @@ const std = @import("std");
 const handles = @import("handles.zig");
 const types = @This();
 
+inline fn asC(comptime C: type, value: anytype) C {
+    var out: C = std.mem.zeroes(C);
+    const v = value;
+    @memcpy(std.mem.asBytes(&out), std.mem.asBytes(&v));
+    return out;
+}
+
 pub const MapAsyncStatusError = error{
     CallbackCancelled,
     Error,
@@ -1225,6 +1232,11 @@ pub const AdapterInfo = extern struct {
     device_id: u32 = 0,
     subgroup_min_size: u32 = 0,
     subgroup_max_size: u32 = 0,
+    /// Releases the payload allocated by `c.wgpuAdapterInfoFreeMembers`.
+    pub fn deinit(self: AdapterInfo) void {
+        c.wgpuAdapterInfoFreeMembers(asC(c.WGPUAdapterInfo, self));
+    }
+
 };
 
 pub const BlendComponent = extern struct {
@@ -1464,6 +1476,11 @@ pub const SupportedFeatures = extern struct {
         self.features = items.ptr;
     }
 
+    /// Releases the payload allocated by `c.wgpuSupportedFeaturesFreeMembers`.
+    pub fn deinit(self: SupportedFeatures) void {
+        c.wgpuSupportedFeaturesFreeMembers(asC(c.WGPUSupportedFeatures, self));
+    }
+
 };
 
 pub const SupportedInstanceFeatures = extern struct {
@@ -1474,6 +1491,12 @@ pub const SupportedInstanceFeatures = extern struct {
         self.features = items.ptr;
     }
 
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    pub inline fn deinit(self: SupportedInstanceFeatures) void {
+        _ = self;
+        @compileError("wgpuSupportedInstanceFeaturesFreeMembers is stubbed by wgpu-native; use wgpu.c.wgpuSupportedInstanceFeaturesFreeMembers for the raw extern (aborts at runtime)");
+    }
+
 };
 
 pub const SupportedWGSLLanguageFeatures = extern struct {
@@ -1482,6 +1505,12 @@ pub const SupportedWGSLLanguageFeatures = extern struct {
     pub fn setFeatures(self: *SupportedWGSLLanguageFeatures, items: []const WGSLLanguageFeatureName) void {
         self.feature_count = @intCast(items.len);
         self.features = items.ptr;
+    }
+
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    pub inline fn deinit(self: SupportedWGSLLanguageFeatures) void {
+        _ = self;
+        @compileError("wgpuSupportedWGSLLanguageFeaturesFreeMembers is stubbed by wgpu-native; use wgpu.c.wgpuSupportedWGSLLanguageFeaturesFreeMembers for the raw extern (aborts at runtime)");
     }
 
 };
@@ -1508,6 +1537,11 @@ pub const SurfaceCapabilities = extern struct {
     pub fn setAlphaModes(self: *SurfaceCapabilities, items: []const CompositeAlphaMode) void {
         self.alpha_mode_count = @intCast(items.len);
         self.alpha_modes = items.ptr;
+    }
+
+    /// Releases the payload allocated by `c.wgpuSurfaceCapabilitiesFreeMembers`.
+    pub fn deinit(self: SurfaceCapabilities) void {
+        c.wgpuSurfaceCapabilitiesFreeMembers(asC(c.WGPUSurfaceCapabilities, self));
     }
 
 };

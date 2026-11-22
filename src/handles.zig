@@ -56,65 +56,107 @@ pub const unimplemented_entry_points: []const []const u8 = &.{
 };
 
 pub const OnSubmittedWorkDoneResult = struct {
-    status: types.QueueWorkDoneStatus = undefined,
-    message_buf: [512]u8 = undefined,
-    message_len: usize = 0,
+    status: types.QueueWorkDoneStatus = .@"undefined",
+    message: ?[]u8 = null,
 
-    pub fn message(self: *const @This()) []const u8 {
-        return self.message_buf[0..self.message_len];
+    pub fn text(self: *const @This()) []const u8 {
+        return self.message orelse "";
+    }
+
+    pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
+        if (self.message) |m| allocator.free(m);
+        self.message = null;
+    }
+
+    pub fn tryOnSubmittedWorkDone(self: *const @This()) types.QueueWorkDoneStatusError!void {
+        if (self.status == .@"undefined") return error.Error;
+        try self.status.toError();
     }
 };
 
-const OnSubmittedWorkDoneSyncCtx = struct { response: OnSubmittedWorkDoneResult = .{}, done: bool = false };
+const OnSubmittedWorkDoneSyncCtx = struct { allocator: std.mem.Allocator, response: OnSubmittedWorkDoneResult = .{}, done: bool = false, oom: bool = false, abandoned: bool = false };
 
 fn onSubmittedWorkDoneSyncTrampoline(status: c.WGPUQueueWorkDoneStatus, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
     _ = userdata2;
     const ctx: *OnSubmittedWorkDoneSyncCtx = @ptrCast(@alignCast(userdata1));
     ctx.response.status = @enumFromInt(status);
     if (message.data) |d| {
-        const n = @min(message.length, ctx.response.message_buf.len);
-        @memcpy(ctx.response.message_buf[0..n], d[0..n]);
-        ctx.response.message_len = n;
+        ctx.response.message = ctx.allocator.dupe(u8, d[0..message.length]) catch {
+            ctx.oom = true;
+            ctx.done = true;
+            return;
+        };
+    }
+    if (ctx.abandoned) {
+        if (ctx.response.message) |m| ctx.allocator.free(m);
+        ctx.allocator.destroy(ctx);
+        return;
     }
     ctx.done = true;
 }
 
 pub const MapResult = struct {
-    status: types.MapAsyncStatus = undefined,
-    message_buf: [512]u8 = undefined,
-    message_len: usize = 0,
+    status: types.MapAsyncStatus = .@"undefined",
+    message: ?[]u8 = null,
 
-    pub fn message(self: *const @This()) []const u8 {
-        return self.message_buf[0..self.message_len];
+    pub fn text(self: *const @This()) []const u8 {
+        return self.message orelse "";
+    }
+
+    pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
+        if (self.message) |m| allocator.free(m);
+        self.message = null;
+    }
+
+    pub fn tryMap(self: *const @This()) types.MapAsyncStatusError!void {
+        if (self.status == .@"undefined") return error.Error;
+        try self.status.toError();
     }
 };
 
-const MapSyncCtx = struct { response: MapResult = .{}, done: bool = false };
+const MapSyncCtx = struct { allocator: std.mem.Allocator, response: MapResult = .{}, done: bool = false, oom: bool = false, abandoned: bool = false };
 
 fn mapSyncTrampoline(status: c.WGPUMapAsyncStatus, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
     _ = userdata2;
     const ctx: *MapSyncCtx = @ptrCast(@alignCast(userdata1));
     ctx.response.status = @enumFromInt(status);
     if (message.data) |d| {
-        const n = @min(message.length, ctx.response.message_buf.len);
-        @memcpy(ctx.response.message_buf[0..n], d[0..n]);
-        ctx.response.message_len = n;
+        ctx.response.message = ctx.allocator.dupe(u8, d[0..message.length]) catch {
+            ctx.oom = true;
+            ctx.done = true;
+            return;
+        };
+    }
+    if (ctx.abandoned) {
+        if (ctx.response.message) |m| ctx.allocator.free(m);
+        ctx.allocator.destroy(ctx);
+        return;
     }
     ctx.done = true;
 }
 
 pub const RequestAdapterResult = struct {
-    status: types.RequestAdapterStatus = undefined,
+    status: types.RequestAdapterStatus = .@"undefined",
     adapter: ?*Adapter = null,
-    message_buf: [512]u8 = undefined,
-    message_len: usize = 0,
+    message: ?[]u8 = null,
 
-    pub fn message(self: *const @This()) []const u8 {
-        return self.message_buf[0..self.message_len];
+    pub fn text(self: *const @This()) []const u8 {
+        return self.message orelse "";
+    }
+
+    pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
+        if (self.message) |m| allocator.free(m);
+        self.message = null;
+    }
+
+    pub fn tryAdapter(self: *const @This()) types.RequestAdapterStatusError!*Adapter {
+        if (self.status == .@"undefined") return error.Error;
+        try self.status.toError();
+        return self.adapter orelse error.Error;
     }
 };
 
-const RequestAdapterSyncCtx = struct { response: RequestAdapterResult = .{}, done: bool = false };
+const RequestAdapterSyncCtx = struct { allocator: std.mem.Allocator, response: RequestAdapterResult = .{}, done: bool = false, oom: bool = false, abandoned: bool = false };
 
 fn requestAdapterSyncTrampoline(status: c.WGPURequestAdapterStatus, adapter: c.WGPUAdapter, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
     _ = userdata2;
@@ -122,25 +164,37 @@ fn requestAdapterSyncTrampoline(status: c.WGPURequestAdapterStatus, adapter: c.W
     ctx.response.status = @enumFromInt(status);
     ctx.response.adapter = if (adapter) |h| Adapter.fromPtr(@ptrCast(h)) else null;
     if (message.data) |d| {
-        const n = @min(message.length, ctx.response.message_buf.len);
-        @memcpy(ctx.response.message_buf[0..n], d[0..n]);
-        ctx.response.message_len = n;
+        ctx.response.message = ctx.allocator.dupe(u8, d[0..message.length]) catch {
+            ctx.oom = true;
+            ctx.done = true;
+            return;
+        };
     }
     ctx.done = true;
 }
 
 pub const RequestDeviceResult = struct {
-    status: types.RequestDeviceStatus = undefined,
+    status: types.RequestDeviceStatus = .@"undefined",
     device: ?*Device = null,
-    message_buf: [512]u8 = undefined,
-    message_len: usize = 0,
+    message: ?[]u8 = null,
 
-    pub fn message(self: *const @This()) []const u8 {
-        return self.message_buf[0..self.message_len];
+    pub fn text(self: *const @This()) []const u8 {
+        return self.message orelse "";
+    }
+
+    pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
+        if (self.message) |m| allocator.free(m);
+        self.message = null;
+    }
+
+    pub fn tryDevice(self: *const @This()) types.RequestDeviceStatusError!*Device {
+        if (self.status == .@"undefined") return error.Error;
+        try self.status.toError();
+        return self.device orelse error.Error;
     }
 };
 
-const RequestDeviceSyncCtx = struct { response: RequestDeviceResult = .{}, done: bool = false };
+const RequestDeviceSyncCtx = struct { allocator: std.mem.Allocator, response: RequestDeviceResult = .{}, done: bool = false, oom: bool = false, abandoned: bool = false };
 
 fn requestDeviceSyncTrampoline(status: c.WGPURequestDeviceStatus, device: c.WGPUDevice, message: c.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
     _ = userdata2;
@@ -148,9 +202,11 @@ fn requestDeviceSyncTrampoline(status: c.WGPURequestDeviceStatus, device: c.WGPU
     ctx.response.status = @enumFromInt(status);
     ctx.response.device = if (device) |h| Device.fromPtr(@ptrCast(h)) else null;
     if (message.data) |d| {
-        const n = @min(message.length, ctx.response.message_buf.len);
-        @memcpy(ctx.response.message_buf[0..n], d[0..n]);
-        ctx.response.message_len = n;
+        ctx.response.message = ctx.allocator.dupe(u8, d[0..message.length]) catch {
+            ctx.oom = true;
+            ctx.done = true;
+            return;
+        };
     }
     ctx.done = true;
 }
@@ -165,7 +221,7 @@ pub const Adapter = opaque {
     }
 
     pub fn getInfo(self: *Adapter) types.StatusError!types.AdapterInfo {
-        var result: types.AdapterInfo = undefined;
+        var result: types.AdapterInfo = .{};
         const status = c.wgpuAdapterGetInfo(@ptrCast(self), @ptrCast(&result));
         try @as(types.Status, @enumFromInt(status)).toError();
         return result;
@@ -176,7 +232,7 @@ pub const Adapter = opaque {
     }
 
     pub fn getLimits(self: *Adapter) types.StatusError!types.Limits {
-        var result: types.Limits = undefined;
+        var result: types.Limits = .{};
         const status = c.wgpuAdapterGetLimits(@ptrCast(self), @ptrCast(&result));
         try @as(types.Status, @enumFromInt(status)).toError();
         return result;
@@ -195,20 +251,13 @@ pub const Adapter = opaque {
         return asC(types.Future, result);
     }
 
-    pub fn requestDeviceSync(self: *Adapter, io: std.Io, instance: *Instance, descriptor: ?*const types.DeviceDescriptor) types.WaitStatusError!RequestDeviceResult {
-        var ctx: RequestDeviceSyncCtx = .{};
+    pub fn requestDeviceSync(self: *Adapter, io: std.Io, allocator: std.mem.Allocator, instance: *Instance, descriptor: ?*const types.DeviceDescriptor) std.mem.Allocator.Error!RequestDeviceResult {
+        var ctx: RequestDeviceSyncCtx = .{ .allocator = allocator };
+        _ = io;
+        _ = instance;
         const future = self.requestDevice(descriptor, types.RequestDeviceCallbackInfo{ .mode = .allow_process_events, .callback = &requestDeviceSyncTrampoline, .userdata1 = @ptrCast(&ctx) });
         _ = future;
-        var spins: u32 = 0;
-        while (!ctx.done) {
-            instance.processEvents();
-            if (ctx.done) break;
-            if (spins < 16) {
-                spins += 1;
-                continue;
-            }
-            std.Io.sleep(io, std.Io.Duration.fromMilliseconds(1), .awake) catch {};
-        }
+        if (ctx.oom) return error.OutOfMemory;
         return ctx.response;
     }
 
@@ -338,16 +387,46 @@ pub const Buffer = opaque {
         c.wgpuBufferAddRef(@ptrCast(self));
     }
 
-    pub fn mapSync(self: *Buffer, io: std.Io, device: *Device, mode: types.MapMode, offset: usize, size: usize) types.WaitStatusError!MapResult {
-        var ctx: MapSyncCtx = .{};
-        const future = self.mapAsync(mode, offset, size, types.BufferMapCallbackInfo{ .mode = .allow_process_events, .callback = &mapSyncTrampoline, .userdata1 = @ptrCast(&ctx) });
+    pub fn mapSync(self: *Buffer, io: std.Io, allocator: std.mem.Allocator, device: *Device, mode: types.MapMode, offset: usize, size: usize, timeout: std.Io.Timeout) (std.mem.Allocator.Error || std.Io.Timeout.Error)!MapResult {
+        var stack_ctx: MapSyncCtx = .{ .allocator = allocator };
+        const ctx: *MapSyncCtx = if (timeout == .none) &stack_ctx else blk: {
+            const heap_ctx = allocator.create(MapSyncCtx) catch return error.OutOfMemory;
+            heap_ctx.* = .{ .allocator = allocator };
+            break :blk heap_ctx;
+        };
+        const future = self.mapAsync(mode, offset, size, types.BufferMapCallbackInfo{ .mode = .allow_process_events, .callback = &mapSyncTrampoline, .userdata1 = @ptrCast(ctx) });
         _ = future;
-        while (!ctx.done) {
-            _ = device.poll(true, null);
-            if (ctx.done) break;
-            std.Io.sleep(io, std.Io.Duration.fromMilliseconds(1), .awake) catch {};
+        if (timeout == .none) {
+            while (!ctx.done) _ = device.poll(true, null);
+        } else {
+            const deadline = switch (timeout) {
+                .none => unreachable,
+                .duration => |d| std.Io.Clock.Timestamp.fromNow(io, d),
+                .deadline => |d| d,
+            };
+            var spins: u32 = 0;
+            while (!ctx.done) {
+                _ = device.poll(false, null);
+                if (ctx.done) break;
+                const remaining_ns = deadline.durationFromNow(io).raw.nanoseconds;
+                if (remaining_ns <= 0) {
+                    ctx.abandoned = true;
+                    return error.Timeout;
+                }
+                if (spins < 16) {
+                    spins += 1;
+                    continue;
+                }
+                const sleep_ns = @min(remaining_ns, 1_000_000);
+                std.Io.sleep(io, std.Io.Duration.fromNanoseconds(sleep_ns), deadline.clock) catch {};
+            }
         }
-        return ctx.response;
+
+        const oom = ctx.oom;
+        const response = ctx.response;
+        if (timeout != .none) allocator.destroy(ctx);
+        if (oom) return error.OutOfMemory;
+        return response;
     }
 
 };
@@ -699,7 +778,7 @@ pub const Device = opaque {
     }
 
     pub fn getLimits(self: *Device) types.StatusError!types.Limits {
-        var result: types.Limits = undefined;
+        var result: types.Limits = .{};
         const status = c.wgpuDeviceGetLimits(@ptrCast(self), @ptrCast(&result));
         try @as(types.Status, @enumFromInt(status)).toError();
         return result;
@@ -824,21 +903,17 @@ pub const Instance = opaque {
         @compileError("wgpuInstanceWaitAny is stubbed by wgpu-native; use wgpu.c.wgpuInstanceWaitAny for the raw extern (aborts at runtime)");
     }
 
-    pub fn requestAdapterSync(self: *Instance, io: std.Io, options: ?*const types.RequestAdapterOptions) types.WaitStatusError!RequestAdapterResult {
-        var ctx: RequestAdapterSyncCtx = .{};
+    pub fn requestAdapterSync(self: *Instance, io: std.Io, allocator: std.mem.Allocator, options: ?*const types.RequestAdapterOptions) std.mem.Allocator.Error!RequestAdapterResult {
+        var ctx: RequestAdapterSyncCtx = .{ .allocator = allocator };
+        _ = io;
         const future = self.requestAdapter(options, types.RequestAdapterCallbackInfo{ .mode = .allow_process_events, .callback = &requestAdapterSyncTrampoline, .userdata1 = @ptrCast(&ctx) });
         _ = future;
-        var spins: u32 = 0;
-        while (!ctx.done) {
-            self.processEvents();
-            if (ctx.done) break;
-            if (spins < 16) {
-                spins += 1;
-                continue;
-            }
-            std.Io.sleep(io, std.Io.Duration.fromMilliseconds(1), .awake) catch {};
-        }
+        if (ctx.oom) return error.OutOfMemory;
         return ctx.response;
+    }
+
+    pub fn requestDeviceSync(self: *Instance, io: std.Io, allocator: std.mem.Allocator, adapter: *Adapter, descriptor: ?*const types.DeviceDescriptor) std.mem.Allocator.Error!RequestDeviceResult {
+        return adapter.requestDeviceSync(io, allocator, self, descriptor);
     }
 
     pub fn create(descriptor: ?*const types.InstanceDescriptor) *Instance {
@@ -966,16 +1041,46 @@ pub const Queue = opaque {
         return asC(types.SubmissionIndex, result);
     }
 
-    pub fn onSubmittedWorkDoneSync(self: *Queue, io: std.Io, device: *Device) types.WaitStatusError!OnSubmittedWorkDoneResult {
-        var ctx: OnSubmittedWorkDoneSyncCtx = .{};
-        const future = self.onSubmittedWorkDone(types.QueueWorkDoneCallbackInfo{ .mode = .allow_process_events, .callback = &onSubmittedWorkDoneSyncTrampoline, .userdata1 = @ptrCast(&ctx) });
+    pub fn onSubmittedWorkDoneSync(self: *Queue, io: std.Io, allocator: std.mem.Allocator, device: *Device, timeout: std.Io.Timeout) (std.mem.Allocator.Error || std.Io.Timeout.Error)!OnSubmittedWorkDoneResult {
+        var stack_ctx: OnSubmittedWorkDoneSyncCtx = .{ .allocator = allocator };
+        const ctx: *OnSubmittedWorkDoneSyncCtx = if (timeout == .none) &stack_ctx else blk: {
+            const heap_ctx = allocator.create(OnSubmittedWorkDoneSyncCtx) catch return error.OutOfMemory;
+            heap_ctx.* = .{ .allocator = allocator };
+            break :blk heap_ctx;
+        };
+        const future = self.onSubmittedWorkDone(types.QueueWorkDoneCallbackInfo{ .mode = .allow_process_events, .callback = &onSubmittedWorkDoneSyncTrampoline, .userdata1 = @ptrCast(ctx) });
         _ = future;
-        while (!ctx.done) {
-            _ = device.poll(true, null);
-            if (ctx.done) break;
-            std.Io.sleep(io, std.Io.Duration.fromMilliseconds(1), .awake) catch {};
+        if (timeout == .none) {
+            while (!ctx.done) _ = device.poll(true, null);
+        } else {
+            const deadline = switch (timeout) {
+                .none => unreachable,
+                .duration => |d| std.Io.Clock.Timestamp.fromNow(io, d),
+                .deadline => |d| d,
+            };
+            var spins: u32 = 0;
+            while (!ctx.done) {
+                _ = device.poll(false, null);
+                if (ctx.done) break;
+                const remaining_ns = deadline.durationFromNow(io).raw.nanoseconds;
+                if (remaining_ns <= 0) {
+                    ctx.abandoned = true;
+                    return error.Timeout;
+                }
+                if (spins < 16) {
+                    spins += 1;
+                    continue;
+                }
+                const sleep_ns = @min(remaining_ns, 1_000_000);
+                std.Io.sleep(io, std.Io.Duration.fromNanoseconds(sleep_ns), deadline.clock) catch {};
+            }
         }
-        return ctx.response;
+
+        const oom = ctx.oom;
+        const response = ctx.response;
+        if (timeout != .none) allocator.destroy(ctx);
+        if (oom) return error.OutOfMemory;
+        return response;
     }
 
 };
@@ -1323,7 +1428,7 @@ pub const Surface = opaque {
     }
 
     pub fn getCapabilities(self: *Surface, adapter: *Adapter) types.StatusError!types.SurfaceCapabilities {
-        var result: types.SurfaceCapabilities = undefined;
+        var result: types.SurfaceCapabilities = .{};
         const status = c.wgpuSurfaceGetCapabilities(@ptrCast(self), @ptrCast(adapter), @ptrCast(&result));
         try @as(types.Status, @enumFromInt(status)).toError();
         return result;
@@ -1501,7 +1606,7 @@ pub inline fn supportedWGSLLanguageFeaturesFreeMembers(supportedWGSLLanguageFeat
 }
 
 pub fn getInstanceLimits() types.StatusError!types.InstanceLimits {
-    var result: types.InstanceLimits = undefined;
+    var result: types.InstanceLimits = .{};
     const status = c.wgpuGetInstanceLimits(@ptrCast(&result));
     try @as(types.Status, @enumFromInt(status)).toError();
     return result;

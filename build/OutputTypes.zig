@@ -4,6 +4,16 @@ const Common = @import("OutputCommon.zig");
 
 pub fn writeTypes(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
     try buf.appendSlice("const c = @import(\"c_wgpu_native\");\nconst std = @import(\"std\");\nconst handles = @import(\"handles.zig\");\nconst types = @This();\n\n");
+    try buf.appendSlice(
+        \\inline fn asC(comptime C: type, value: anytype) C {
+        \\    var out: C = std.mem.zeroes(C);
+        \\    const v = value;
+        \\    @memcpy(std.mem.asBytes(&out), std.mem.asBytes(&v));
+        \\    return out;
+        \\}
+        \\
+        \\
+    );
     try writeEnums(buf, mapping);
     try writeFlags(buf, mapping);
     try writeStructs(buf, mapping);
@@ -295,6 +305,8 @@ fn writeStructs(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
 
         try writeSliceSetters(buf, mapping, decl, zname, "");
 
+        try writeDeinit(buf, mapping, sname, zname);
+
         // Inject StringView helpers inside the struct body
         if (std.mem.eql(u8, zname, "StringView")) {
             try buf.appendSlice(
@@ -340,6 +352,48 @@ fn writeStructs(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {
             );
         }
     }
+}
+
+/// Find the `wgpu<Type>FreeMembers(WGPU<Type>)` C entry point for a struct, if
+/// the header declares one.
+fn findFreeMembersFn(mapping: *Mapping, struct_c_name: []const u8) ?[]const u8 {
+    var it = mapping.fn_decls.iterator();
+    while (it.next()) |entry| {
+        const fn_decl = entry.value_ptr.*;
+        if (!std.mem.endsWith(u8, fn_decl.name, "FreeMembers")) continue;
+        const ret_slice = if (fn_decl.return_type.unwrap()) |rt| mapping.ast.getNodeSource(rt) else "void";
+        if (!std.mem.eql(u8, ret_slice, "void")) continue;
+        if (fn_decl.params.items.len != 1) continue;
+        const param = fn_decl.params.items[0];
+        if (param.kind != .data_struct) continue;
+        const ctype = mapping.ast.getNodeSource(param.type);
+        if (std.mem.eql(u8, ctype, struct_c_name)) return fn_decl.name;
+    }
+    return null;
+}
+
+fn writeDeinit(buf: *std.array_list.Managed(u8), mapping: *Mapping, sname: []const u8, zname: []const u8) !void {
+    const free_fn = findFreeMembersFn(mapping, sname) orelse return;
+    if (mapping.unimplemented.contains(free_fn)) {
+        try buf.print(
+            \\    /// Stubbed by wgpu-native: calling this is a compile error.
+            \\    pub inline fn deinit(self: {s}) void {{
+            \\        _ = self;
+            \\        @compileError("{s} is stubbed by wgpu-native; use wgpu.c.{s} for the raw extern (aborts at runtime)");
+            \\    }}
+            \\
+            \\
+        , .{ zname, free_fn, free_fn });
+        return;
+    }
+    try buf.print(
+        \\    /// Releases the payload allocated by `c.{s}`.
+        \\    pub fn deinit(self: {s}) void {{
+        \\        c.{s}(asC(c.{s}, self));
+        \\    }}
+        \\
+        \\
+    , .{ free_fn, zname, free_fn, sname });
 }
 
 fn writeTypedefs(buf: *std.array_list.Managed(u8), mapping: *Mapping) !void {

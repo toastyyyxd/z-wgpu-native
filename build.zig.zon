@@ -43,7 +43,6 @@
         "tests",
         "readme.md",
         "wgpu-native-version",
-        "tools",
         "LICENSE-MIT",
         "LICENSE-APACHE",
     },
