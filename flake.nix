@@ -146,6 +146,7 @@
             -Wl,*.def) args+=("''${arg#-Wl,}") ;;
             -nolibc | -nodefaultlibs | -nostdlib) ;; # rust likes to do this for some reason but we are using zig's built in stuff
             -lmsvcrt) ;; # get rid of explicit msvcrt to prevent zig from looking for a dll thats not there
+            -lsynchronization) args+=("-lapi-ms-win-core-synch-l1-2-0") ;; # Zig 0.17.1 has no SDK alias for this API set
             -Wl,--fix-cortex-a53-843419 | --fix-cortex-a53-843419) ;; # gcc-only workaround, lld rejects it
             *) args+=("$arg") ;;
           esac
@@ -170,6 +171,7 @@
             -Wl,*.def) args+=("''${arg#-Wl,}") ;;
             -nolibc | -nodefaultlibs | -nostdlib) ;; # rust likes to do this for some reason but we are using zig's built in stuff
             -lmsvcrt) ;; # get rid of explicit msvcrt to prevent zig from looking for a dll thats not there
+            -lsynchronization) args+=("-lapi-ms-win-core-synch-l1-2-0") ;; # Zig 0.17.1 has no SDK alias for this API set
             -Wl,--fix-cortex-a53-843419 | --fix-cortex-a53-843419) ;; # gcc-only workaround, lld rejects it
             *) args+=("$arg") ;;
           esac
