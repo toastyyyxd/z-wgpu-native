@@ -124,6 +124,8 @@ CI runs the headless suites on a GitHub-hosted ubuntu runner, the Windows
 `abi`/`lib` suites under Wine, and the `abi`/`lib` suites natively on a macOS
 runner (best effort). Windowed suites are not run in CI, because the Nix-linked
 test binaries need the dev shell's glibc, which a non-NixOS runner doesn't have.
+The build-matrix jobs attach the per-target libraries as run artifacts, and a
+`v*` tag publishes the combined tarball as a GitHub release.
 
 ## Code layout
 
