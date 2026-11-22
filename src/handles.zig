@@ -223,9 +223,12 @@ pub const BindGroup = opaque {
         c.wgpuBindGroupRelease(@ptrCast(self));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *BindGroup, label: types.StringView) void {
-        c.wgpuBindGroupSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuBindGroupSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *BindGroup, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuBindGroupSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuBindGroupSetLabel for the raw extern (aborts at runtime)");
     }
 
     pub fn addRef(self: *BindGroup) void {
@@ -239,9 +242,12 @@ pub const BindGroupLayout = opaque {
         return @ptrCast(ptr);
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *BindGroupLayout, label: types.StringView) void {
-        c.wgpuBindGroupLayoutSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuBindGroupLayoutSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *BindGroupLayout, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuBindGroupLayoutSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuBindGroupLayoutSetLabel for the raw extern (aborts at runtime)");
     }
 
     pub fn addRef(self: *BindGroupLayout) void {
@@ -259,10 +265,11 @@ pub const Buffer = opaque {
         return @ptrCast(ptr);
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn getMapState(self: *Buffer) types.BufferMapState {
-        const result = c.wgpuBufferGetMapState(@ptrCast(self));
-        return @enumFromInt(result);
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuBufferGetMapState` for the raw extern, which aborts at runtime.
+    pub inline fn getMapState(self: *Buffer) types.BufferMapState {
+        _ = self;
+        @compileError("wgpuBufferGetMapState is stubbed by wgpu-native; use wgpu.c.wgpuBufferGetMapState for the raw extern (aborts at runtime)");
     }
 
     pub fn release(self: *Buffer) void {
@@ -273,10 +280,14 @@ pub const Buffer = opaque {
         c.wgpuBufferDestroy(@ptrCast(self));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn writeMappedRange(self: *Buffer, offset: usize, data: ?*const anyopaque, size: usize) types.StatusError!void {
-        const status = c.wgpuBufferWriteMappedRange(@ptrCast(self), offset, data, size);
-        try @as(types.Status, @enumFromInt(status)).toError();
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuBufferWriteMappedRange` for the raw extern, which aborts at runtime.
+    pub inline fn writeMappedRange(self: *Buffer, offset: usize, data: ?*const anyopaque, size: usize) types.StatusError!void {
+        _ = self;
+        _ = offset;
+        _ = data;
+        _ = size;
+        @compileError("wgpuBufferWriteMappedRange is stubbed by wgpu-native; use wgpu.c.wgpuBufferWriteMappedRange for the raw extern (aborts at runtime)");
     }
 
     pub fn mapAsync(self: *Buffer, mode: types.MapMode, offset: usize, size: usize, callbackInfo: types.BufferMapCallbackInfo) types.Future {
@@ -292,10 +303,14 @@ pub const Buffer = opaque {
         return c.wgpuBufferGetConstMappedRange(@ptrCast(self), offset, size);
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn readMappedRange(self: *Buffer, offset: usize, data: ?*anyopaque, size: usize) types.StatusError!void {
-        const status = c.wgpuBufferReadMappedRange(@ptrCast(self), offset, data, size);
-        try @as(types.Status, @enumFromInt(status)).toError();
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuBufferReadMappedRange` for the raw extern, which aborts at runtime.
+    pub inline fn readMappedRange(self: *Buffer, offset: usize, data: ?*anyopaque, size: usize) types.StatusError!void {
+        _ = self;
+        _ = offset;
+        _ = data;
+        _ = size;
+        @compileError("wgpuBufferReadMappedRange is stubbed by wgpu-native; use wgpu.c.wgpuBufferReadMappedRange for the raw extern (aborts at runtime)");
     }
 
     pub fn getUsage(self: *Buffer) types.BufferUsage {
@@ -307,9 +322,12 @@ pub const Buffer = opaque {
         c.wgpuBufferUnmap(@ptrCast(self));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *Buffer, label: types.StringView) void {
-        c.wgpuBufferSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuBufferSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *Buffer, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuBufferSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuBufferSetLabel for the raw extern (aborts at runtime)");
     }
 
     pub fn getMappedRange(self: *Buffer, offset: usize, size: usize) ?*anyopaque {
@@ -343,9 +361,12 @@ pub const CommandBuffer = opaque {
         c.wgpuCommandBufferAddRef(@ptrCast(self));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *CommandBuffer, label: types.StringView) void {
-        c.wgpuCommandBufferSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuCommandBufferSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *CommandBuffer, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuCommandBufferSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuCommandBufferSetLabel for the raw extern (aborts at runtime)");
     }
 
     pub fn release(self: *CommandBuffer) void {
@@ -414,9 +435,12 @@ pub const CommandEncoder = opaque {
         return @ptrCast(result.?);
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *CommandEncoder, label: types.StringView) void {
-        c.wgpuCommandEncoderSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuCommandEncoderSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *CommandEncoder, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuCommandEncoderSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuCommandEncoderSetLabel for the raw extern (aborts at runtime)");
     }
 
     pub fn insertDebugMarker(self: *CommandEncoder, markerLabel: types.StringView) void {
@@ -442,9 +466,12 @@ pub const ComputePassEncoder = opaque {
         c.wgpuComputePassEncoderAddRef(@ptrCast(self));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *ComputePassEncoder, label: types.StringView) void {
-        c.wgpuComputePassEncoderSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuComputePassEncoderSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *ComputePassEncoder, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuComputePassEncoderSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuComputePassEncoderSetLabel for the raw extern (aborts at runtime)");
     }
 
     pub fn setPipeline(self: *ComputePassEncoder, pipeline: *ComputePipeline) void {
@@ -514,9 +541,12 @@ pub const ComputePipeline = opaque {
         c.wgpuComputePipelineAddRef(@ptrCast(self));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *ComputePipeline, label: types.StringView) void {
-        c.wgpuComputePipelineSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuComputePipelineSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *ComputePipeline, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuComputePipelineSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuComputePipelineSetLabel for the raw extern (aborts at runtime)");
     }
 
     pub fn release(self: *ComputePipeline) void {
@@ -589,10 +619,13 @@ pub const Device = opaque {
         c.wgpuDeviceDestroy(@ptrCast(self));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn createComputePipelineAsync(self: *Device, descriptor: *const types.ComputePipelineDescriptor, callbackInfo: types.CreateComputePipelineAsyncCallbackInfo) types.Future {
-        const result = c.wgpuDeviceCreateComputePipelineAsync(@ptrCast(self), @ptrCast(descriptor), asC(c.WGPUCreateComputePipelineAsyncCallbackInfo, callbackInfo));
-        return asC(types.Future, result);
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuDeviceCreateComputePipelineAsync` for the raw extern, which aborts at runtime.
+    pub inline fn createComputePipelineAsync(self: *Device, descriptor: *const types.ComputePipelineDescriptor, callbackInfo: types.CreateComputePipelineAsyncCallbackInfo) types.Future {
+        _ = self;
+        _ = descriptor;
+        _ = callbackInfo;
+        @compileError("wgpuDeviceCreateComputePipelineAsync is stubbed by wgpu-native; use wgpu.c.wgpuDeviceCreateComputePipelineAsync for the raw extern (aborts at runtime)");
     }
 
     pub fn createPipelineLayout(self: *Device, descriptor: *const types.PipelineLayoutDescriptor) *PipelineLayout {
@@ -610,27 +643,32 @@ pub const Device = opaque {
         return @ptrCast(result.?);
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn getAdapterInfo(self: *Device) types.StatusError!types.AdapterInfo {
-        var result: types.AdapterInfo = undefined;
-        const status = c.wgpuDeviceGetAdapterInfo(@ptrCast(self), @ptrCast(&result));
-        try @as(types.Status, @enumFromInt(status)).toError();
-        return result;
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuDeviceGetAdapterInfo` for the raw extern, which aborts at runtime.
+    pub inline fn getAdapterInfo(self: *Device) types.StatusError!types.AdapterInfo {
+        _ = self;
+        @compileError("wgpuDeviceGetAdapterInfo is stubbed by wgpu-native; use wgpu.c.wgpuDeviceGetAdapterInfo for the raw extern (aborts at runtime)");
     }
 
     pub fn addRef(self: *Device) void {
         c.wgpuDeviceAddRef(@ptrCast(self));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn createRenderPipelineAsync(self: *Device, descriptor: *const types.RenderPipelineDescriptor, callbackInfo: types.CreateRenderPipelineAsyncCallbackInfo) types.Future {
-        const result = c.wgpuDeviceCreateRenderPipelineAsync(@ptrCast(self), @ptrCast(descriptor), asC(c.WGPUCreateRenderPipelineAsyncCallbackInfo, callbackInfo));
-        return asC(types.Future, result);
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuDeviceCreateRenderPipelineAsync` for the raw extern, which aborts at runtime.
+    pub inline fn createRenderPipelineAsync(self: *Device, descriptor: *const types.RenderPipelineDescriptor, callbackInfo: types.CreateRenderPipelineAsyncCallbackInfo) types.Future {
+        _ = self;
+        _ = descriptor;
+        _ = callbackInfo;
+        @compileError("wgpuDeviceCreateRenderPipelineAsync is stubbed by wgpu-native; use wgpu.c.wgpuDeviceCreateRenderPipelineAsync for the raw extern (aborts at runtime)");
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *Device, label: types.StringView) void {
-        c.wgpuDeviceSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuDeviceSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *Device, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuDeviceSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuDeviceSetLabel for the raw extern (aborts at runtime)");
     }
 
     pub fn popErrorScope(self: *Device, callbackInfo: types.PopErrorScopeCallbackInfo) types.Future {
@@ -643,10 +681,11 @@ pub const Device = opaque {
         return @ptrCast(result.?);
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn getLostFuture(self: *Device) types.Future {
-        const result = c.wgpuDeviceGetLostFuture(@ptrCast(self));
-        return asC(types.Future, result);
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuDeviceGetLostFuture` for the raw extern, which aborts at runtime.
+    pub inline fn getLostFuture(self: *Device) types.Future {
+        _ = self;
+        @compileError("wgpuDeviceGetLostFuture is stubbed by wgpu-native; use wgpu.c.wgpuDeviceGetLostFuture for the raw extern (aborts at runtime)");
     }
 
     pub fn createCommandEncoder(self: *Device, descriptor: ?*const types.CommandEncoderDescriptor) *CommandEncoder {
@@ -700,19 +739,26 @@ pub const ExternalTexture = opaque {
         return @ptrCast(ptr);
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *ExternalTexture, label: types.StringView) void {
-        c.wgpuExternalTextureSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuExternalTextureSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *ExternalTexture, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuExternalTextureSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuExternalTextureSetLabel for the raw extern (aborts at runtime)");
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn addRef(self: *ExternalTexture) void {
-        c.wgpuExternalTextureAddRef(@ptrCast(self));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuExternalTextureAddRef` for the raw extern, which aborts at runtime.
+    pub inline fn addRef(self: *ExternalTexture) void {
+        _ = self;
+        @compileError("wgpuExternalTextureAddRef is stubbed by wgpu-native; use wgpu.c.wgpuExternalTextureAddRef for the raw extern (aborts at runtime)");
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn release(self: *ExternalTexture) void {
-        c.wgpuExternalTextureRelease(@ptrCast(self));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuExternalTextureRelease` for the raw extern, which aborts at runtime.
+    pub inline fn release(self: *ExternalTexture) void {
+        _ = self;
+        @compileError("wgpuExternalTextureRelease is stubbed by wgpu-native; use wgpu.c.wgpuExternalTextureRelease for the raw extern (aborts at runtime)");
     }
 
 };
@@ -740,18 +786,24 @@ pub const Instance = opaque {
         return asC(types.Future, result);
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn getWGSLLanguageFeatures(self: *Instance, features: *types.SupportedWGSLLanguageFeatures) void {
-        c.wgpuInstanceGetWGSLLanguageFeatures(@ptrCast(self), @ptrCast(features));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuInstanceGetWGSLLanguageFeatures` for the raw extern, which aborts at runtime.
+    pub inline fn getWGSLLanguageFeatures(self: *Instance, features: *types.SupportedWGSLLanguageFeatures) void {
+        _ = self;
+        _ = features;
+        @compileError("wgpuInstanceGetWGSLLanguageFeatures is stubbed by wgpu-native; use wgpu.c.wgpuInstanceGetWGSLLanguageFeatures for the raw extern (aborts at runtime)");
     }
 
     pub fn generateReport(self: *Instance, report: *types.GlobalReport) void {
         c.wgpuGenerateReport(@ptrCast(self), @ptrCast(report));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn hasWGSLLanguageFeature(self: *Instance, feature: types.WGSLLanguageFeatureName) bool {
-        return c.wgpuInstanceHasWGSLLanguageFeature(@ptrCast(self), @intFromEnum(feature)) != 0;
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuInstanceHasWGSLLanguageFeature` for the raw extern, which aborts at runtime.
+    pub inline fn hasWGSLLanguageFeature(self: *Instance, feature: types.WGSLLanguageFeatureName) bool {
+        _ = self;
+        _ = feature;
+        @compileError("wgpuInstanceHasWGSLLanguageFeature is stubbed by wgpu-native; use wgpu.c.wgpuInstanceHasWGSLLanguageFeature for the raw extern (aborts at runtime)");
     }
 
     pub fn processEvents(self: *Instance) void {
@@ -762,15 +814,14 @@ pub const Instance = opaque {
         c.wgpuInstanceAddRef(@ptrCast(self));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn waitAny(self: *Instance, futures: []types.FutureWaitInfo, timeoutNS: u64) types.WaitStatusError!void {
-        return self.waitAnyRaw(@intCast(futures.len), (if (futures.len == 0) null else @ptrCast(futures.ptr)), timeoutNS);
-    }
-
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn waitAnyRaw(self: *Instance, futureCount: usize, futures: ?*types.FutureWaitInfo, timeoutNS: u64) types.WaitStatusError!void {
-        const status = c.wgpuInstanceWaitAny(@ptrCast(self), futureCount, @ptrCast(futures), timeoutNS);
-        try @as(types.WaitStatus, @enumFromInt(status)).toError();
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuInstanceWaitAny` for the raw extern, which aborts at runtime.
+    pub inline fn waitAny(self: *Instance, futureCount: usize, futures: ?*types.FutureWaitInfo, timeoutNS: u64) types.WaitStatusError!void {
+        _ = self;
+        _ = futureCount;
+        _ = futures;
+        _ = timeoutNS;
+        @compileError("wgpuInstanceWaitAny is stubbed by wgpu-native; use wgpu.c.wgpuInstanceWaitAny for the raw extern (aborts at runtime)");
     }
 
     pub fn requestAdapterSync(self: *Instance, io: std.Io, options: ?*const types.RequestAdapterOptions) types.WaitStatusError!RequestAdapterResult {
@@ -806,9 +857,12 @@ pub const PipelineLayout = opaque {
         c.wgpuPipelineLayoutAddRef(@ptrCast(self));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *PipelineLayout, label: types.StringView) void {
-        c.wgpuPipelineLayoutSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuPipelineLayoutSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *PipelineLayout, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuPipelineLayoutSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuPipelineLayoutSetLabel for the raw extern (aborts at runtime)");
     }
 
     pub fn release(self: *PipelineLayout) void {
@@ -843,9 +897,12 @@ pub const QuerySet = opaque {
         c.wgpuQuerySetAddRef(@ptrCast(self));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *QuerySet, label: types.StringView) void {
-        c.wgpuQuerySetSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuQuerySetSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *QuerySet, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuQuerySetSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuQuerySetSetLabel for the raw extern (aborts at runtime)");
     }
 
 };
@@ -876,9 +933,12 @@ pub const Queue = opaque {
         c.wgpuQueueAddRef(@ptrCast(self));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *Queue, label: types.StringView) void {
-        c.wgpuQueueSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuQueueSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *Queue, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuQueueSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuQueueSetLabel for the raw extern (aborts at runtime)");
     }
 
     pub fn writeBuffer(self: *Queue, buffer: *Buffer, bufferOffset: u64, data: ?*const anyopaque, size: usize) void {
@@ -929,9 +989,12 @@ pub const RenderBundle = opaque {
         c.wgpuRenderBundleRelease(@ptrCast(self));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *RenderBundle, label: types.StringView) void {
-        c.wgpuRenderBundleSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuRenderBundleSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *RenderBundle, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuRenderBundleSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuRenderBundleSetLabel for the raw extern (aborts at runtime)");
     }
 
     pub fn addRef(self: *RenderBundle) void {
@@ -957,9 +1020,12 @@ pub const RenderBundleEncoder = opaque {
         c.wgpuRenderBundleEncoderPushDebugGroup(@ptrCast(self), asC(c.WGPUStringView, groupLabel));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *RenderBundleEncoder, label: types.StringView) void {
-        c.wgpuRenderBundleEncoderSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuRenderBundleEncoderSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *RenderBundleEncoder, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuRenderBundleEncoderSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuRenderBundleEncoderSetLabel for the raw extern (aborts at runtime)");
     }
 
     pub fn finish(self: *RenderBundleEncoder, descriptor: ?*const types.RenderBundleDescriptor) *RenderBundle {
@@ -1110,9 +1176,12 @@ pub const RenderPassEncoder = opaque {
         c.wgpuRenderPassEncoderWriteTimestamp(@ptrCast(self), @ptrCast(querySet), queryIndex);
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *RenderPassEncoder, label: types.StringView) void {
-        c.wgpuRenderPassEncoderSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuRenderPassEncoderSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *RenderPassEncoder, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuRenderPassEncoderSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuRenderPassEncoderSetLabel for the raw extern (aborts at runtime)");
     }
 
     pub fn drawIndexed(self: *RenderPassEncoder, indexCount: u32, instanceCount: u32, firstIndex: u32, baseVertex: i32, firstInstance: u32) void {
@@ -1162,9 +1231,12 @@ pub const RenderPipeline = opaque {
         c.wgpuRenderPipelineAddRef(@ptrCast(self));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *RenderPipeline, label: types.StringView) void {
-        c.wgpuRenderPipelineSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuRenderPipelineSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *RenderPipeline, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuRenderPipelineSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuRenderPipelineSetLabel for the raw extern (aborts at runtime)");
     }
 
     pub fn release(self: *RenderPipeline) void {
@@ -1191,9 +1263,12 @@ pub const Sampler = opaque {
         c.wgpuSamplerAddRef(@ptrCast(self));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *Sampler, label: types.StringView) void {
-        c.wgpuSamplerSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuSamplerSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *Sampler, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuSamplerSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuSamplerSetLabel for the raw extern (aborts at runtime)");
     }
 
 };
@@ -1203,15 +1278,20 @@ pub const ShaderModule = opaque {
         return @ptrCast(ptr);
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *ShaderModule, label: types.StringView) void {
-        c.wgpuShaderModuleSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuShaderModuleSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *ShaderModule, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuShaderModuleSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuShaderModuleSetLabel for the raw extern (aborts at runtime)");
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn getCompilationInfo(self: *ShaderModule, callbackInfo: types.CompilationInfoCallbackInfo) types.Future {
-        const result = c.wgpuShaderModuleGetCompilationInfo(@ptrCast(self), asC(c.WGPUCompilationInfoCallbackInfo, callbackInfo));
-        return asC(types.Future, result);
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuShaderModuleGetCompilationInfo` for the raw extern, which aborts at runtime.
+    pub inline fn getCompilationInfo(self: *ShaderModule, callbackInfo: types.CompilationInfoCallbackInfo) types.Future {
+        _ = self;
+        _ = callbackInfo;
+        @compileError("wgpuShaderModuleGetCompilationInfo is stubbed by wgpu-native; use wgpu.c.wgpuShaderModuleGetCompilationInfo for the raw extern (aborts at runtime)");
     }
 
     pub fn addRef(self: *ShaderModule) void {
@@ -1253,9 +1333,12 @@ pub const Surface = opaque {
         c.wgpuSurfaceGetCurrentTexture(@ptrCast(self), @ptrCast(surfaceTexture));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *Surface, label: types.StringView) void {
-        c.wgpuSurfaceSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuSurfaceSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *Surface, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuSurfaceSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuSurfaceSetLabel for the raw extern (aborts at runtime)");
     }
 
     pub fn addRef(self: *Surface) void {
@@ -1273,10 +1356,11 @@ pub const Texture = opaque {
         return @ptrCast(ptr);
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn getTextureBindingViewDimension(self: *Texture) types.TextureViewDimension {
-        const result = c.wgpuTextureGetTextureBindingViewDimension(@ptrCast(self));
-        return @enumFromInt(result);
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuTextureGetTextureBindingViewDimension` for the raw extern, which aborts at runtime.
+    pub inline fn getTextureBindingViewDimension(self: *Texture) types.TextureViewDimension {
+        _ = self;
+        @compileError("wgpuTextureGetTextureBindingViewDimension is stubbed by wgpu-native; use wgpu.c.wgpuTextureGetTextureBindingViewDimension for the raw extern (aborts at runtime)");
     }
 
     pub fn getSampleCount(self: *Texture) u32 {
@@ -1327,9 +1411,12 @@ pub const Texture = opaque {
         return asC(types.TextureUsage, result);
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *Texture, label: types.StringView) void {
-        c.wgpuTextureSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuTextureSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *Texture, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuTextureSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuTextureSetLabel for the raw extern (aborts at runtime)");
     }
 
     pub fn getNativeMetalTexture(self: *Texture) ?*anyopaque {
@@ -1355,16 +1442,21 @@ pub const TextureView = opaque {
         c.wgpuTextureViewRelease(@ptrCast(self));
     }
 
-    /// Stubbed by wgpu-native, so calling it aborts.
-    pub fn setLabel(self: *TextureView, label: types.StringView) void {
-        c.wgpuTextureViewSetLabel(@ptrCast(self), asC(c.WGPUStringView, label));
+    /// Stubbed by wgpu-native: calling this is a compile error.
+    /// Use `wgpu.c.wgpuTextureViewSetLabel` for the raw extern, which aborts at runtime.
+    pub inline fn setLabel(self: *TextureView, label: types.StringView) void {
+        _ = self;
+        _ = label;
+        @compileError("wgpuTextureViewSetLabel is stubbed by wgpu-native; use wgpu.c.wgpuTextureViewSetLabel for the raw extern (aborts at runtime)");
     }
 
 };
 
-/// Stubbed by wgpu-native, so calling it aborts.
-pub fn getInstanceFeatures(features: *types.SupportedInstanceFeatures) void {
-    c.wgpuGetInstanceFeatures(@ptrCast(features));
+/// Stubbed by wgpu-native: calling this is a compile error.
+/// Use `wgpu.c.wgpuGetInstanceFeatures` for the raw extern, which aborts at runtime.
+pub inline fn getInstanceFeatures(features: *types.SupportedInstanceFeatures) void {
+    _ = features;
+    @compileError("wgpuGetInstanceFeatures is stubbed by wgpu-native; use wgpu.c.wgpuGetInstanceFeatures for the raw extern (aborts at runtime)");
 }
 
 pub fn supportedFeaturesFreeMembers(supportedFeatures: types.SupportedFeatures) void {
@@ -1375,9 +1467,11 @@ pub fn surfaceCapabilitiesFreeMembers(surfaceCapabilities: types.SurfaceCapabili
     c.wgpuSurfaceCapabilitiesFreeMembers(asC(c.WGPUSurfaceCapabilities, surfaceCapabilities));
 }
 
-/// Stubbed by wgpu-native, so calling it aborts.
-pub fn getProcAddress(procName: types.StringView) c.WGPUProc {
-    return c.wgpuGetProcAddress(asC(c.WGPUStringView, procName));
+/// Stubbed by wgpu-native: calling this is a compile error.
+/// Use `wgpu.c.wgpuGetProcAddress` for the raw extern, which aborts at runtime.
+pub inline fn getProcAddress(procName: types.StringView) c.WGPUProc {
+    _ = procName;
+    @compileError("wgpuGetProcAddress is stubbed by wgpu-native; use wgpu.c.wgpuGetProcAddress for the raw extern (aborts at runtime)");
 }
 
 pub fn setLogCallback(callback: c.WGPULogCallback, userdata: ?*anyopaque) void {
@@ -1392,14 +1486,18 @@ pub fn createInstance(descriptor: ?*const types.InstanceDescriptor) *Instance {
     return Instance.create(descriptor);
 }
 
-/// Stubbed by wgpu-native, so calling it aborts.
-pub fn supportedInstanceFeaturesFreeMembers(supportedInstanceFeatures: types.SupportedInstanceFeatures) void {
-    c.wgpuSupportedInstanceFeaturesFreeMembers(asC(c.WGPUSupportedInstanceFeatures, supportedInstanceFeatures));
+/// Stubbed by wgpu-native: calling this is a compile error.
+/// Use `wgpu.c.wgpuSupportedInstanceFeaturesFreeMembers` for the raw extern, which aborts at runtime.
+pub inline fn supportedInstanceFeaturesFreeMembers(supportedInstanceFeatures: types.SupportedInstanceFeatures) void {
+    _ = supportedInstanceFeatures;
+    @compileError("wgpuSupportedInstanceFeaturesFreeMembers is stubbed by wgpu-native; use wgpu.c.wgpuSupportedInstanceFeaturesFreeMembers for the raw extern (aborts at runtime)");
 }
 
-/// Stubbed by wgpu-native, so calling it aborts.
-pub fn supportedWGSLLanguageFeaturesFreeMembers(supportedWGSLLanguageFeatures: types.SupportedWGSLLanguageFeatures) void {
-    c.wgpuSupportedWGSLLanguageFeaturesFreeMembers(asC(c.WGPUSupportedWGSLLanguageFeatures, supportedWGSLLanguageFeatures));
+/// Stubbed by wgpu-native: calling this is a compile error.
+/// Use `wgpu.c.wgpuSupportedWGSLLanguageFeaturesFreeMembers` for the raw extern, which aborts at runtime.
+pub inline fn supportedWGSLLanguageFeaturesFreeMembers(supportedWGSLLanguageFeatures: types.SupportedWGSLLanguageFeatures) void {
+    _ = supportedWGSLLanguageFeatures;
+    @compileError("wgpuSupportedWGSLLanguageFeaturesFreeMembers is stubbed by wgpu-native; use wgpu.c.wgpuSupportedWGSLLanguageFeaturesFreeMembers for the raw extern (aborts at runtime)");
 }
 
 pub fn getInstanceLimits() types.StatusError!types.InstanceLimits {
@@ -1417,8 +1515,10 @@ pub fn setLogLevel(level: types.LogLevel) void {
     c.wgpuSetLogLevel(@intFromEnum(level));
 }
 
-/// Stubbed by wgpu-native, so calling it aborts.
-pub fn hasInstanceFeature(feature: types.InstanceFeatureName) bool {
-    return c.wgpuHasInstanceFeature(@intFromEnum(feature)) != 0;
+/// Stubbed by wgpu-native: calling this is a compile error.
+/// Use `wgpu.c.wgpuHasInstanceFeature` for the raw extern, which aborts at runtime.
+pub inline fn hasInstanceFeature(feature: types.InstanceFeatureName) bool {
+    _ = feature;
+    @compileError("wgpuHasInstanceFeature is stubbed by wgpu-native; use wgpu.c.wgpuHasInstanceFeature for the raw extern (aborts at runtime)");
 }
 

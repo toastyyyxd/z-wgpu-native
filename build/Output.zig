@@ -91,6 +91,8 @@ fn appendAliases(
 fn declarationName(line: []const u8) ?[]const u8 {
     const rest = if (std.mem.startsWith(u8, line, "pub const "))
         line["pub const ".len..]
+    else if (std.mem.startsWith(u8, line, "pub inline fn "))
+        line["pub inline fn ".len..]
     else if (std.mem.startsWith(u8, line, "pub fn "))
         line["pub fn ".len..]
     else

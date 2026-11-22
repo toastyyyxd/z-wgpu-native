@@ -178,9 +178,13 @@ Entry points that return a status become Zig error unions, generated from the
 status enum:
 
 ```zig
-const limits = try device.getLimits();                         // StatusError!Limits
-try buffer.writeMappedRange(0, @ptrCast(data.ptr), data.len);  // StatusError!void
+const limits = try device.getLimits();  // StatusError!Limits
+const info = try adapter.getInfo();     // StatusError!AdapterInfo
 ```
+
+Only entry points wgpu-native actually implements are used here. Calling a
+stubbed one is a compile error rather than a process abort; see
+[Entry points that currently abort](#entry-points-that-currently-abort).
 
 Each status enum also has `toError`/`fromError`. Async callbacks and request
 results keep their status field, so the raw status is never lost, and handles
@@ -255,12 +259,18 @@ generated for entry points wgpu-native stubs out (see
 
 ## Entry points that currently abort
 
-wgpu-native stubs some C entry points with `unimplemented!()`. Calling one
-panics inside the Rust library and aborts the process. The bindings still expose
-them because they mirror the C headers.
+wgpu-native stubs some C entry points with `unimplemented!()`. The raw externs
+would abort the process, so the ergonomic layer turns them into compile errors:
+the generated method is an `inline fn` whose body is `@compileError`, and a call
+fails the build naming the entry point. Merely referencing the type is fine.
+`wgpu.c.<name>` stays available as the escape hatch if you really need the raw
+extern, which does abort at runtime.
 
 `wgpu.unimplemented_entry_points` lists the affected C names. Sync wrappers are
-not generated for these.
+not generated for these. The buffer-mapping conveniences are among them:
+`readMappedRange`/`writeMappedRange` and `getMapState` are stubbed, so map with
+`mapSync` (or `mapAsync`) and copy through the pointer from `getMappedRange`,
+as [`tests/compute.zig`](tests/compute.zig) does.
 
 ```zig
 for (wgpu.unimplemented_entry_points) |name| {

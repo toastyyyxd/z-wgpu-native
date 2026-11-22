@@ -121,7 +121,28 @@ fn writeUnimplementedList(buf: *std.array_list.Managed(u8), mapping: *Mapping) !
 fn writeAbortDoc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_name: []const u8, indent: []const u8) !void {
     if (!mapping.unimplemented.contains(fn_name)) return;
     try buf.appendSlice(indent);
-    try buf.appendSlice("/// Stubbed by wgpu-native, so calling it aborts.\n");
+    try buf.appendSlice("/// Stubbed by wgpu-native: calling this is a compile error.\n");
+    try buf.appendSlice(indent);
+    try buf.print("/// Use `wgpu.c.{s}` for the raw extern, which aborts at runtime.\n", .{fn_name});
+}
+
+/// Emits the body of a stubbed entry point. Stubs are `inline fn`, so the body
+/// is only analyzed when the method is called; referencing the type does not
+/// trigger the compile error.
+fn writeStubBody(
+    buf: *std.array_list.Managed(u8),
+    fn_decl: *Mapping.FnDecl,
+    out_param_idx: ?usize,
+    indent: []const u8,
+    has_receiver: bool,
+) !void {
+    if (has_receiver) try buf.print("{s}_ = self;\n", .{indent});
+    for (fn_decl.params.items, 0..) |param, i| {
+        if (has_receiver and i == 0) continue;
+        if (out_param_idx != null and i == out_param_idx.?) continue;
+        try buf.print("{s}_ = {s};\n", .{ indent, param.name });
+    }
+    try buf.print("{s}@compileError(\"{s} is stubbed by wgpu-native; use wgpu.c.{s} for the raw extern (aborts at runtime)\");\n", .{ indent, fn_decl.name, fn_decl.name });
 }
 
 
@@ -256,10 +277,14 @@ fn sliceTypeFromPointer(mapped: []const u8, buf: []u8) ?[]const u8 {
 }
 
 fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_decl: *Mapping.FnDecl, hzname: []const u8) !void {
+    if (mapping.unimplemented.contains(fn_decl.name)) {
+        try writeHandleMethodImpl(buf, mapping, fn_decl, hzname, false, true);
+        return;
+    }
     var infos_buf: [16]ParamInfo = undefined;
     const params = fn_decl.params.items;
     const emitted = params[1..];
-    if (emitted.len > infos_buf.len) return writeHandleMethodImpl(buf, mapping, fn_decl, hzname, false);
+    if (emitted.len > infos_buf.len) return writeHandleMethodImpl(buf, mapping, fn_decl, hzname, false, false);
     for (emitted, 0..) |*param, i| {
         infos_buf[i] = .{
             .name = param.name,
@@ -270,12 +295,12 @@ fn writeHandleMethod(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_dec
     var pairs_buf: [8]SlicePair = undefined;
     const pair_count = findSlicePairs(infos_buf[0..emitted.len], &pairs_buf);
     if (pair_count == 0) {
-        try writeHandleMethodImpl(buf, mapping, fn_decl, hzname, false);
+        try writeHandleMethodImpl(buf, mapping, fn_decl, hzname, false, false);
         return;
     }
     try writeSliceWrapper(buf, mapping, fn_decl, hzname, pairs_buf[0..pair_count]);
     try writeAbortDoc(buf, mapping, fn_decl.name, "    ");
-    try writeHandleMethodImpl(buf, mapping, fn_decl, hzname, true);
+    try writeHandleMethodImpl(buf, mapping, fn_decl, hzname, true, false);
 }
 
 /// Emits the slice method, which forwards to the Raw method.
@@ -411,7 +436,7 @@ fn isPairPointer(pairs: []const SlicePair, rel_index: usize) bool {
     return false;
 }
 
-fn writeHandleMethodImpl(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_decl: *Mapping.FnDecl, hzname: []const u8, raw: bool) !void {
+fn writeHandleMethodImpl(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_decl: *Mapping.FnDecl, hzname: []const u8, raw: bool, stub: bool) !void {
     var name_buf: [128]u8 = undefined;
     const after_wgpu = Common.stripWgpuFunc(fn_decl.name);
     const method = if (std.mem.startsWith(u8, after_wgpu, hzname))
@@ -501,7 +526,7 @@ fn writeHandleMethodImpl(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn
     }
 
     // Write signature
-    try buf.print("    pub fn {s}(self: *{s}", .{ zname, hzname });
+    try buf.print("    pub {s}fn {s}(self: *{s}", .{ if (stub) "inline " else "", zname, hzname });
     for (fn_decl.params.items[1..], 0..) |*param, i| {
         if (out_param_idx != null and i + 1 == out_param_idx.?) continue;
         var pb: [256]u8 = undefined;
@@ -519,6 +544,12 @@ fn writeHandleMethodImpl(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn
         try buf.print(", {s}: {s}", .{ param.name, Common.applyPointerNullability(zt, nullable, &nb) });
     }
     try buf.print(") {s} {{\n", .{actual_ret_type});
+
+    if (stub) {
+        try writeStubBody(buf, fn_decl, out_param_idx, "        ", true);
+        try buf.appendSlice("    }\n\n");
+        return;
+    }
 
     // Generate body
     if (out_param_idx) |opi| {
@@ -686,7 +717,7 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
 
     const standalone_ret_converted = !is_handle_ret and !returns_void and !returns_status and standalone_out_param_idx == null and std.mem.startsWith(u8, actual_ret_type, "types.");
 
-    try buf.print("pub fn {s}(", .{zname});
+    try buf.print("pub {s}fn {s}(", .{ if (mapping.unimplemented.contains(fn_decl.name)) "inline " else "", zname });
     var sig_sep = false;
     for (fn_decl.params.items, 0..) |*param, i| {
         if (standalone_out_param_idx != null and i == standalone_out_param_idx.?) continue;
@@ -707,6 +738,12 @@ fn writeStandaloneFunc(buf: *std.array_list.Managed(u8), mapping: *Mapping, fn_d
         try buf.print("{s}: {s}", .{ param.name, Common.applyPointerNullability(zt, nullable, &nb) });
     }
     try buf.print(") {s} {{\n", .{actual_ret_type});
+
+    if (mapping.unimplemented.contains(fn_decl.name)) {
+        try writeStubBody(buf, fn_decl, standalone_out_param_idx, "    ", false);
+        try buf.appendSlice("}\n\n");
+        return;
+    }
 
     var ctor_name_buf: [128]u8 = undefined;
     if (constructorHandleName(mapping, fn_decl.name, &ctor_name_buf)) |handle_name| {
