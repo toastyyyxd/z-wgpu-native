@@ -101,6 +101,8 @@
       wrapperArgs ? [],
       extraEnv ? {},
       zigBuildFlags ? [ "-Doptimize=ReleaseFast" "-Dtest=true" "-Dmode=full" ],
+      doCheck ? false,
+      checkFlags ? [],
       extraBuildInputs ? [],
       extraNativeBuildInputs ? [],
       extraInputs ? {},
@@ -239,10 +241,12 @@
         CARGO_BUILD_TARGET = rustTriple;
       } // cargoEnv // extraEnv // (extraInputs.env or {});
 
-    in env.package {
+      finalZigBuildFlags = zigBuildFlags ++ [ "-Dcargo-target=${rustTriple}" ] ++ (extraInputs.zigBuildFlags or []);
+
+    in env.package ({
       src = lib.cleanSource ./.;
       inherit zigTarget nativeBuildInputs buildInputs;
-      zigBuildFlags = zigBuildFlags ++ [ "-Dcargo-target=${rustTriple}" ] ++ (extraInputs.zigBuildFlags or []);
+      zigBuildFlags = finalZigBuildFlags;
       zigPreferMusl = preferMusl;
       zigWrapperBins = wrapperBins;
       zigWrapperLibs = wrapperLibs;
@@ -266,7 +270,10 @@
         
         export BINDGEN_EXTRA_CLANG_ARGS_${bindgenRustTriple}="$BINDGEN_EXTRA_CLANG_ARGS_${bindgenRustTriple} $ZIG_INCLUDES"
       '' else "") + "\n" + (extraInputs.preBuild or "");
-    };
+    } // lib.optionalAttrs doCheck {
+      doCheck = true;
+      zigCheckFlags = finalZigBuildFlags ++ checkFlags;
+    });
 
     mkCross = triple: let
       crossPkgs = env.crossPkgsForTarget triple;
@@ -341,6 +348,9 @@
         pkgs = hostPkgs;
         preferMusl = false;
         extraInputs = hostExtraInputs;
+        zigBuildFlags = [ "-Doptimize=ReleaseFast" "-Dmode=full" ];
+        doCheck = true;
+        checkFlags = [ "-Dtest=true" ];
       };
       allPkg = hostPkgs.runCommand "z_wgpu_native-all" {} ''
         mkdir -p $out
