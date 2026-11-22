@@ -23,7 +23,7 @@ jobs:
           - aarch64-linux-musl
           - x86_64-windows-gnu
           - aarch64-windows-gnu
-          - android
+          - aarch64-linux-android
           - arm-linux-android
           - x86_64-linux-android
     steps:
@@ -72,29 +72,69 @@ jobs:
       - uses: actions/checkout@v7
         with:
           submodules: recursive
+          fetch-depth: 0
       - uses: actions/download-artifact@v8
         with:
-          path: stage/lib
+          path: artifacts
           pattern: libs-*
-          merge-multiple: true
-      - name: Collect tarball
+      - name: Package per-target archives
         run: |
           set -eu
-          mkdir -p stage/include
-          cp vendor/wgpu-native/ffi/wgpu.h stage/include/wgpu.h
-          cp vendor/wgpu-native/ffi/webgpu-headers/webgpu.h stage/include/webgpu.h
-          tarball="z-wgpu-native-${GITHUB_REF_NAME#v}-bindings.tar.gz"
-          tar -czf "$tarball" -C stage .
-          ls -lh "$tarball"
+          tag="${GITHUB_REF_NAME#v}"
+          dist="$PWD/dist"
+          mkdir -p "$dist"
+          for dir in artifacts/libs-*; do
+            target="${dir#artifacts/libs-}"
+            mkdir -p "stage/$target/lib" "stage/$target/include"
+            for f in "$dir"/*; do
+              [ -f "$f" ] || continue
+              base="$(basename "$f")"
+              ext="${base##*.}"
+              case "$base" in
+                libwgpu_native-*) name="libwgpu_native.$ext" ;;
+                wgpu_native-*) name="wgpu_native.$ext" ;;
+                libz_wgpu_native-*) name="libz_wgpu_native.$ext" ;;
+                z_wgpu_native-*) name="z_wgpu_native.$ext" ;;
+                *) continue ;;
+              esac
+              cp "$f" "stage/$target/lib/$name"
+            done
+            cp vendor/wgpu-native/ffi/wgpu.h "stage/$target/include/wgpu.h"
+            cp vendor/wgpu-native/ffi/webgpu-headers/webgpu.h "stage/$target/include/webgpu.h"
+            if [[ "$target" == *windows* ]]; then
+              (cd "stage/$target" && zip -qr "$dist/z-wgpu-native-${tag}-${target}.zip" .)
+            else
+              tar -czf "$dist/z-wgpu-native-${tag}-${target}.tar.gz" -C "stage/$target" .
+            fi
+          done
+          mkdir -p combined/lib combined/include
+          cp artifacts/libs-*/* combined/lib/
+          cp vendor/wgpu-native/ffi/wgpu.h combined/include/wgpu.h
+          cp vendor/wgpu-native/ffi/webgpu-headers/webgpu.h combined/include/webgpu.h
+          tar -czf "$dist/z-wgpu-native-${tag}-all.tar.gz" -C combined .
+          (cd "$dist" && sha256sum ./* > SHA256SUMS)
+          ls -lh "$dist"
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tarball="z-wgpu-native-${GITHUB_REF_NAME#v}-bindings.tar.gz"
-          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
-            gh release upload "${GITHUB_REF_NAME}" "$tarball" --clobber
+          set -eu
+          tag="${GITHUB_REF_NAME}"
+          flags=()
+          if [[ "$tag" == *-dev ]]; then
+            flags+=(--latest=false)
           else
-            gh release create "${GITHUB_REF_NAME}" "$tarball" \
-              --title "${GITHUB_REF_NAME}" \
-              --generate-notes
+            flags+=(--latest)
+          fi
+          prev="$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)"
+          if [ -n "$prev" ]; then
+            flags+=(--notes-start-tag "$prev")
+          fi
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/* --clobber
+          else
+            gh release create "$tag" dist/* \
+              --title "$tag" \
+              --generate-notes \
+              "${flags[@]}"
           fi
