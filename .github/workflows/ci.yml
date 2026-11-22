@@ -68,9 +68,8 @@ jobs:
             -Dtarget=x86_64-windows-gnu -fwine
 
   macos-tests:
-    name: tests (macOS, best effort)
+    name: tests (macOS)
     runs-on: macos-latest
-    continue-on-error: true
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
@@ -82,6 +81,34 @@ jobs:
             experimental-features = nix-command flakes
       - name: Run abi/lib suites natively
         run: nix develop -c zig build test -Dtest=true -Dmode=minimal -Dcore-tests=true
+
+  codegen-check:
+    name: codegen drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: cachix/install-nix-action@v32
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Allow unprivileged user namespaces
+        # zig2nix wraps Zig with bubblewrap; Ubuntu 24.04 restricts unprivileged
+        # user namespaces via AppArmor, which breaks its Nix build.
+        run: |
+          if [ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+          if [ -e /proc/sys/kernel/unprivileged_userns_clone ]; then
+            sudo sysctl -w kernel.unprivileged_userns_clone=1
+          fi
+      - name: Regenerate and compare
+        run: |
+          nix develop -c zig build codegen
+          git status --porcelain -- src/
+          test -z "$(git status --porcelain -- src/)"
 
   build:
     name: build ${{ matrix.target }}

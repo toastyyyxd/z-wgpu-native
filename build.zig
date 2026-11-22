@@ -25,6 +25,7 @@ const State = struct {
 
     c_includes: ?std.mem.SplitIterator(u8, std.mem.DelimiterType.any),
     wgpu_native_path: ?LazyPath,
+    system_libs: []const u8,
 
     cargo_step: ?*Step,
     translate_step: ?*Step,
@@ -64,7 +65,8 @@ pub fn build(b: *std.Build) !void {
     const c_includes_opt = b.option([]const u8, "c-includes", "Path to any headers needed for translate-c and other steps.");
     state.c_includes = if (c_includes_opt) |s| std.mem.splitAny(u8, s, ",") else null;
 
-    state.wgpu_native_path = b.option(LazyPath, "wgpu", "Provide a prebuilt wgpu-native library to skip the cargo and rust dependencies.");
+    state.wgpu_native_path = b.option(LazyPath, "wgpu", "Provide a prebuilt wgpu-native library to skip the cargo and rust dependencies. When the package is used as a dependency this also links that library into the exported `z_wgpu_native` module.");
+    state.system_libs = b.option([]const u8, "system-libs", "Comma-separated system libraries to link into the exported `z_wgpu_native` module when -Dwgpu is provided (e.g. `X11,wayland-client`). Defaults to none; the consumer decides which window-system and platform libraries to bring.") orelse "";
 
     state.cargo_step = null;
     state.translate_step = null;
@@ -245,6 +247,15 @@ fn codegen(state: *State, translated_source: LazyPath) !*Step {
 }
 
 fn library(state: *State) !*Step {
+    // The installed archive stays free of runtime link inputs: it is the
+    // checked-in bindings, unrelated to any particular wgpu-native binary.
+    const lib_mod = state.build.addModule("z_wgpu_native_impl", .{
+        .root_source_file = state.build.path("src/root.zig"),
+        .optimize = state.optimize,
+        .target = state.target,
+    });
+    // The module consumers import. When -Dwgpu supplies a prebuilt runtime it
+    // carries the object file and the consumer-declared system libraries.
     const mod = state.build.addModule("z_wgpu_native", .{
         .root_source_file = state.build.path("src/root.zig"),
         .optimize = state.optimize,
@@ -255,11 +266,13 @@ fn library(state: *State) !*Step {
         .optimize = state.optimize,
         .target = state.target,
     });
+    lib_mod.addImport("c_wgpu_native", c_mod);
     mod.addImport("c_wgpu_native", c_mod);
+    linkRuntime(state, mod);
 
     const lib = state.build.addLibrary(.{
         .name = "z_wgpu_native",
-        .root_module = mod,
+        .root_module = lib_mod,
     });
     state.build.installArtifact(lib);
 
@@ -298,40 +311,20 @@ fn library(state: *State) !*Step {
             .link_libc = true,
         });
 
-        lib_test_mod.addImport("z_wgpu_native", mod);
-        abi_test_mod.addImport("z_wgpu_native", mod);
+        // The abi/lib suites only inspect the bindings; they do not need the runtime.
+        lib_test_mod.addImport("z_wgpu_native", lib_mod);
+        abi_test_mod.addImport("z_wgpu_native", lib_mod);
+        // The compute/headed suites exercise the runtime, which rides on `mod`.
         compute_test_mod.addImport("z_wgpu_native", mod);
         triangle_test_mod.addImport("z_wgpu_native", mod);
         rgbw_test_mod.addImport("z_wgpu_native", mod);
 
         if (!state.core_tests) {
-            const need_linked = [_]*std.Build.Module{ compute_test_mod, triangle_test_mod, rgbw_test_mod };
-            for (need_linked) |module| {
-                module.addObjectFile(state.wgpu_native_path.?);
-                switch (state.target.result.os.tag) {
-                    .linux => {
-                        module.linkSystemLibrary("unwind", .{});
-                        module.linkSystemLibrary("gcc_s", .{});
-                        module.linkSystemLibrary("pthread", .{});
-                        module.linkSystemLibrary("dl", .{});
-                        module.linkSystemLibrary("m", .{});
-                        module.linkSystemLibrary("glfw3", .{});
-                        module.linkSystemLibrary("wayland-client", .{});
-                        module.linkSystemLibrary("vulkan", .{});
-                        module.linkSystemLibrary("X11", .{});
-                    },
-                    .windows => {
-                        module.linkSystemLibrary("winpthread", .{});
-                        module.linkSystemLibrary("ws2_32", .{});
-                        module.linkSystemLibrary("userenv", .{});
-                        module.linkSystemLibrary("unwind", .{});
-                        module.linkSystemLibrary("glfw3", .{});
-                    },
-                    else => {
-                        std.log.err("Unsupported target OS \"{any}\" of \"{s}\" for tests.", .{ state.target.result.os.tag, state.zig_triple });
-                        return error.UnsupportedTarget;
-                    },
-                }
+            const linked = [_]*std.Build.Module{ compute_test_mod, triangle_test_mod, rgbw_test_mod };
+            for (linked) |module| linkRuntimeLibs(state, module);
+            if (state.test_headed) {
+                try linkWindowLibs(state, triangle_test_mod);
+                try linkWindowLibs(state, rgbw_test_mod);
             }
         }
 
@@ -384,4 +377,61 @@ fn library(state: *State) !*Step {
     }
     
     return step;
+}
+
+/// Attach a prebuilt wgpu-native runtime to the module consumers import.
+/// This stays opt-in: without `-Dwgpu` the module is the pure bindings, exactly
+/// as before, and the consumer links the runtime however they prefer.
+fn linkRuntime(state: *State, module: *std.Build.Module) void {
+    const path = state.wgpu_native_path orelse return;
+    module.addObjectFile(path);
+    module.link_libc = true;
+    var names = std.mem.splitScalar(u8, state.system_libs, ',');
+    while (names.next()) |raw| {
+        const name = std.mem.trim(u8, raw, " \t");
+        if (name.len == 0) continue;
+        module.linkSystemLibrary(name, .{});
+    }
+}
+
+/// Libraries the wgpu-native archive itself needs at link time on this OS.
+/// Everything else - the window system, Vulkan loader, platform SDKs - is the
+/// consumer's choice, because wgpu-native's surface and instance extensions
+/// differ per application.
+fn linkRuntimeLibs(state: *State, module: *std.Build.Module) void {
+    switch (state.target.result.os.tag) {
+        .linux => {
+            // unwind/gcc_s: Rust unwinder. pthread/dl/m were separate libraries
+            // before glibc 2.34 and are kept for older hosts.
+            module.linkSystemLibrary("unwind", .{});
+            module.linkSystemLibrary("gcc_s", .{});
+            module.linkSystemLibrary("pthread", .{});
+            module.linkSystemLibrary("dl", .{});
+            module.linkSystemLibrary("m", .{});
+        },
+        .windows => {
+            module.linkSystemLibrary("winpthread", .{});
+            module.linkSystemLibrary("ws2_32", .{});
+            module.linkSystemLibrary("userenv", .{});
+            module.linkSystemLibrary("unwind", .{});
+        },
+        else => {},
+    }
+}
+
+/// Window-system libraries only the headed (windowed) suites need.
+fn linkWindowLibs(state: *State, module: *std.Build.Module) !void {
+    switch (state.target.result.os.tag) {
+        .linux => {
+            module.linkSystemLibrary("glfw3", .{});
+            module.linkSystemLibrary("X11", .{});
+            module.linkSystemLibrary("wayland-client", .{});
+            module.linkSystemLibrary("vulkan", .{});
+        },
+        .windows => module.linkSystemLibrary("glfw3", .{}),
+        else => {
+            std.log.err("Headed tests are not supported on target OS \"{any}\" of \"{s}\".", .{ state.target.result.os.tag, state.zig_triple });
+            return error.UnsupportedTarget;
+        },
+    }
 }
