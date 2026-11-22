@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main, zig-0.17.1]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: tests (x86_64-linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Build and run headless suites
+        run: nix build .#default --no-link --print-out-paths | tee /tmp/default-out
+      - name: Windowed suites (best effort)
+        continue-on-error: true
+        run: |
+          sudo apt-get update && sudo apt-get install -y xvfb
+          lib="$(cat /tmp/default-out)/lib/libwgpu_native.a"
+          xvfb-run -a nix develop -c zig build test -Dtest=true -Dheaded-tests=true -Dmode=minimal -Dwgpu="$lib"
+
+  windows-tests:
+    name: tests (windows-gnu via Wine)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Run abi/lib suites under Wine
+        run: |
+          nix develop .#windows-tests -c zig build test -Dtest=true -Dmode=minimal \
+            -Dcore-tests=true -Dforce-cross-tests=true \
+            -Dtarget=x86_64-windows-gnu -fwine
+
+  macos-tests:
+    name: tests (macOS, best effort)
+    runs-on: macos-latest
+    continue-on-error: true
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Run abi/lib suites natively
+        run: nix develop -c zig build test -Dtest=true -Dmode=minimal -Dcore-tests=true
+
+  build:
+    name: build ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-linux-gnu
+          - aarch64-linux-gnu
+          - x86_64-linux-musl
+          - aarch64-linux-musl
+          - x86_64-windows-gnu
+          - aarch64-windows-gnu
+          - android
+          - arm-linux-android
+          - x86_64-linux-android
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: nix build
+        run: nix build .#${{ matrix.target }} --no-link --print-out-paths

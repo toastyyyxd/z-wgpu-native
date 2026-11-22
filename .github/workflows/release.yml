@@ -1,0 +1,86 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-linux-gnu
+          - aarch64-linux-gnu
+          - x86_64-linux-musl
+          - aarch64-linux-musl
+          - x86_64-windows-gnu
+          - aarch64-windows-gnu
+          - android
+          - arm-linux-android
+          - x86_64-linux-android
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Build ${{ matrix.target }}
+        run: |
+          set -eu
+          out="$(nix build .#${{ matrix.target }} --no-link --print-out-paths)"
+          mkdir -p out
+          for src in libwgpu_native.a wgpu_native.lib libz_wgpu_native.a z_wgpu_native.lib; do
+            if [ -f "$out/lib/$src" ]; then
+              base="${src%.*}"
+              ext="${src##*.}"
+              cp "$out/lib/$src" "out/${base}-${{ matrix.target }}.${ext}"
+            fi
+          done
+          ls -l out/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libs-${{ matrix.target }}
+          path: out/
+          if-no-files-found: error
+
+  release:
+    name: publish release
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/download-artifact@v4
+        with:
+          path: stage/lib
+          pattern: libs-*
+          merge-multiple: true
+      - name: Collect tarball
+        run: |
+          set -eu
+          mkdir -p stage/include
+          cp vendor/wgpu-native/ffi/wgpu.h stage/include/wgpu.h
+          cp vendor/wgpu-native/ffi/webgpu-headers/webgpu.h stage/include/webgpu.h
+          tarball="z-wgpu-native-${GITHUB_REF_NAME#v}-bindings.tar.gz"
+          tar -czf "$tarball" -C stage .
+          ls -lh "$tarball"
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            "z-wgpu-native-${GITHUB_REF_NAME#v}-bindings.tar.gz" \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes

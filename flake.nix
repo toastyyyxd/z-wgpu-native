@@ -16,6 +16,16 @@
     zig-bin = zig2nix.outputs.packages.${system}.zig-master;
     env = zig2nix.outputs.zig-env.${system} { zig = zig-bin; };
     zls = zls-overlay.packages.${system}.zls;
+    ndkPkgs = import hostPkgs.path {
+      inherit system;
+      config = hostPkgs.config // { allowUnfree = true; };
+    };
+    androidNdk = ndkPkgs.androidenv.androidPkgs.ndk-bundle;
+    ndkRoot = "${androidNdk}/libexec/android-sdk/ndk/${androidNdk.version}";
+    androidRust = (rust-overlay.lib.mkRustBin {} hostPkgs).stable.latest.default.override {
+      targets = [ "aarch64-linux-android" "armv7-linux-androideabi" "x86_64-linux-android" ];
+    };
+    ndkBin = "${ndkRoot}/toolchains/llvm/prebuilt/linux-x86_64/bin";
     hostPkgs = env.pkgs;
     inherit (hostPkgs) lib;
 
@@ -27,7 +37,16 @@
       "aarch64-linux-gnu"   = "aarch64-unknown-linux-gnu";
       "x86_64-windows-gnu"  = "x86_64-pc-windows-gnullvm";
       "aarch64-windows-gnu" = "aarch64-pc-windows-gnullvm";
+      "aarch64-linux-android" = "aarch64-linux-android";
+      "arm-linux-android"     = "armv7-linux-androideabi";
+      "x86_64-linux-android"  = "x86_64-linux-android";
     };
+
+    androidTriples = [
+      "aarch64-linux-android"
+      "arm-linux-android"
+      "x86_64-linux-android"
+    ];
 
     targetTriples = [
       "x86_64-linux-gnu"
@@ -72,6 +91,10 @@
     mkBuild = {
       pkgs,
       buildTarget ? null,
+      extraRustTargets ? [],
+      skipZigIncludes ? false,
+      bindgenHook ? true,
+      includeGlfw ? true,
       preferMusl ? true,
       wrapperBins ? [],
       wrapperLibs ? [],
@@ -103,7 +126,7 @@
 
       rust-bin = rust-overlay.lib.mkRustBin {} hostPkgs;
       rustToolchain = rust-bin.stable.latest.default.override {
-        targets = [ rustTriple ];
+        targets = [ rustTriple ] ++ extraRustTargets;
       };
 
       dynamicLinker = hostPkgs.stdenv.cc.bintools.dynamicLinker or "";
@@ -121,6 +144,7 @@
             -Wl,*.def) args+=("''${arg#-Wl,}") ;;
             -nolibc | -nodefaultlibs | -nostdlib) ;; # rust likes to do this for some reason but we are using zig's built in stuff
             -lmsvcrt) ;; # get rid of explicit msvcrt to prevent zig from looking for a dll thats not there
+            -Wl,--fix-cortex-a53-843419 | --fix-cortex-a53-843419) ;; # gcc-only workaround, lld rejects it
             *) args+=("$arg") ;;
           esac
         done
@@ -144,6 +168,7 @@
             -Wl,*.def) args+=("''${arg#-Wl,}") ;;
             -nolibc | -nodefaultlibs | -nostdlib) ;; # rust likes to do this for some reason but we are using zig's built in stuff
             -lmsvcrt) ;; # get rid of explicit msvcrt to prevent zig from looking for a dll thats not there
+            -Wl,--fix-cortex-a53-843419 | --fix-cortex-a53-843419) ;; # gcc-only workaround, lld rejects it
             *) args+=("$arg") ;;
           esac
         done
@@ -186,10 +211,12 @@
         "TARGET_DLLTOOL" = "${zigWrappers}/bin/${rustTriple}-dlltool";
         "DLLTOOL" = "${zigWrappers}/bin/${rustTriple}-dlltool";
         "BINDGEN_EXTRA_CLANG_ARGS_${bindgenRustTriple}" = "--target=${clangTarget}";
+      } // lib.optionalAttrs (lib.hasInfix "windows" rustTriple) {
+        # rustc passes --unwindlib=libunwind, which zig cc does not translate.
+        "CARGO_TARGET_${upperRustTriple}_RUSTFLAGS" = "-C link-arg=-lunwind";
       });
 
-      buildInputs = [
-        (if isCross && lib.hasInfix "windows" buildTarget 
+      buildInputs = lib.optional includeGlfw (if isCross && lib.hasInfix "windows" buildTarget
          then (env.zigCrossPkgsForTarget buildTarget).glfw.overrideAttrs (oldAttrs: {
            # linux's glib's mesonEmulatorHook for some reason gets the wrong target when using zigCrossPkgs
            # and window's mingw_w64 fails to build on aarch64 and plain crossPkgs/nixpkgs.pkgsCross
@@ -197,17 +224,15 @@
              # Remove the Windows resource file from the build to bypass zig rc wrapper issues
              find . -name "CMakeLists.txt" -exec sed -i '/glfw\.rc/d' {} +
            '';
-         }) 
-         else pkgs.glfw) 
-      ] ++ extraBuildInputs ++ (extraInputs.buildInputs or []);
+         })
+         else pkgs.glfw) ++ extraBuildInputs ++ (extraInputs.buildInputs or []);
       
-      nativeBuildInputs = with hostPkgs.buildPackages; [
+      nativeBuildInputs = (with hostPkgs.buildPackages; [
         rustToolchain
         zigWrappers
         llvmPackages.libclang.lib
         rustPlatform.cargoSetupHook
-        rustPlatform.bindgenHook
-      ] ++ [ (extraInputs.clang or hostPkgs.llvmPackages.clang) ] ++ extraNativeBuildInputs ++ (extraInputs.nativeBuildInputs or []);
+      ] ++ lib.optional bindgenHook hostPkgs.buildPackages.rustPlatform.bindgenHook) ++ [ (extraInputs.clang or hostPkgs.llvmPackages.clang) ] ++ extraNativeBuildInputs ++ (extraInputs.nativeBuildInputs or []);
       
       finalEnv = {
         LIBCLANG_PATH = "${hostPkgs.buildPackages.llvmPackages.libclang.lib}/lib";
@@ -227,7 +252,7 @@
       cargoDeps = hostPkgs.rustPlatform.importCargoLock {
         lockFile = ./vendor/wgpu-native/Cargo.lock;
       };
-      preBuild = (if isCross then ''
+      preBuild = (if isCross && !skipZigIncludes then ''
         set +e # no crashy
         echo "Extracting Zig C/C++ include paths for ${rustTriple}..."
         
@@ -250,10 +275,56 @@
       pkgs = crossPkgs;
       buildTarget = triple;
       preferMusl = lib.hasInfix "musl" triple;
+      # Cross packages are build-only: tests cannot run for these targets anyway,
+      # and skipping them drops the cross glfw/fontconfig/tzdata closure.
+      includeGlfw = false;
+      zigBuildFlags = [ "-Doptimize=ReleaseFast" "-Dmode=full" "-Dskip-codegen=true" ];
       extraInputs = { clang = hostPkgs.llvmPackages.clang-unwrapped; } //
         (if lib.hasInfix "linux" triple then linuxInputs { pkgs = crossPkgs; }
         else if lib.hasInfix "windows" triple then windowsInputs { pkgs = crossPkgs; }
         else {});
+    };
+
+    mkAndroid = triple: let
+      rustTriple = zigToRustTriple.${triple};
+      upperRustTriple = lib.toUpper (builtins.replaceStrings ["-"] ["_"] rustTriple);
+      bindgenRustTriple = builtins.replaceStrings ["-"] ["_"] rustTriple;
+      clangTriple = {
+        "aarch64-linux-android" = "aarch64-linux-android26";
+        "arm-linux-android" = "armv7a-linux-androideabi26";
+        "x86_64-linux-android" = "x86_64-linux-android26";
+      }.${triple};
+      clang = "${ndkBin}/${clangTriple}-clang";
+      sysroot = "${ndkRoot}/toolchains/llvm/prebuilt/linux-x86_64/sysroot";
+    in mkBuild {
+      pkgs = hostPkgs;
+      buildTarget = triple;
+      preferMusl = false;
+      extraRustTargets = [ rustTriple ];
+      skipZigIncludes = true;
+      bindgenHook = false;
+      includeGlfw = false;
+      zigBuildFlags = [ "-Doptimize=ReleaseFast" "-Dmode=full" ];
+      extraNativeBuildInputs = [ androidNdk ];
+      extraInputs = {
+        # bindgen's clang_macro_fallback spawns the clang executable, and the
+        # nixpkgs clang wrapper injects host glibc include paths. With an
+        # Android target that mixes host glibc headers into the parse, so set
+        # the NDK args explicitly and point CLANG_PATH at unwrapped clang.
+        preBuild = ''
+          export BINDGEN_EXTRA_CLANG_ARGS="--target=${clangTriple} --sysroot=${sysroot}"
+          export BINDGEN_EXTRA_CLANG_ARGS_${bindgenRustTriple}="--target=${clangTriple} --sysroot=${sysroot}"
+        '';
+      };
+      extraEnv = {
+        "CARGO_TARGET_${upperRustTriple}_LINKER" = clang;
+        "CC_${bindgenRustTriple}" = clang;
+        "AR_${bindgenRustTriple}" = "${ndkBin}/llvm-ar";
+        "BINDGEN_EXTRA_CLANG_ARGS" = "--target=${clangTriple} --sysroot=${sysroot}";
+        "BINDGEN_EXTRA_CLANG_ARGS_${bindgenRustTriple}" = "--target=${clangTriple} --sysroot=${sysroot}";
+        "LIBCLANG_PATH" = "${hostPkgs.llvmPackages.libclang.lib}/lib";
+        "CLANG_PATH" = "${hostPkgs.llvmPackages.clang-unwrapped}/bin/clang";
+      };
     };
 
     # Outputs
@@ -264,6 +335,8 @@
 
     packages = let
       crossPkgs = lib.genAttrs targetTriples mkCross;
+      androidPkgs = lib.genAttrs androidTriples mkAndroid;
+      allPkgs = crossPkgs // androidPkgs;
       defaultPkg = mkBuild {
         pkgs = hostPkgs;
         preferMusl = false;
@@ -273,11 +346,12 @@
         mkdir -p $out
         ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: pkg: ''
           ln -s ${pkg} $out/${name}
-        '') crossPkgs)}
+        '') allPkgs)}
       '';
-    in crossPkgs // {
+    in allPkgs // {
       default = defaultPkg;
       cross-default = crossPkgs.${builtins.head targetTriples};
+      android = androidPkgs."aarch64-linux-android";
       all = allPkg;
     };
 
@@ -304,6 +378,45 @@
         '';
         postPatch = ''
           ln -s ${hostPkgs.callPackage ./build.zig.zon.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
+        '';
+      };
+
+      windows-tests = env.mkShell {
+        nativeBuildInputs = packages.default.nativeBuildInputs
+          ++ packages.default.buildInputs
+          ++ packages.default.zigWrapperBins
+          ++ packages.default.zigWrapperLibs
+          ++ [ hostPkgs.wine64 ];
+        shellHook = ''
+          export WINEPREFIX="$PWD/.wine"
+          export WINEDEBUG=-all
+        '';
+      };
+
+      android = hostPkgs.mkShell {
+        packages = [
+          zig-bin
+          androidRust
+          androidNdk
+          hostPkgs.llvmPackages.libclang.lib
+          hostPkgs.pkg-config
+        ];
+        shellHook = ''
+          export ANDROID_NDK_HOME=${ndkRoot}
+          export ANDROID_NDK_ROOT=${ndkRoot}
+          export LIBCLANG_PATH=${hostPkgs.llvmPackages.libclang.lib}/lib
+          export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=${ndkBin}/aarch64-linux-android26-clang
+          export CC_aarch64_linux_android=${ndkBin}/aarch64-linux-android26-clang
+          export AR_aarch64_linux_android=${ndkBin}/llvm-ar
+          export BINDGEN_EXTRA_CLANG_ARGS_aarch64_linux_android="--target=aarch64-linux-android26 --sysroot=${ndkRoot}/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
+          export CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=${ndkBin}/armv7a-linux-androideabi26-clang
+          export CC_armv7_linux_androideabi=${ndkBin}/armv7a-linux-androideabi26-clang
+          export AR_armv7_linux_androideabi=${ndkBin}/llvm-ar
+          export BINDGEN_EXTRA_CLANG_ARGS_armv7_linux_androideabi="--target=armv7a-linux-androideabi26 --sysroot=${ndkRoot}/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
+          export CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=${ndkBin}/x86_64-linux-android26-clang
+          export CC_x86_64_linux_android=${ndkBin}/x86_64-linux-android26-clang
+          export AR_x86_64_linux_android=${ndkBin}/llvm-ar
+          export BINDGEN_EXTRA_CLANG_ARGS_x86_64_linux_android="--target=x86_64-linux-android26 --sysroot=${ndkRoot}/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
         '';
       };
     };
