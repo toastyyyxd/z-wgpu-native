@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Push store paths to carbon's harmonia cache and root them for retention.
 # Usage: push-cache.sh <revision> <store-path>...
+#
+# The runner -> carbon path is single-flow limited, so the closure is split
+# across parallel nix copy connections. Paths carbon can pull from its own
+# substituters are not sent; compression is left to ssh.
 set -euo pipefail
 
 if [ "$#" -lt 2 ]; then
@@ -10,6 +14,8 @@ fi
 
 revision="$1"
 shift
+
+parallel="${PUSH_PARALLEL:-8}"
 
 workdir="${RUNNER_TEMP:-/tmp}/carbon-cache"
 mkdir -p "$workdir"
@@ -35,13 +41,40 @@ ssh_opts=(
     -o IdentitiesOnly=yes
     -o UserKnownHostsFile="$known_hosts"
     -o StrictHostKeyChecking=yes
+    -o Compression=yes
+    -o IPQoS=throughput
 )
 export NIX_SSHOPTS="${ssh_opts[*]}"
 
 mapfile -t closure < <(nix-store -qR "$@")
 nix store sign --key-file "$signing_key" "${closure[@]}"
 
-nix copy --to ssh-ng://ci-cache@toastyx.dev "$@"
+shard_dir="$workdir/shards"
+rm -rf "$shard_dir"
+mkdir -p "$shard_dir"
+
+index=0
+for path in "${closure[@]}"; do
+    printf '%s\n' "$path" >>"$shard_dir/$((index % parallel))"
+    index=$((index + 1))
+done
+
+pids=()
+for shard in "$shard_dir"/*; do
+    mapfile -t paths <"$shard"
+    nix copy --no-recursive --substitute-on-destination \
+        --to ssh-ng://ci-cache@toastyx.dev "${paths[@]}" &
+    pids+=("$!")
+done
+
+failed=0
+for pid in "${pids[@]}"; do
+    wait "$pid" || failed=1
+done
+if [ "$failed" -ne 0 ]; then
+    echo "one or more cache push shards failed" >&2
+    exit 1
+fi
 
 ssh "${ssh_opts[@]}" ci-cache@toastyx.dev \
     /run/current-system/sw/bin/carbon-builder roots add \
