@@ -53,15 +53,30 @@ shard_dir="$workdir/shards"
 rm -rf "$shard_dir"
 mkdir -p "$shard_dir"
 
-index=0
-for path in "${closure[@]}"; do
-    printf '%s\n' "$path" >>"$shard_dir/$((index % parallel))"
-    index=$((index + 1))
+# Balance shards by closure size; a handful of large paths would otherwise
+# finish last and leave the other connections idle.
+declare -a totals=()
+for ((i = 0; i < parallel; i++)); do
+    : >"$shard_dir/$i"
+    totals[i]=0
 done
+while IFS=$'\t' read -r size path; do
+    best=0
+    for ((i = 1; i < parallel; i++)); do
+        if ((totals[i] < totals[best])); then
+            best=$i
+        fi
+    done
+    printf '%s\n' "$path" >>"$shard_dir/$best"
+    totals[best]=$((totals[best] + size))
+done < <(nix path-info -S "${closure[@]}" | awk -F'\t' '{gsub(/ /, "", $2); print $2 "\t" $1}' | sort -rn)
 
 pids=()
 for shard in "$shard_dir"/*; do
     mapfile -t paths <"$shard"
+    if [ "${#paths[@]}" -eq 0 ]; then
+        continue
+    fi
     nix copy --no-recursive --substitute-on-destination \
         --to ssh-ng://ci-cache@toastyx.dev "${paths[@]}" &
     pids+=("$!")
