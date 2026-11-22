@@ -26,11 +26,8 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
-            extra-substituters = https://zig2nix.cachix.org
-            extra-trusted-public-keys = zig2nix.cachix.org-1:LSXEcFKIAN2NtNsznYLMbhEtyHHorV0caI2UgTIxk2k=
-      - uses: DeterminateSystems/magic-nix-cache-action@v15
-        with:
-          use-flakehub: false
+            extra-substituters = https://nix-cache.toastyx.dev https://zig2nix.cachix.org
+            extra-trusted-public-keys = carbon:jeqyrpj5bvQbe1UuSa/qiK6F5JC+euudPFNk+ZDc830= zig2nix.cachix.org-1:LSXEcFKIAN2NtNsznYLMbhEtyHHorV0caI2UgTIxk2k=
       - name: Allow unprivileged user namespaces
         # zig2nix wraps Zig with bubblewrap; Ubuntu 24.04 restricts unprivileged
         # user namespaces via AppArmor, which breaks its Nix build.
@@ -43,6 +40,16 @@ jobs:
           fi
       - name: Build and run headless suites
         run: nix build .#default --no-link --print-out-paths
+      - name: Push to carbon cache
+        if: github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CARBON_CACHE_SSH_KEY: ${{ secrets.CARBON_CACHE_SSH_KEY }}
+          CARBON_CACHE_SIGNING_KEY: ${{ secrets.CARBON_CACHE_SIGNING_KEY }}
+        run: |
+          ./.github/scripts/push-cache.sh "$GITHUB_SHA" \
+            "$(nix build .#default --no-link --print-out-paths)" \
+            "$(nix build .#devShells.x86_64-linux.default --no-link --print-out-paths)"
 
   windows-tests:
     name: tests (windows-gnu via Wine)
@@ -56,11 +63,8 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
-            extra-substituters = https://zig2nix.cachix.org
-            extra-trusted-public-keys = zig2nix.cachix.org-1:LSXEcFKIAN2NtNsznYLMbhEtyHHorV0caI2UgTIxk2k=
-      - uses: DeterminateSystems/magic-nix-cache-action@v15
-        with:
-          use-flakehub: false
+            extra-substituters = https://nix-cache.toastyx.dev https://zig2nix.cachix.org
+            extra-trusted-public-keys = carbon:jeqyrpj5bvQbe1UuSa/qiK6F5JC+euudPFNk+ZDc830= zig2nix.cachix.org-1:LSXEcFKIAN2NtNsznYLMbhEtyHHorV0caI2UgTIxk2k=
       - name: Allow unprivileged user namespaces
         # zig2nix wraps Zig with bubblewrap; Ubuntu 24.04 restricts unprivileged
         # user namespaces via AppArmor, which breaks its Nix build.
@@ -89,13 +93,19 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
-            extra-substituters = https://zig2nix.cachix.org
-            extra-trusted-public-keys = zig2nix.cachix.org-1:LSXEcFKIAN2NtNsznYLMbhEtyHHorV0caI2UgTIxk2k=
-      - uses: DeterminateSystems/magic-nix-cache-action@v15
-        with:
-          use-flakehub: false
+            extra-substituters = https://nix-cache.toastyx.dev https://zig2nix.cachix.org
+            extra-trusted-public-keys = carbon:jeqyrpj5bvQbe1UuSa/qiK6F5JC+euudPFNk+ZDc830= zig2nix.cachix.org-1:LSXEcFKIAN2NtNsznYLMbhEtyHHorV0caI2UgTIxk2k=
       - name: Run abi/lib suites natively
         run: nix develop -c zig build test -Dtest=true -Dmode=minimal -Dcore-tests=true
+      - name: Push to carbon cache
+        if: github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CARBON_CACHE_SSH_KEY: ${{ secrets.CARBON_CACHE_SSH_KEY }}
+          CARBON_CACHE_SIGNING_KEY: ${{ secrets.CARBON_CACHE_SIGNING_KEY }}
+        run: |
+          ./.github/scripts/push-cache.sh "$GITHUB_SHA" \
+            "$(nix build .#devShells.aarch64-darwin.default --no-link --print-out-paths)"
 
   codegen-check:
     name: codegen drift
@@ -109,11 +119,8 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
-            extra-substituters = https://zig2nix.cachix.org
-            extra-trusted-public-keys = zig2nix.cachix.org-1:LSXEcFKIAN2NtNsznYLMbhEtyHHorV0caI2UgTIxk2k=
-      - uses: DeterminateSystems/magic-nix-cache-action@v15
-        with:
-          use-flakehub: false
+            extra-substituters = https://nix-cache.toastyx.dev https://zig2nix.cachix.org
+            extra-trusted-public-keys = carbon:jeqyrpj5bvQbe1UuSa/qiK6F5JC+euudPFNk+ZDc830= zig2nix.cachix.org-1:LSXEcFKIAN2NtNsznYLMbhEtyHHorV0caI2UgTIxk2k=
       - name: Allow unprivileged user namespaces
         # zig2nix wraps Zig with bubblewrap; Ubuntu 24.04 restricts unprivileged
         # user namespaces via AppArmor, which breaks its Nix build.
@@ -128,6 +135,15 @@ jobs:
         run: |
           nix develop -c zig build -Dmode=codegen codegen
           git diff --exit-code -- src/builders.zig src/callbacks.zig src/handles.zig src/root.zig src/types.zig
+      - name: Push to carbon cache
+        if: github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CARBON_CACHE_SSH_KEY: ${{ secrets.CARBON_CACHE_SSH_KEY }}
+          CARBON_CACHE_SIGNING_KEY: ${{ secrets.CARBON_CACHE_SIGNING_KEY }}
+        run: |
+          ./.github/scripts/push-cache.sh "$GITHUB_SHA" \
+            "$(nix build .#devShells.x86_64-linux.default --no-link --print-out-paths)"
 
   build:
     name: build ${{ matrix.target }}
@@ -154,11 +170,8 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
-            extra-substituters = https://zig2nix.cachix.org
-            extra-trusted-public-keys = zig2nix.cachix.org-1:LSXEcFKIAN2NtNsznYLMbhEtyHHorV0caI2UgTIxk2k=
-      - uses: DeterminateSystems/magic-nix-cache-action@v15
-        with:
-          use-flakehub: false
+            extra-substituters = https://nix-cache.toastyx.dev https://zig2nix.cachix.org
+            extra-trusted-public-keys = carbon:jeqyrpj5bvQbe1UuSa/qiK6F5JC+euudPFNk+ZDc830= zig2nix.cachix.org-1:LSXEcFKIAN2NtNsznYLMbhEtyHHorV0caI2UgTIxk2k=
       - name: Allow unprivileged user namespaces
         # zig2nix wraps Zig with bubblewrap; Ubuntu 24.04 restricts unprivileged
         # user namespaces via AppArmor, which breaks its Nix build.
@@ -188,3 +201,12 @@ jobs:
           path: out/
           if-no-files-found: error
           retention-days: 14
+      - name: Push to carbon cache
+        if: github.event_name == 'push'
+        continue-on-error: true
+        env:
+          CARBON_CACHE_SSH_KEY: ${{ secrets.CARBON_CACHE_SSH_KEY }}
+          CARBON_CACHE_SIGNING_KEY: ${{ secrets.CARBON_CACHE_SIGNING_KEY }}
+        run: |
+          ./.github/scripts/push-cache.sh "$GITHUB_SHA" \
+            "$(nix build .#${{ matrix.target }} --no-link --print-out-paths)"
