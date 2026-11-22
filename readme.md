@@ -178,8 +178,8 @@ Entry points that return a status become Zig error unions, generated from the
 status enum:
 
 ```zig
-const limits = try device.getLimits();                         // StatusError!Limits
-try buffer.writeMappedRange(0, @ptrCast(data.ptr), data.len);  // StatusError!void
+const limits = try device.getLimits();  // StatusError!Limits
+const info = try adapter.getInfo();     // StatusError!AdapterInfo
 ```
 
 Each status enum also has `toError`/`fromError`. Async callbacks and request
@@ -260,7 +260,10 @@ panics inside the Rust library and aborts the process. The bindings still expose
 them because they mirror the C headers.
 
 `wgpu.unimplemented_entry_points` lists the affected C names. Sync wrappers are
-not generated for these.
+not generated for these. The buffer-mapping conveniences are among them:
+`readMappedRange`/`writeMappedRange` and `getMapState` are stubbed, so map with
+`mapSync` (or `mapAsync`) and copy through the pointer from `getMappedRange`,
+as [`tests/compute.zig`](tests/compute.zig) does.
 
 ```zig
 for (wgpu.unimplemented_entry_points) |name| {
