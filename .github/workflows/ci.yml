@@ -26,6 +26,16 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+      - name: Allow unprivileged user namespaces
+        # zig2nix wraps Zig with bubblewrap; Ubuntu 24.04 restricts unprivileged
+        # user namespaces via AppArmor, which breaks its Nix build.
+        run: |
+          if [ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+          if [ -e /proc/sys/kernel/unprivileged_userns_clone ]; then
+            sudo sysctl -w kernel.unprivileged_userns_clone=1
+          fi
       - name: Build and run headless suites
         run: nix build .#default --no-link --print-out-paths | tee /tmp/default-out
       - name: Windowed suites (best effort)
@@ -47,6 +57,16 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+      - name: Allow unprivileged user namespaces
+        # zig2nix wraps Zig with bubblewrap; Ubuntu 24.04 restricts unprivileged
+        # user namespaces via AppArmor, which breaks its Nix build.
+        run: |
+          if [ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+          if [ -e /proc/sys/kernel/unprivileged_userns_clone ]; then
+            sudo sysctl -w kernel.unprivileged_userns_clone=1
+          fi
       - name: Run abi/lib suites under Wine
         run: |
           nix develop .#windows-tests -c zig build test -Dtest=true -Dmode=minimal \
@@ -94,5 +114,15 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+      - name: Allow unprivileged user namespaces
+        # zig2nix wraps Zig with bubblewrap; Ubuntu 24.04 restricts unprivileged
+        # user namespaces via AppArmor, which breaks its Nix build.
+        run: |
+          if [ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+          if [ -e /proc/sys/kernel/unprivileged_userns_clone ]; then
+            sudo sysctl -w kernel.unprivileged_userns_clone=1
+          fi
       - name: nix build
         run: nix build .#${{ matrix.target }} --no-link --print-out-paths
