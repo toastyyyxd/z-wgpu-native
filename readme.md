@@ -53,9 +53,13 @@ Tagged archives pin a release:
 # Zig master
 zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.2.0-zig0.18-dev.tar.gz
 
-# Zig 0.17.1 (plain v1.2.0 tag)
-zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.2.0.tar.gz
+# Zig 0.17.1 (stable)
+zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.2.0-zig0.17.1.tar.gz
 ```
+
+The plain `v1.2.0` tag is an alias for the stable line, kept so registries
+resolve a default. Use an explicit `-zig<version>` tag (above) to pin what you
+support.
 
 Or use a path or submodule dependency:
 

@@ -16,7 +16,11 @@ nix develop          # Zig from zig2nix (master), zls, Rust toolchain for -Dmode
 | Branch | Zig | Tag convention |
 | --- | --- | --- |
 | `main` | 0.18.0-dev | `vX.Y.Z-zig0.18-dev` |
-| `zig-0.17.1` | 0.17.1 | `vX.Y.Z` |
+| `zig-0.17.1` | 0.17.1 | `vX.Y.Z-zig0.17.1` |
+
+Releases are published only for tags with a `-zig` suffix (for example
+`vX.Y.Z-zig<version>`). The plain `vX.Y.Z` tag is an alias for the stable line so
+registries resolve a stable default.
 
 The branches differ only in Zig 0.18's renames (`packed struct` became
 `bitpack struct`, plus `std.meta` changes) and the pin/readme updates, so
