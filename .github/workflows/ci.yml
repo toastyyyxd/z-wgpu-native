@@ -37,13 +37,7 @@ jobs:
             sudo sysctl -w kernel.unprivileged_userns_clone=1
           fi
       - name: Build and run headless suites
-        run: nix build .#default --no-link --print-out-paths | tee /tmp/default-out
-      - name: Windowed suites (best effort)
-        continue-on-error: true
-        run: |
-          sudo apt-get update && sudo apt-get install -y xvfb
-          lib="$(cat /tmp/default-out)/lib/libwgpu_native.a"
-          xvfb-run -a nix develop -c zig build test -Dtest=true -Dheaded-tests=true -Dmode=minimal -Dwgpu="$lib"
+        run: nix build .#default --no-link --print-out-paths
 
   windows-tests:
     name: tests (windows-gnu via Wine)

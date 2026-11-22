@@ -122,7 +122,8 @@ nix develop -c zig build test -Dtest=true -Dmode=minimal -Dcore-tests=true
 
 CI runs the headless suites on a GitHub-hosted ubuntu runner, the Windows
 `abi`/`lib` suites under Wine, and the `abi`/`lib` suites natively on a macOS
-runner (best effort). The windowed suites run under Xvfb and are best effort.
+runner (best effort). Windowed suites are not run in CI, because the Nix-linked
+test binaries need the dev shell's glibc, which a non-NixOS runner doesn't have.
 
 ## Code layout
 
