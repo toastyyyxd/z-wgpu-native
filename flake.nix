@@ -101,6 +101,8 @@
       wrapperArgs ? [],
       extraEnv ? {},
       zigBuildFlags ? [ "-Doptimize=ReleaseFast" "-Dtest=true" "-Dmode=full" ],
+      doCheck ? false,
+      checkFlags ? [],
       extraBuildInputs ? [],
       extraNativeBuildInputs ? [],
       extraInputs ? {},
@@ -144,7 +146,6 @@
             -Wl,*.def) args+=("''${arg#-Wl,}") ;;
             -nolibc | -nodefaultlibs | -nostdlib) ;; # rust likes to do this for some reason but we are using zig's built in stuff
             -lmsvcrt) ;; # get rid of explicit msvcrt to prevent zig from looking for a dll thats not there
-            -lsynchronization) args+=("-lapi-ms-win-core-synch-l1-2-0") ;; # Zig 0.17.1 has no SDK alias for this API set
             -Wl,--fix-cortex-a53-843419 | --fix-cortex-a53-843419) ;; # gcc-only workaround, lld rejects it
             *) args+=("$arg") ;;
           esac
@@ -169,7 +170,6 @@
             -Wl,*.def) args+=("''${arg#-Wl,}") ;;
             -nolibc | -nodefaultlibs | -nostdlib) ;; # rust likes to do this for some reason but we are using zig's built in stuff
             -lmsvcrt) ;; # get rid of explicit msvcrt to prevent zig from looking for a dll thats not there
-            -lsynchronization) args+=("-lapi-ms-win-core-synch-l1-2-0") ;; # Zig 0.17.1 has no SDK alias for this API set
             -Wl,--fix-cortex-a53-843419 | --fix-cortex-a53-843419) ;; # gcc-only workaround, lld rejects it
             *) args+=("$arg") ;;
           esac
@@ -241,10 +241,12 @@
         CARGO_BUILD_TARGET = rustTriple;
       } // cargoEnv // extraEnv // (extraInputs.env or {});
 
-    in env.package {
+      finalZigBuildFlags = zigBuildFlags ++ [ "-Dcargo-target=${rustTriple}" ] ++ (extraInputs.zigBuildFlags or []);
+
+    in env.package ({
       src = lib.cleanSource ./.;
       inherit zigTarget nativeBuildInputs buildInputs;
-      zigBuildFlags = zigBuildFlags ++ [ "-Dcargo-target=${rustTriple}" ] ++ (extraInputs.zigBuildFlags or []);
+      zigBuildFlags = finalZigBuildFlags;
       zigPreferMusl = preferMusl;
       zigWrapperBins = wrapperBins;
       zigWrapperLibs = wrapperLibs;
@@ -268,7 +270,10 @@
         
         export BINDGEN_EXTRA_CLANG_ARGS_${bindgenRustTriple}="$BINDGEN_EXTRA_CLANG_ARGS_${bindgenRustTriple} $ZIG_INCLUDES"
       '' else "") + "\n" + (extraInputs.preBuild or "");
-    };
+    } // lib.optionalAttrs doCheck {
+      doCheck = true;
+      zigCheckFlags = finalZigBuildFlags ++ checkFlags;
+    });
 
     mkCross = triple: let
       crossPkgs = env.crossPkgsForTarget triple;
@@ -343,6 +348,9 @@
         pkgs = hostPkgs;
         preferMusl = false;
         extraInputs = hostExtraInputs;
+        zigBuildFlags = [ "-Doptimize=ReleaseFast" "-Dmode=full" ];
+        doCheck = true;
+        checkFlags = [ "-Dtest=true" ];
       };
       allPkg = hostPkgs.runCommand "z_wgpu_native-all" {} ''
         mkdir -p $out
