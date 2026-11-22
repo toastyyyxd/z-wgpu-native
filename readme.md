@@ -44,20 +44,19 @@ const instance = wgpu.createInstance(null);
 
 ## Install
 
-Zig **0.18.0-dev.1151+8dfb7a7cc** on `main` (`minimum_zig_version` in
-`build.zig.zon`), or Zig **0.17.1** on the `zig-0.17.1` branch.
+Zig **master** on `main`, or Zig **0.17.1** on the `zig-0.17.1` branch.
 
 Tagged archives pin a release:
 
 ```sh
 # Zig master
-zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.2.0-zig0.18-dev.tar.gz
+zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.3.0-zig0.18-dev.tar.gz
 
 # Zig 0.17.1 (stable)
-zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.2.0-zig0.17.1.tar.gz
+zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.3.0-zig0.17.1.tar.gz
 ```
 
-The plain `v1.2.0` tag is an alias for the stable line, kept so registries
+The plain `v1.3.0` tag is an alias for the stable line, kept so registries
 resolve a default. Use an explicit `-zig<version>` tag (above) to pin what you
 support.
 
