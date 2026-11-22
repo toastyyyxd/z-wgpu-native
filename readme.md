@@ -51,13 +51,15 @@ Tagged archives pin a release:
 
 ```sh
 # Zig 0.17.1 (this branch)
-zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.2.0.tar.gz
+zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.2.0-zig0.17.1.tar.gz
 
 # Zig master
 zig fetch --save https://git.toastyx.dev/toasty/z-wgpu-native/archive/v1.2.0-zig0.18-dev.tar.gz
 ```
 
-This branch releases as `v1.2.0`. `main` releases as `v1.2.0-zig0.18-dev`.
+The plain `v1.2.0` tag is an alias for the stable line, kept so registries
+resolve a default. Use an explicit `-zig<version>` tag (above) to pin what you
+support.
 
 Or use a path or submodule dependency:
 
