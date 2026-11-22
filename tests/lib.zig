@@ -11,6 +11,19 @@ test "root re-exports module declarations" {
     }
 }
 
+test "stubbed entry points stay declared and root-aliased" {
+    comptime {
+        // Stubs are inline functions whose body is a compile error. The
+        // declarations themselves must remain visible in both modules, so a
+        // misspelled name is a normal Zig error and docs still show them.
+        std.debug.assert(@hasDecl(z.handles.Buffer, "writeMappedRange"));
+        std.debug.assert(@hasDecl(z.Device, "getAdapterInfo"));
+        std.debug.assert(@hasDecl(z.handles, "getInstanceFeatures"));
+        std.debug.assert(@hasDecl(z, "getInstanceFeatures"));
+        std.debug.assert(@hasDecl(z, "getProcAddress"));
+    }
+}
+
 test "flag helpers compose" {
     const usage = (z.BufferUsage{ .map_read = true }).bitOr(.{ .copy_dst = true });
     try std.testing.expect(usage.map_read);
