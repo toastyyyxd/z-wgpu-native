@@ -69,7 +69,7 @@ while IFS=$'\t' read -r size path; do
     done
     printf '%s\n' "$path" >>"$shard_dir/$best"
     totals[best]=$((totals[best] + size))
-done < <(nix path-info -S "${closure[@]}" | awk -F'\t' '{gsub(/ /, "", $2); print $2 "\t" $1}' | sort -rn)
+done < <(nix path-info -S "${closure[@]}" | awk '{print $2 "\t" $1}' | sort -rn)
 
 pids=()
 for shard in "$shard_dir"/*; do
