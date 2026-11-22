@@ -34,11 +34,8 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
-            extra-substituters = https://zig2nix.cachix.org
-            extra-trusted-public-keys = zig2nix.cachix.org-1:LSXEcFKIAN2NtNsznYLMbhEtyHHorV0caI2UgTIxk2k=
-      - uses: DeterminateSystems/magic-nix-cache-action@v15
-        with:
-          use-flakehub: false
+            extra-substituters = https://nix-cache.toastyx.dev https://zig2nix.cachix.org
+            extra-trusted-public-keys = carbon:jeqyrpj5bvQbe1UuSa/qiK6F5JC+euudPFNk+ZDc830= zig2nix.cachix.org-1:LSXEcFKIAN2NtNsznYLMbhEtyHHorV0caI2UgTIxk2k=
       - name: Allow unprivileged user namespaces
         # zig2nix wraps Zig with bubblewrap; Ubuntu 24.04 restricts unprivileged
         # user namespaces via AppArmor, which breaks its Nix build.
@@ -67,6 +64,14 @@ jobs:
           name: libs-${{ matrix.target }}
           path: out/
           if-no-files-found: error
+      - name: Push to carbon cache
+        continue-on-error: true
+        env:
+          CARBON_CACHE_SSH_KEY: ${{ secrets.CARBON_CACHE_SSH_KEY }}
+          CARBON_CACHE_SIGNING_KEY: ${{ secrets.CARBON_CACHE_SIGNING_KEY }}
+        run: |
+          ./.github/scripts/push-cache.sh "$GITHUB_SHA" \
+            "$(nix build .#${{ matrix.target }} --no-link --print-out-paths)"
 
   macos-build:
     name: build aarch64-macos
@@ -80,11 +85,8 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
-            extra-substituters = https://zig2nix.cachix.org
-            extra-trusted-public-keys = zig2nix.cachix.org-1:LSXEcFKIAN2NtNsznYLMbhEtyHHorV0caI2UgTIxk2k=
-      - uses: DeterminateSystems/magic-nix-cache-action@v15
-        with:
-          use-flakehub: false
+            extra-substituters = https://nix-cache.toastyx.dev https://zig2nix.cachix.org
+            extra-trusted-public-keys = carbon:jeqyrpj5bvQbe1UuSa/qiK6F5JC+euudPFNk+ZDc830= zig2nix.cachix.org-1:LSXEcFKIAN2NtNsznYLMbhEtyHHorV0caI2UgTIxk2k=
       - name: Build aarch64-macos
         run: |
           set -eu
@@ -101,6 +103,14 @@ jobs:
           path: out/
           if-no-files-found: error
           retention-days: 14
+      - name: Push to carbon cache
+        continue-on-error: true
+        env:
+          CARBON_CACHE_SSH_KEY: ${{ secrets.CARBON_CACHE_SSH_KEY }}
+          CARBON_CACHE_SIGNING_KEY: ${{ secrets.CARBON_CACHE_SIGNING_KEY }}
+        run: |
+          ./.github/scripts/push-cache.sh "$GITHUB_SHA" \
+            "$(nix build .#devShells.aarch64-darwin.default --no-link --print-out-paths)"
 
   release:
     name: publish release
