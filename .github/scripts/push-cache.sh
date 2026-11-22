@@ -15,7 +15,7 @@ fi
 revision="$1"
 shift
 
-parallel="${PUSH_PARALLEL:-8}"
+parallel="${PUSH_PARALLEL:-16}"
 
 workdir="${RUNNER_TEMP:-/tmp}/carbon-cache"
 mkdir -p "$workdir"
