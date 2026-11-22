@@ -20,8 +20,10 @@ printf '%s' "$CARBON_CACHE_SIGNING_KEY" >"$signing_key"
 chmod 600 "$signing_key"
 
 ssh_key="$workdir/id_ed25519"
-printf '%s' "$CARBON_CACHE_SSH_KEY" >"$ssh_key"
+# CARBON_CACHE_SSH_KEY is base64 of the private key, single line.
+printf '%s' "$CARBON_CACHE_SSH_KEY" | base64 -d >"$ssh_key"
 chmod 600 "$ssh_key"
+ssh-keygen -y -f "$ssh_key" >/dev/null
 
 known_hosts="$workdir/known_hosts"
 cat >"$known_hosts" <<'EOF'
