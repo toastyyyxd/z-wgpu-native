@@ -377,7 +377,7 @@ Differences from raw wgpu-native:
 - **Nullable handles are options.** `WGPU_NULLABLE` follows the C headers, so
   descriptor fields are `?*T` and reads need `.?`/`if` (e.g.
   `surface_tex.texture.?.createView(null)`).
-- **Flags are `bitpack struct` flag sets.** Compose with `bitOr`/`bitAnd`/`bitXor`.
+- **Flags are `packed struct` flag sets.** Compose with `bitOr`/`bitAnd`/`bitXor`.
   `@bitCast` through the backing `u64` still works when you need raw bits, e.g.
   `wgpu.BufferUsage{ .map_read = true }.bitOr(.{ .copy_dst = true })`.
 - **Descriptors are zero-initialized.** C's `INIT` macros zero every field and
